@@ -21,19 +21,19 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm i
       - run: npm run test:lcov
-      # - name: Coveralls
-      #   uses: coverallsapp/github-action@master
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     flag-name: run-${{ matrix.node-version }}
-      #     parallel: true
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: run-${{ matrix.node-version }}
+          parallel: true
 
-  # finish:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Coveralls Finished
-  #       uses: coverallsapp/github-action@master
-  #       with:
-  #         github-token: ${{ secrets.GITHUB_TOKEN }}
-  #         parallel-finished: true
+  finish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
