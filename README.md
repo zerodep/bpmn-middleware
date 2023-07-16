@@ -18,6 +18,8 @@ app.use('/rest', bpmnEngineMiddleware());
 
 app.use(errorHandler);
 
+app.listen(3000);
+
 function errorHandler(err, req, res, next) {
   if (!(err instanceof Error)) return next();
   if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
@@ -27,9 +29,11 @@ function errorHandler(err, req, res, next) {
 
 ## Options
 
-- `adapter`: Optional [storage adapter](#storage-adapter). Defaults to in-memory adapter
+- `adapter`: Optional [storage adapter](#storage-adapter). Defaults to in-memory adapter based on LRU cache
 - `engineOptions`: Optional BPMN Engine [options](https://github.com/paed01/bpmn-engine/blob/master/docs/API.md)
 - `engineCache`: Optional engine LRU cache, defaults to `new LRUCache({ max: 1000 })`
+- `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines
+- `idleTimeout`: Optional positive integer, engine execution timeout in milliseconds before engine execution is considered idle and is stopped, defaults to 120000ms
 
 # Routes
 
