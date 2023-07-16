@@ -1,9 +1,9 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "BPMN engine express middleware",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/main.cjs",
   "module": "src/index.js",
   "scripts": {
     "test": "mocha -R dot",
