@@ -1,6 +1,7 @@
 import request from 'supertest';
 import * as ck from 'chronokinesis';
 import { LRUCache } from 'lru-cache';
+import FormData from 'form-data';
 
 import { getAppWithExtensions, createDeployment, waitForProcess, horizontallyScaled } from '../helpers/testHelpers.js';
 import { MemoryAdapter } from '../../src/index.js';
@@ -665,6 +666,159 @@ Feature('storage adapter', () => {
 
     And('engine is still running', () => {
       expect(apps.getRunning()).to.have.length(1);
+    });
+  });
+
+  Scenario('storage adapter throws on upsert file', () => {
+    let apps, storage;
+    after(() => {
+      return apps.stop();
+    });
+
+    Given('a faulty storage adapter', () => {
+      storage = new LRUCache({ max: 1000 });
+      class VolatileAdapter extends MemoryAdapter {
+        upsert(type, key, value) {
+          if (type === STORAGE_TYPE_FILE) {
+            return Promise.reject(new Error('DB file error'));
+          } else {
+            return super.upsert(type, key, value);
+          }
+        }
+      }
+
+      apps = horizontallyScaled(2, { adapter: new VolatileAdapter(storage) });
+    });
+
+    let response;
+    And('a process is deployed', async () => {
+      response = await createDeployment(apps.balance(), 'faulty-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="bp" isExecutable="true">
+          <userTask id="task" />
+        </process>
+      </definitions>`);
+    });
+
+    Then('error is returned', () => {
+      expect(response.statusCode, response.text).to.equal(502);
+      expect(response.body.message).to.equal('DB file error');
+    });
+  });
+
+  Scenario('storage adapter throws on upsert multiple files', () => {
+    let apps, adapter;
+    after(() => {
+      return apps.stop();
+    });
+
+    Given('a faulty storage adapter', () => {
+      class VolatileAdapter extends MemoryAdapter {
+        upsert(type, key, value) {
+          if (type === STORAGE_TYPE_FILE && key === 'multiple-file-process.json') {
+            return Promise.reject(new Error('DB json file error'));
+          } else {
+            return super.upsert(type, key, value);
+          }
+        }
+      }
+
+      adapter = new VolatileAdapter();
+      apps = horizontallyScaled(2, { adapter });
+    });
+
+    let deploymentName, response;
+    And('a process is with multiple files', async () => {
+      deploymentName = 'multiple-file-process';
+      const form = new FormData();
+      form.append('deployment-name', deploymentName);
+      form.append('deployment-source', 'Test modeler');
+      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="bp" isExecutable="true">
+          <userTask id="task" />
+        </process>
+      </definitions>`, `${deploymentName}.bpmn`);
+
+      form.append(`${deploymentName}.json`, Buffer.from('{"foo":"bar"}'), `${deploymentName}.json`);
+
+      response = await apps.request()
+        .post('/rest/deployment/create')
+        .set(form.getHeaders())
+        .send(form.getBuffer().toString());
+    });
+
+    Then('error is returned', () => {
+      expect(response.statusCode, response.text).to.equal(502);
+      expect(response.body.message).to.equal('DB json file error');
+    });
+
+    And('storage lack both files', async () => {
+      expect(await adapter.fetch(STORAGE_TYPE_FILE, `${deploymentName}.json`), `${deploymentName}.json`).to.not.be.ok;
+      expect(await adapter.fetch(STORAGE_TYPE_FILE, `${deploymentName}.bpmn`), `${deploymentName}.bpmn`).to.not.be.ok;
+    });
+  });
+
+  Scenario('storage adapter throws on delete file', () => {
+    let apps, adapter;
+    after(() => {
+      return apps.stop();
+    });
+
+    Given('a faulty storage adapter', () => {
+      class VolatileAdapter extends MemoryAdapter {
+        upsert(type, key, value) {
+          if (type === STORAGE_TYPE_FILE && key === 'multiple-file-process.json') {
+            return Promise.reject(new Error('DB json file error'));
+          } else {
+            return super.upsert(type, key, value);
+          }
+        }
+        delete(type, key, value) {
+          if (type === STORAGE_TYPE_FILE && key === 'multiple-file-process.bpmn') {
+            return Promise.reject(new Error('Delete DB bpmn file error'));
+          } else {
+            return super.delete(type, key, value);
+          }
+        }
+      }
+
+      adapter = new VolatileAdapter();
+      apps = horizontallyScaled(2, { adapter });
+    });
+
+    let deploymentName, response;
+    And('a process is with multiple files', async () => {
+      deploymentName = 'multiple-file-process';
+      const form = new FormData();
+      form.append('deployment-name', deploymentName);
+      form.append('deployment-source', 'Test modeler');
+      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="bp" isExecutable="true">
+          <userTask id="task" />
+        </process>
+      </definitions>`, `${deploymentName}.bpmn`);
+
+      form.append(`${deploymentName}.json`, Buffer.from('{"foo":"bar"}'), `${deploymentName}.json`);
+
+      response = await apps.request()
+        .post('/rest/deployment/create')
+        .set(form.getHeaders())
+        .send(form.getBuffer().toString());
+    });
+
+    Then('error is returned', () => {
+      expect(response.statusCode, response.text).to.equal(502);
+      expect(response.body.message).to.equal('DB json file error');
+    });
+
+    And('storage has kept file', async () => {
+      expect(await adapter.fetch(STORAGE_TYPE_FILE, `${deploymentName}.json`), `${deploymentName}.json`).to.not.be.ok;
+      expect(await adapter.fetch(STORAGE_TYPE_FILE, `${deploymentName}.bpmn`), `${deploymentName}.bpmn`).to.be.ok;
     });
   });
 });

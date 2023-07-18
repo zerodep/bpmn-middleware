@@ -16,7 +16,7 @@ MulterAdapterStorage.prototype._handleFile = function handleFile(req, file, call
     })
     .on('end', async () => {
       try {
-        await this.adapter.upsert(STORAGE_TYPE_FILE, fileName, content);
+        await this.adapter.upsert(STORAGE_TYPE_FILE, fileName, { ...file, content });
         return callback(null, { path: fileName, size });
       } catch (err) {
         return callback(err);
@@ -25,6 +25,10 @@ MulterAdapterStorage.prototype._handleFile = function handleFile(req, file, call
     .on('error', callback);
 };
 
-MulterAdapterStorage.prototype._removeFile = function removeFile(req, file, callback) {
-  callback();
+MulterAdapterStorage.prototype._removeFile = async function removeFile(req, file, callback) {
+  try {
+    await this.adapter.delete(STORAGE_TYPE_FILE, file.originalname);
+  } finally {
+    callback();
+  }
 };

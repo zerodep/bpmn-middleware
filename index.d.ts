@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, Handler } from 'express'
+import { Request, Response, NextFunction, Handler, Router } from 'express'
 import { Engine, BpmnEngineOptions, BpmnEngineExecutionState, BpmnMessage } from 'bpmn-engine'
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
@@ -143,7 +143,7 @@ export class BpmnEngineMiddleware {
   /** GET (*)?/status/:token */
   getStatusByToken(req: Request<tokenParam>, res: Response<RunningResponseBody>, next: NextFunction): Promise<void>;
   /** GET (*)?/status/:token/:activityId */
-  getActivityStatus(req: Request<tokenParam | activityIdParam>, res: Response<PostponedActivity>, next: NextFunction): Promise<void>;
+  getActivityStatus(req: Request<tokenParam & activityIdParam>, res: Response<PostponedActivity>, next: NextFunction): Promise<void>;
   /** POST (*)?/resume/:token */
   resumeByToken(req: Request<tokenParam>, res: Response, next: NextFunction): Promise<void>;
   /** POST (*)?/signal/:token */
@@ -162,4 +162,8 @@ export class BpmnEngineMiddleware {
   internalStopByToken(req: Request<tokenParam>, res: Response, next: NextFunction): void;
 }
 
-export function bpmnEngineMiddleware(options?: BpmnEngineMiddlewareOptions): Handler[];
+interface MiddlewareReturnType extends Router {
+  engines: Engines;
+}
+
+export function bpmnEngineMiddleware(options?: BpmnEngineMiddlewareOptions): MiddlewareReturnType;

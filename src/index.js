@@ -14,8 +14,6 @@ import { fromActivityApi } from './Caller.js';
 
 const packageInfo = fs.promises.readFile(join(process.cwd(), 'package.json')).then((content) => JSON.parse(content));
 
-const kInitialized = Symbol.for('adapter init');
-
 export { Engines, MemoryAdapter, HttpError, MiddlewareEngine };
 export * from './constants.js';
 
@@ -34,37 +32,39 @@ export function bpmnEngineMiddleware(options) {
 
   const router = new Router({ mergeParams: true });
 
-  const middleware = [
-    router.use(engineMiddleware.init),
-    router.get('(*)?/version', engineMiddleware.getVersion),
-    router.get('(*)?/deployment', engineMiddleware.getDeployment),
-    router.post('(*)?/deployment/create', multer({ storage }).any(), engineMiddleware.create),
-    router.post('(*)?/process-definition/:deploymentName/start', json(), engineMiddleware.start),
-    router.get('(*)?/running', engineMiddleware.getRunning),
-    router.get('(*)?/status/:token', engineMiddleware.getStatusByToken),
-    router.get('(*)?/status/:token/:activityId', engineMiddleware.getActivityStatus),
-    router.post('(*)?/resume/:token', json(), engineMiddleware.resumeByToken),
-    router.post('(*)?/signal/:token', json(), engineMiddleware.signalActivity),
-    router.post('(*)?/cancel/:token', json(), engineMiddleware.cancelActivity),
-    router.post('(*)?/fail/:token', json(), engineMiddleware.failActivity),
-    router.get('(*)?/state/:token', engineMiddleware.getStateByToken),
-    router.delete('(*)?/state/:token', engineMiddleware.deleteStateByToken),
-    router.delete('(*)?/internal/stop', engineMiddleware.internalStopAll),
-    router.delete('(*)?/internal/stop/:token', engineMiddleware.internalStopByToken),
-  ];
+  let initialized = false;
 
-  Object.defineProperties(middleware, { engines: { value: engines } });
+  router.use((req, res, next) => {
+    if (initialized) return next();
+    initialized = true;
+    return engineMiddleware.init(req, res, next);
+  });
+  router.get('(*)?/version', engineMiddleware.getVersion);
+  router.get('(*)?/deployment', engineMiddleware.getDeployment);
+  router.post('(*)?/deployment/create', multer({ storage }).any(), engineMiddleware.create);
+  router.post('(*)?/process-definition/:deploymentName/start', json(), engineMiddleware.start);
+  router.get('(*)?/running', engineMiddleware.getRunning);
+  router.get('(*)?/status/:token', engineMiddleware.getStatusByToken);
+  router.get('(*)?/status/:token/:activityId', engineMiddleware.getActivityStatus);
+  router.post('(*)?/resume/:token', json(), engineMiddleware.resumeByToken);
+  router.post('(*)?/signal/:token', json(), engineMiddleware.signalActivity);
+  router.post('(*)?/cancel/:token', json(), engineMiddleware.cancelActivity);
+  router.post('(*)?/fail/:token', json(), engineMiddleware.failActivity);
+  router.get('(*)?/state/:token', engineMiddleware.getStateByToken);
+  router.delete('(*)?/state/:token', engineMiddleware.deleteStateByToken);
+  router.delete('(*)?/internal/stop', engineMiddleware.internalStopAll);
+  router.delete('(*)?/internal/stop/:token', engineMiddleware.internalStopByToken);
 
-  return middleware;
+  Object.defineProperties(router, { engines: { value: engines } });
+
+  return router;
 }
 
 export function BpmnEngineMiddleware(options) {
   this.adapter = options.adapter;
   this.engines = options.engines;
   this.engineOptions = { ...options.engineOptions };
-  this[kInitialized] = false;
 
-  this.init = this.init.bind(this);
   this.getVersion = this.getVersion.bind(this);
   this.getDeployment = this.getDeployment.bind(this);
   this.create = this.create.bind(this);
@@ -83,8 +83,6 @@ export function BpmnEngineMiddleware(options) {
 }
 
 BpmnEngineMiddleware.prototype.init = function init(req, res, next) {
-  if (this[kInitialized]) return next();
-  this[kInitialized] = true;
   req.app.on('bpmn/end', (engine) => this._postProcessRun(engine));
   req.app.on('bpmn/error', (err, engine) => this._postProcessRun(engine, err));
   req.app.on('bpmn/activity.call', (callActivityApi) => this._startProcessByCallActivity(callActivityApi));
@@ -249,13 +247,14 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
   if (!deployment) return;
 
   const { listener, variables, businessKey, caller, idleTimeout } = options;
+  const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
 
   const token = randomUUID();
   await this.engines.execute({
     ...this.engineOptions,
     name: deploymentName,
     token,
-    source: (await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path)),
+    source: deploymentSource.content,
     listener,
     variables: {
       ...this.engineOptions.variables,

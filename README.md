@@ -14,7 +14,7 @@ import express from 'express';
 import { bpmnEngineMiddleware, HttpError } from 'bpmn-express-middleware';
 
 const app = express();
-app.use('/rest', bpmnEngineMiddleware());
+app.use('/rest', bpmnEngineMiddleware({ idleTimeout: 90000 }));
 
 app.use(errorHandler);
 
@@ -26,6 +26,8 @@ function errorHandler(err, req, res, next) {
   res.status(502).send({ message: err.message });
 }
 ```
+
+# Middleware
 
 ## Options
 
@@ -174,8 +176,8 @@ Persistent storage adapter, defaults to in memory storage.
 Three types will be saved to adapter:
 
 - `deployment`: BPMN deployment with references to BPMN files
-- `file`: BPMN file with content
-- `state`: BPMN process engine state
+- `file`: BPMN file with meta and content
+- `state`: BPMN engine state
 
 ## `async upsert(type, key, value[, options])`
 
