@@ -44,6 +44,80 @@ Feature('call activity', () => {
     Then('run completes', () => {
       return end;
     });
+
+    Given('a process with a call activity referencing a process with user task', () => {
+      return createDeployment(apps.balance(), 'call-internal-user-process', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="main-process" isExecutable="true">
+          <startEvent id="start" />
+          <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+          <callActivity id="call-activity" calledElement="called-process" />
+          <endEvent id="end" />
+          <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+        </process>
+        <process id="called-process" isExecutable="false">
+          <userTask id="task" />
+        </process>
+      </definitions>`);
+    });
+
+    let token, wait;
+    When('when process is started', async () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, 'call-internal-user-process').wait('task');
+
+      const response = await request(app)
+        .post('/rest/process-definition/call-internal-user-process/start')
+        .expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('internal process user task is waiting', () => {
+      return wait;
+    });
+
+    When('user task is signalled', () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, token).end();
+
+      return request(app)
+        .post(`/rest/signal/${token}`)
+        .send({ id: 'task' })
+        .expect(200);
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
+
+    When('when process is started again', async () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, 'call-internal-user-process').wait('task');
+
+      const response = await request(app)
+        .post('/rest/process-definition/call-internal-user-process/start')
+        .expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('internal process user task is waiting', () => {
+      return wait;
+    });
+
+    When('user task is errored', () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, token).end();
+
+      return request(app)
+        .post(`/rest/fail/${token}`)
+        .send({ id: 'task', message: 'foo' })
+        .expect(200);
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
   });
 
   Scenario('call deployed process', () => {
@@ -62,7 +136,7 @@ Feature('call activity', () => {
           <callActivity id="call-activity" calledElement="deployment:called-deployment">
             <extensionElements>
               <camunda:inputOutput>
-                <camunda:outputParameter name="from">\${content.output}</camunda:outputParameter>
+                <camunda:outputParameter name="from">\${content.output.message}</camunda:outputParameter>
               </camunda:inputOutput>
             </extensionElements>
           </callActivity>
@@ -106,7 +180,7 @@ Feature('call activity', () => {
           <userTask id="task">
             <extensionElements>
               <camunda:inputOutput>
-                <camunda:outputParameter name="user">\${content.output}</camunda:outputParameter>
+                <camunda:outputParameter name="user">\${content.output.message}</camunda:outputParameter>
               </camunda:inputOutput>
             </extensionElements>
           </userTask>
@@ -605,7 +679,7 @@ Feature('call activity', () => {
           <callActivity id="call-activity" calledElement="deployment:called-deployment">
             <extensionElements>
               <camunda:inputOutput>
-                <camunda:outputParameter name="from">\${content.output}</camunda:outputParameter>
+                <camunda:outputParameter name="from">\${content.output.message}</camunda:outputParameter>
               </camunda:inputOutput>
             </extensionElements>
           </callActivity>
@@ -648,7 +722,7 @@ Feature('call activity', () => {
           <userTask id="task">
             <extensionElements>
               <camunda:inputOutput>
-                <camunda:outputParameter name="user">\${content.output}</camunda:outputParameter>
+                <camunda:outputParameter name="user">\${content.output.message}</camunda:outputParameter>
               </camunda:inputOutput>
             </extensionElements>
           </userTask>

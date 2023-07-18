@@ -84,23 +84,22 @@ Engines.prototype.resume = async function resume(token, listener) {
 
 Engines.prototype.signalActivity = async function signalActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
-  const api = await this._getActivityApi(engine, body);
 
-  api.signal(body.message);
+  engine.execution.signal(body);
 
   return engine;
 };
 
 Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
-  const api = await this._getActivityApi(engine, body);
+  const api = this._getActivityApi(engine, body);
   api.cancel();
   return engine;
 };
 
 Engines.prototype.failActivity = async function failActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
-  const api = await this._getActivityApi(engine, body);
+  const api = this._getActivityApi(engine, body);
   api.sendApiMessage('error', body, { type: 'error' });
   return engine;
 };

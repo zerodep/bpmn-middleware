@@ -8,15 +8,14 @@ Feature('recover resume', () => {
 
   Scenario('two app instances with shared storage', () => {
     let apps;
+    before(() => {
+      apps = horizontallyScaled(2);
+    });
     after(() => {
       return apps.stop();
     });
 
-    Given('two parallel app instances with a shared adapter source', () => {
-      apps = horizontallyScaled(2);
-    });
-
-    And('a process with one user task with a bound timeout deployed on second app', () => {
+    Given('a process with one user task with a bound timeout deployed on second app', () => {
       return createDeployment(apps.balance(), 'shared', `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -73,6 +72,16 @@ Feature('recover resume', () => {
       response = await apps.request()
         .post(`/rest/signal/${bp.id}`)
         .send({ id: 'task' });
+    });
+
+    Then('bad request is returned with message completed', () => {
+      expect(response.statusCode, response.text).to.equal(400);
+      expect(response.body).to.have.property('message').that.match(/completed/i);
+    });
+
+    When('completed process is resumed', async () => {
+      response = await apps.request()
+        .post(`/rest/resume/${bp.id}`);
     });
 
     Then('bad request is returned with message completed', () => {
@@ -364,7 +373,7 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is updated', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 18);
+      expect(running[0]).to.have.property('sequenceNumber', 19);
       expect(running[0]).to.have.property('activityStatus', 'timer');
       expect(running[0]).to.have.property('expireAt').that.is.ok;
     });
@@ -406,7 +415,7 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is updated', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 22);
+      expect(running[0]).to.have.property('sequenceNumber', 23);
     });
 
     And('process activity status is wait', () => {

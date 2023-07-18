@@ -221,19 +221,18 @@ Feature('storage adapter', () => {
 
     And('a process with a user task with a non-interrupting bound timeout', () => {
       return createDeployment(apps.balance(), 'multi-user-task', `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <process id="bp" isExecutable="true">
-        <startEvent id="start" />
-        <sequenceFlow id="to-task1" sourceRef="start" targetRef="task1" />
-        <userTask id="task1" />
-        <sequenceFlow id="to-task2" sourceRef="task1" targetRef="task2" />
-        <userTask id="task2" />
-        <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
-        <endEvent id="end" />
-      </process>
-    </definitions>`);
-
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="bp" isExecutable="true">
+          <startEvent id="start" />
+          <sequenceFlow id="to-task1" sourceRef="start" targetRef="task1" />
+          <userTask id="task1" />
+          <sequenceFlow id="to-task2" sourceRef="task1" targetRef="task2" />
+          <userTask id="task2" />
+          <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
+          <endEvent id="end" />
+        </process>
+      </definitions>`);
     });
 
     let response, bp;
@@ -288,8 +287,8 @@ Feature('storage adapter', () => {
         .send({ id: 'task1' });
     });
 
-    Then('bad request is returned', () => {
-      expect(response.statusCode, response.text).to.equal(400);
+    Then('ok is returned', () => {
+      expect(response.statusCode, response.text).to.equal(200);
     });
 
     And('process instance is still running on both apps', () => {

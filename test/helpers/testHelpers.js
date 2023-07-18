@@ -120,8 +120,11 @@ export function waitForProcess(app, nameOrToken) {
     return event('engine.stop');
   }
 
-  function wait() {
-    return event('activity.wait');
+  function wait(activityId) {
+    if (!activityId) return event('activity.wait');
+    return event('activity.wait', (msg) => {
+      return msg.content.id === activityId;
+    });
   }
 
   function idle() {
@@ -133,13 +136,13 @@ export function waitForProcess(app, nameOrToken) {
     }
   }
 
-  function event(eventRoutingKey) {
+  function event(eventRoutingKey, expectFn) {
     return new Promise((resolve, reject) => {
       const rnd = randomInt(10000);
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
       broker.subscribeTmp('event', eventRoutingKey, (_, msg) => {
-        if (filterByNameOrToken(msg)) {
+        if (filterByNameOrToken(msg, expectFn)) {
           broker.cancel(msg.fields.consumerTag);
           broker.cancel(errConsumerTag);
           resolve(msg);
@@ -179,8 +182,10 @@ export function waitForProcess(app, nameOrToken) {
     });
   }
 
-  function filterByNameOrToken(msg) {
-    return msg.properties.token === nameOrToken || msg.properties.deployment === nameOrToken;
+  function filterByNameOrToken(msg, expectFn) {
+    const matchToken = msg.properties.token === nameOrToken || msg.properties.deployment === nameOrToken;
+    if (matchToken && expectFn && !expectFn(msg)) return false;
+    return matchToken;
   }
 }
 
