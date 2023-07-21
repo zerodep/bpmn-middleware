@@ -13,6 +13,7 @@ import { MiddlewareEngine } from './MiddlewareEngine.js';
 import { fromActivityApi } from './Caller.js';
 
 const packageInfo = fs.promises.readFile(join(process.cwd(), 'package.json')).then((content) => JSON.parse(content));
+const kInitilialized = Symbol.for('initialized');
 
 export { Engines, MemoryAdapter, HttpError, MiddlewareEngine };
 export * from './constants.js';
@@ -28,7 +29,7 @@ export function bpmnEngineMiddleware(options) {
   });
 
   const storage = new MulterAdapterStorage(adapter);
-  const engineMiddleware = new BpmnEngineMiddleware({ adapter, engines });
+  const middleware = new BpmnEngineMiddleware({ adapter, engines });
 
   const router = new Router({ mergeParams: true });
 
@@ -37,23 +38,23 @@ export function bpmnEngineMiddleware(options) {
   router.use((req, res, next) => {
     if (initialized) return next();
     initialized = true;
-    return engineMiddleware.init(req, res, next);
+    return middleware.init(req, res, next);
   });
-  router.get('(*)?/version', engineMiddleware.getVersion);
-  router.get('(*)?/deployment', engineMiddleware.getDeployment);
-  router.post('(*)?/deployment/create', multer({ storage }).any(), engineMiddleware.create);
-  router.post('(*)?/process-definition/:deploymentName/start', json(), engineMiddleware.start);
-  router.get('(*)?/running', engineMiddleware.getRunning);
-  router.get('(*)?/status/:token', engineMiddleware.getStatusByToken);
-  router.get('(*)?/status/:token/:activityId', engineMiddleware.getActivityStatus);
-  router.post('(*)?/resume/:token', json(), engineMiddleware.resumeByToken);
-  router.post('(*)?/signal/:token', json(), engineMiddleware.signalActivity);
-  router.post('(*)?/cancel/:token', json(), engineMiddleware.cancelActivity);
-  router.post('(*)?/fail/:token', json(), engineMiddleware.failActivity);
-  router.get('(*)?/state/:token', engineMiddleware.getStateByToken);
-  router.delete('(*)?/state/:token', engineMiddleware.deleteStateByToken);
-  router.delete('(*)?/internal/stop', engineMiddleware.internalStopAll);
-  router.delete('(*)?/internal/stop/:token', engineMiddleware.internalStopByToken);
+  router.get('(*)?/version', middleware.getVersion);
+  router.get('(*)?/deployment', middleware.getDeployment);
+  router.post('(*)?/deployment/create', multer({ storage }).any(), middleware.create);
+  router.post('(*)?/process-definition/:deploymentName/start', json(), middleware.addEngineLocals, middleware.start);
+  router.get('(*)?/running', middleware.getRunning);
+  router.get('(*)?/status/:token', middleware.getStatusByToken);
+  router.get('(*)?/status/:token/:activityId', middleware.addEngineLocals, middleware.getActivityStatus);
+  router.post('(*)?/resume/:token', json(), middleware.addEngineLocals, middleware.resumeByToken);
+  router.post('(*)?/signal/:token', json(), middleware.addEngineLocals, middleware.signalActivity);
+  router.post('(*)?/cancel/:token', json(), middleware.addEngineLocals, middleware.cancelActivity);
+  router.post('(*)?/fail/:token', json(), middleware.addEngineLocals, middleware.failActivity);
+  router.get('(*)?/state/:token', middleware.getStateByToken);
+  router.delete('(*)?/state/:token', middleware.deleteStateByToken);
+  router.delete('(*)?/internal/stop', middleware.internalStopAll);
+  router.delete('(*)?/internal/stop/:token', middleware.internalStopByToken);
 
   Object.defineProperties(router, { engines: { value: engines } });
 
@@ -64,10 +65,12 @@ export function BpmnEngineMiddleware(options) {
   this.adapter = options.adapter;
   this.engines = options.engines;
   this.engineOptions = { ...options.engineOptions };
+  this[kInitilialized] = false;
 
   this.getVersion = this.getVersion.bind(this);
   this.getDeployment = this.getDeployment.bind(this);
   this.create = this.create.bind(this);
+  this.addEngineLocals = this.addEngineLocals.bind(this);
   this.start = this.start.bind(this);
   this.cancelActivity = this.cancelActivity.bind(this);
   this.deleteStateByToken = this.deleteStateByToken.bind(this);
@@ -83,11 +86,24 @@ export function BpmnEngineMiddleware(options) {
 }
 
 BpmnEngineMiddleware.prototype.init = function init(req, res, next) {
-  req.app.on('bpmn/end', (engine) => this._postProcessRun(engine));
-  req.app.on('bpmn/error', (err, engine) => this._postProcessRun(engine, err));
-  req.app.on('bpmn/activity.call', (callActivityApi) => this._startProcessByCallActivity(callActivityApi));
-  req.app.on('bpmn/activity.call.cancel', (callActivityApi) => this._cancelProcessByCallActivity(callActivityApi));
+  if (this[kInitilialized]) return next();
+  this[kInitilialized] = true;
+
+  const app = req.app;
+  app.locals.bpmnEngineListener = new BpmnPrefixListener(app);
+
+  app.on('bpmn/end', (engine) => this._postProcessRun(engine));
+  app.on('bpmn/error', (err, engine) => this._postProcessRun(engine, err));
+  app.on('bpmn/activity.call', (callActivityApi) => this._startProcessByCallActivity(callActivityApi));
+  app.on('bpmn/activity.call.cancel', (callActivityApi) => this._cancelProcessByCallActivity(callActivityApi));
   return next();
+};
+
+BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(req, res, next) {
+  res.locals.engines = this.engines;
+  res.locals.adapter = this.adapter;
+  res.locals.listener = req.app.locals.bpmnEngineListener ?? new BpmnPrefixListener(req.app);
+  next();
 };
 
 BpmnEngineMiddleware.prototype.getVersion = async function getVersion(req, res) {
@@ -122,7 +138,7 @@ BpmnEngineMiddleware.prototype.start = async function start(req, res, next) {
     const deploymentName = req.params.deploymentName;
 
     const result = await this._startDeployment(deploymentName, {
-      listener: new ForwardListener(req.app),
+      listener: res.locals.listener,
       variables: req.body?.variables,
       businessKey: req.body?.businessKey,
       idleTimeout: req.body?.idleTimeout,
@@ -138,8 +154,8 @@ BpmnEngineMiddleware.prototype.start = async function start(req, res, next) {
 
 BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, next) {
   try {
-    const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...req.query, state: 'running' });
-    return res.send({ engines: records.map(getStatusFromEngineState), ...rest });
+    const result = await this.engines.getRunning(req.query);
+    return res.send(result);
   } catch (err) {
     next(err);
   }
@@ -148,9 +164,9 @@ BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, 
 BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToken(req, res, next) {
   try {
     const token = req.params.token;
-    const state = await this.adapter.fetch(STORAGE_TYPE_STATE, token);
-    if (!state) throw new HttpError(`Token ${token} not found`, 404);
-    return res.send(getStatusFromEngineState(state));
+    const status = await this.engines.getStatusByToken(token);
+    if (!status) throw new HttpError(`Token ${token} not found`, 404);
+    return res.send(status);
   } catch (err) {
     next(err);
   }
@@ -159,7 +175,7 @@ BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToke
 BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivityStatus(req, res, next) {
   try {
     const { token, activityId } = req.params;
-    const postponed = await this.engines.getPostponed(token, new ForwardListener(req.app));
+    const postponed = await this.engines.getPostponed(token, new BpmnPrefixListener(req.app));
     const activity = postponed.find((p) => p.id === activityId);
 
     if (!activity) throw new HttpError(`Token ${token} has no running activity with id ${activityId}`, 400);
@@ -173,7 +189,7 @@ BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivitySta
 BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.signalActivity(token, new ForwardListener(req.app), req.body);
+    await this.engines.signalActivity(token, res.locals.listener, req.body);
     return res.send(this.engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -183,7 +199,7 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
 BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.cancelActivity(token, new ForwardListener(req.app), req.body);
+    await this.engines.cancelActivity(token, res.locals.listener, req.body);
     return res.send(this.engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -193,7 +209,7 @@ BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(re
 BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.failActivity(token, new ForwardListener(req.app), req.body);
+    await this.engines.failActivity(token, res.locals.listener, req.body);
     return res.send(this.engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -203,7 +219,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
 BpmnEngineMiddleware.prototype.resumeByToken = async function resumeByToken(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.resume(token, new ForwardListener(req.app));
+    await this.engines.resume(token, res.locals.listener);
     return res.send(this.engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -323,23 +339,10 @@ BpmnEngineMiddleware.prototype._postProcessRun = async function postProcessRun(e
   }
 };
 
-function ForwardListener(app) {
+export function BpmnPrefixListener(app) {
   this.app = app;
 }
 
-ForwardListener.prototype.emit = function emitBpmnEvent(eventName, ...args) {
+BpmnPrefixListener.prototype.emit = function emitBpmnEvent(eventName, ...args) {
   return this.app.emit(`bpmn/${eventName}`, ...args);
 };
-
-function getStatusFromEngineState(state) {
-  return {
-    token: state.token,
-    name: state.name,
-    state: state.state,
-    activityStatus: state.activityStatus,
-    sequenceNumber: state.sequenceNumber,
-    postponed: state.postponed,
-    caller: state.caller,
-    expireAt: state.expireAt,
-  };
-}

@@ -58,8 +58,8 @@ Engines.prototype.resume = async function resume(token, listener) {
     if (engine) return engine;
 
     engine = new MiddlewareEngine(token, {
-      ...this.engineOptions,
       listener,
+      ...this.engineOptions,
       token,
     }).recover(state.engine);
 
@@ -118,8 +118,28 @@ Engines.prototype.getPostponed = async function getPostponed(token, listener) {
   });
 };
 
-Engines.prototype.getStateByToken = function getByToken(token) {
-  return this.adapter.fetch(STORAGE_TYPE_STATE, token);
+Engines.prototype.getStateByToken = function getStateByToken(token, options) {
+  return this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
+};
+
+Engines.prototype.getStatusByToken = function getStatusByToken(token) {
+  return this.getStateByToken(token, { exclude: [ 'engine' ] });
+};
+
+Engines.prototype.getRunning = async function getRunning(query) {
+  const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: [ 'engine' ] });
+  return { engines: records, ...rest };
+};
+
+Engines.prototype.discardByToken = async function discardByToken(token) {
+  const engine = await this.resume(token);
+
+  const definitions = engine.execution?.definitions;
+  for (const definition of definitions) {
+    for (const bp of definition.getRunningProcesses()) {
+      bp.getApi().discard();
+    }
+  }
 };
 
 Engines.prototype.deleteByToken = function deleteByToken(token) {
@@ -145,17 +165,6 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
   this._teardownEngine(engine);
   engine.stop();
   return true;
-};
-
-Engines.prototype.discardByToken = async function discardByToken(token) {
-  const engine = await this.resume(token);
-
-  const definitions = engine.execution?.definitions;
-  for (const definition of definitions) {
-    for (const bp of definition.getRunningProcesses()) {
-      bp.getApi().discard();
-    }
-  }
 };
 
 Engines.prototype.createEngine = function createEngine(executeOptions) {
@@ -305,15 +314,14 @@ Engines.prototype._saveEngineState = async function saveEngineState(engine) {
     ...(caller && { caller }),
   };
 
-  if (!engine.stopped) {
-    const postponed = [];
-    state.activityStatus = engine.activityStatus;
-    state.postponed = postponed;
-    state.state = engine.state;
+  const postponed = state.postponed = [];
+  for (const elm of engine.execution.getPostponed()) {
+    postponed.push({ id: elm.id, type: elm.type });
+  }
 
-    for (const elm of engine.execution.getPostponed()) {
-      postponed.push({ id: elm.id, type: elm.type });
-    }
+  if (!engine.stopped) {
+    state.activityStatus = engine.activityStatus;
+    state.state = engine.state;
   }
 
   state.engine = engine.execution.getState();

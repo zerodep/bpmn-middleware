@@ -169,6 +169,28 @@ Stop running instances by token on this specific app instance.
 
 BPMN Engine will forward BPMN engine events to app prefixed by `bpmn/`.
 
+## Event `bpmn/end`
+
+BPMN Engine has completed successfully.
+
+Handler arguments:
+- `engine`: Engine instance
+
+## Event `bpmn/stop`
+
+BPMN Engine execution has stopped.
+
+Handler arguments:
+- `engine`: Engine instance
+
+## Event `bpmn/error`
+
+BPMN Engine execution has failed.
+
+Handler arguments:
+- `err`: Error
+- `engine`: Engine instance
+
 # Storage adapter
 
 Persistent storage adapter, defaults to in memory storage.
@@ -202,6 +224,7 @@ Fetch entry by key.
 - `type`: string, storage type, `deployment`, `file`, or `state`
 - `key`: string, storage key
 - `options`: optional object with options
+  * `exclude`: optional list of fields to exclude
 
 ## `async query(type, qs[, options])`
 
@@ -209,6 +232,7 @@ Query entries.
 
 - `type`: string, storage type, `deployment`, `file`, or `state`
 - `qs`: object, storage query
+  * `exclude`: optional list of fields to exclude
   * `state`: optional string, get engine states by state of engine, `idle`, `running`, etc
   * `caller`: optional object, get engines by call activity caller
     - `token`: string, calling process token

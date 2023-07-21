@@ -9,22 +9,30 @@ export enum StorageType {
   File = 'file',
 }
 
-export interface IAdapter {
-  upsert<T>(type: StorageType, key: string, value: T, options?: any): Promise<any>;
-  fetch<T>(type: StorageType, key: string, options?: any): Promise<T>;
-  delete(type: StorageType, key: string): Promise<any>;
-  query<T>(type: StorageType, qs: any, options?: any): Promise<{ records: T[], [x: string]: any}>;
+export interface StorageQuery {
+  /** Fields to exclude */
+  exclude?: string[];
+  state?: string;
+  caller?: Caller;
+  [x: string]: any;
 }
 
-export class MemoryAdapter implements IAdapter {
+export interface IStorageAdapter {
   upsert<T>(type: StorageType, key: string, value: T, options?: any): Promise<any>;
   fetch<T>(type: StorageType, key: string, options?: any): Promise<T>;
   delete(type: StorageType, key: string): Promise<any>;
-  query<T>(type: StorageType, qs: any, options?: any): Promise<{ records: T[], [x: string]: any}>;
+  query<T>(type: StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[], [x: string]: any}>;
+}
+
+export class MemoryAdapter implements IStorageAdapter {
+  upsert<T>(type: StorageType, key: string, value: T, options?: any): Promise<any>;
+  fetch<T>(type: StorageType, key: string, options?: any): Promise<T>;
+  delete(type: StorageType, key: string): Promise<any>;
+  query<T>(type: StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[], [x: string]: any}>;
 }
 
 interface BpmnEngineMiddlewareOptions {
-  adapter: IAdapter;
+  adapter: IStorageAdapter;
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;
   /** Executing engines */
@@ -50,17 +58,51 @@ export class MiddlewareEngine extends Engine {
   startIdleTimer(): void;
 }
 
+export interface EngineStatus {
+  token: string;
+  name: string;
+  state: Engine['state'];
+  activityStatus: Engine['activityStatus'];
+  sequenceNumber: number;
+  postponed: {id: string, executionId: string, type: string}[];
+  caller?: Caller;
+  expireAt?: Date;
+}
+
+export interface EngineState extends EngineStatus {
+  engine: BpmnEngineExecutionState;
+}
+
+export interface RunningResult {
+  engines: EngineStatus[];
+  [x: string]: any;
+}
+
+export interface PostponedActivity extends BpmnMessage {
+  token: string;
+  executing?: BpmnMessage[];
+}
+
 export class Engines {
   constructor(options: BpmnEngineMiddlewareOptions);
-  adapter: IAdapter;
-  idleTimeout?: number | undefined;
+  adapter: IStorageAdapter;
   engineCache: LRUCache<string, MiddlewareEngine>;
   engineOptions: BpmnEngineOptions;
+  idleTimeout?: number | undefined;
   broker?: Broker;
   execute(options: ExecuteOptions): MiddlewareEngine;
   resume(token: string, listener: BpmnEngineOptions['listener']): MiddlewareEngine;
   createEngine(options: ExecuteOptions): MiddlewareEngine;
+  getStateByToken(token: string): EngineState | undefined;
+  getStatusByToken(token: string): EngineStatus | undefined;
+  getRunning(query?: any): RunningResult;
+  getPostponed(token: string, listener: BpmnEngineOptions['listener']): PostponedActivity[];
+  signalActivity(token: string, listener: BpmnEngineOptions['listener'], body: SignalRequestBody): MiddlewareEngine;
+  cancelActivity(token: string, listener: BpmnEngineOptions['listener'], body: SignalRequestBody): MiddlewareEngine;
+  failActivity(token: string, listener: BpmnEngineOptions['listener'], body: SignalRequestBody): MiddlewareEngine;
   terminateByToken(token: string): void;
+  deleteByToken(token: string): void;
+  discardByToken(token: string): void;
 }
 
 export interface CreateRequestBody {
@@ -83,37 +125,23 @@ export interface StartRequestBody {
 }
 
 export interface Caller {
+  /** Calling process token */
   token: string;
+  /** Calling process deployment name */
   deployment: string;
+  /** Calling activity id */
   id: string;
+  /** Calling activity type */
   type: string;
+  /** Calling activity execution id */
   executionId: string;
-}
-
-export interface RunningResponseBody {
-  token: string;
-  name: string;
-  state: Engine['state'];
-  activityStatus: Engine['activityStatus'];
-  sequenceNumber: number;
-  postponed: {id: string, executionId: string, type: string}[];
-  caller?: Caller;
-  expireAt?: Date;
-}
-
-export interface StateResponseBody extends RunningResponseBody {
-  engine: BpmnEngineExecutionState;
-}
-
-export interface PostponedActivity extends BpmnMessage {
-  token: string;
-  executing?: BpmnMessage[];
 }
 
 export interface SignalRequestBody {
   id: string;
   executionId?: string;
   message?: any;
+  [x: string]: any;
 }
 
 type tokenParam = {
@@ -125,11 +153,13 @@ type activityIdParam = {
 };
 
 export class BpmnEngineMiddleware {
-  readonly adapter?: IAdapter;
+  readonly adapter?: IStorageAdapter;
   readonly engines?: Engines;
   readonly engineOptions?: BpmnEngineOptions;
-  constructor(options?: { adapter?: IAdapter, engines?: Engines, engineOptions?: BpmnEngineOptions });
+  constructor(options?: { adapter?: IStorageAdapter, engines?: Engines, engineOptions?: BpmnEngineOptions });
   init(req: Request, res: Response, next: NextFunction): void;
+  /** Add adapter, engines, and app engine listener to res.locals */
+  addEngineLocals(req: Request, res: Response, next: NextFunction): void;
   /** GET (*)?/version */
   getVersion(req: Request, res: Response<{version: string}>, next: NextFunction): void;
   /** GET (*)?/deployment */
@@ -139,21 +169,21 @@ export class BpmnEngineMiddleware {
   /** POST (*)?/process-definition/:deploymentName/start */
   start(req: Request<{deploymentName: string}, StartRequestBody, ExecutionInstance>, res: Response<ExecutionInstance>, next: NextFunction): Promise<void>;
   /** GET (*)?/running */
-  getRunning(req: Request, res: Response<{engines: RunningResponseBody[]}>, next: NextFunction): Promise<void>;
+  getRunning(req: Request, res: Response<RunningResult>, next: NextFunction): Promise<void>;
   /** GET (*)?/status/:token */
-  getStatusByToken(req: Request<tokenParam>, res: Response<RunningResponseBody>, next: NextFunction): Promise<void>;
+  getStatusByToken(req: Request<tokenParam>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
   /** GET (*)?/status/:token/:activityId */
   getActivityStatus(req: Request<tokenParam & activityIdParam>, res: Response<PostponedActivity>, next: NextFunction): Promise<void>;
   /** POST (*)?/resume/:token */
   resumeByToken(req: Request<tokenParam>, res: Response, next: NextFunction): Promise<void>;
   /** POST (*)?/signal/:token */
-  signalActivity(req: Request<tokenParam, SignalRequestBody>, res: Response, next: NextFunction): Promise<void>;
+  signalActivity(req: Request<tokenParam, any, SignalRequestBody>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
   /** POST (*)?/cancel/:token */
-  cancelActivity(req: Request<tokenParam, SignalRequestBody>, res: Response, next: NextFunction): Promise<void>;
+  cancelActivity(req: Request<tokenParam, any, SignalRequestBody>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
   /** POST (*)?/fail/:token */
-  failActivity(req: Request<tokenParam, SignalRequestBody>, res: Response<RunningResponseBody>, next: NextFunction): Promise<void>;
+  failActivity(req: Request<tokenParam, any, SignalRequestBody>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
   /** GET (*)?/state/:token */
-  getStateByToken(req: Request<tokenParam>, res: Response<StateResponseBody>, next: NextFunction): Promise<void>;
+  getStateByToken(req: Request<tokenParam>, res: Response<EngineState>, next: NextFunction): Promise<void>;
   /** DELETE (*)?/state/:token */
   deleteStateByToken(req: Request<tokenParam>, res: Response, next: NextFunction): Promise<void>;
   /** DELETE (*)?/internal/stop */

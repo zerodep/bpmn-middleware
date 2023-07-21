@@ -46,6 +46,95 @@ describe('express-middleware', () => {
       expect(middleware.STORAGE_TYPE_DEPLOYMENT).to.equal('deployment');
       expect(middleware.STORAGE_TYPE_STATE).to.equal('state');
       expect(middleware.STORAGE_TYPE_FILE).to.equal('file');
+      expect(middleware.DEFAULT_IDLE_TIMER).to.equal(120000);
+    });
+  });
+
+  describe('init', () => {
+    it('is only initialized once', async () => {
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({});
+
+      const myApp = express();
+      myApp.get('/rest/version', engineMiddleware.init.bind(engineMiddleware), engineMiddleware.getVersion);
+      myApp.use(errorHandler);
+
+      await request(myApp)
+        .get('/rest/version')
+        .expect(200);
+
+      await request(myApp)
+        .get('/rest/version')
+        .expect(200);
+
+      expect(myApp.listenerCount('bpmn/end')).to.equal(1);
+    });
+  });
+
+  describe('addEngineLocals', () => {
+    it('adds engines, adapter, and listener to res.locals', async () => {
+      const adapter = new middleware.MemoryAdapter();
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({
+        adapter,
+        engines: new middleware.Engines({ adapter }),
+      });
+
+      const myApp = express();
+      myApp.use('/rest', engineMiddleware.init.bind(engineMiddleware));
+      myApp.get('/rest/locals', engineMiddleware.addEngineLocals, (req, res) => {
+        res.send({
+          engines: !!res.locals.engines,
+          adapter: !!res.locals.adapter,
+          listener: !!res.locals.listener,
+        });
+      });
+
+      myApp.use(errorHandler);
+
+      await request(myApp)
+        .get('/rest/locals')
+        .expect(200)
+        .expect({
+          engines: true,
+          adapter: true,
+          listener: true,
+        });
+
+      await request(myApp)
+        .get('/rest/locals')
+        .expect(200)
+        .expect({
+          engines: true,
+          adapter: true,
+          listener: true,
+        });
+    });
+
+    it('adds locals even if init has not ran', async () => {
+      const adapter = new middleware.MemoryAdapter();
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({
+        adapter,
+        engines: new middleware.Engines({ adapter }),
+      });
+
+      const myApp = express();
+      myApp.use('/rest/locals', engineMiddleware.addEngineLocals, (req, res) => {
+        res.send({
+          engines: !!res.locals.engines,
+          adapter: !!res.locals.adapter,
+          listener: !!res.locals.listener,
+        });
+      });
+
+      myApp.use(errorHandler);
+
+      await request(myApp)
+        .get('/rest/locals')
+        .expect(200)
+        .expect({
+          engines: true,
+          adapter: true,
+          listener: true,
+        });
     });
   });
 

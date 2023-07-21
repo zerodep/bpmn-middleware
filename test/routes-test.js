@@ -144,16 +144,47 @@ describe('routes', () => {
   });
 
   describe('GET (*)?/running', () => {
-    it('returns running engines', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+    it('returns running engines status but not engine state', async () => {
+      await apps.request()
+        .post('/rest/process-definition/test-process/start')
+        .expect(201);
 
-      expect(response.body).to.have.property('engines').that.is.an('array');
+      const response = await apps.request()
+        .get('/rest/running');
+
+      expect(response.statusCode, response.text).to.equal(200);
+
+      expect(response.body.engines.length).to.be.above(0);
+
+      for (const engine of response.body.engines) {
+        expect(engine).to.have.property('token');
+        expect(engine).to.have.property('name');
+        expect(engine).to.have.property('state');
+        expect(engine).to.have.property('activityStatus');
+        expect(engine).to.have.property('sequenceNumber');
+        expect(engine).to.have.property('postponed');
+
+        expect(engine, 'engine state').to.not.have.property('engine');
+      }
     });
   });
 
   describe('GET (*)?/status/:token', () => {
+    it('returns engine status but not engine state', async () => {
+      const { body } = await apps.request()
+        .post('/rest/process-definition/test-process/start')
+        .expect(201);
+
+      const response = await apps.request()
+        .get(`/rest/status/${body.id}`);
+
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('token', body.id);
+      expect(response.body).to.have.property('state');
+      expect(response.body).to.have.property('activityStatus');
+      expect(response.body, 'engine state').to.not.have.property('engine');
+    });
+
     it('status of a corrupt state returns 502', async () => {
       class VolatileAdapter extends MemoryAdapter {
         fetch(type, key, options) {

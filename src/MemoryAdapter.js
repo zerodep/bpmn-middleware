@@ -29,7 +29,17 @@ MemoryAdapter.prototype.delete = function deleteByKey(type, key) {
 
 MemoryAdapter.prototype.fetch = async function fetch(type, key, options) {
   const value = await this.storage.fetch(`${type}:${key}`, options);
-  return value && JSON.parse(value);
+  if (!value) return value;
+
+  const data = JSON.parse(value);
+
+  if (options?.exclude) {
+    for (const field of options.exclude) {
+      delete data[field];
+    }
+  }
+
+  return data;
 };
 
 MemoryAdapter.prototype.query = function query(type, qs) {
@@ -44,7 +54,7 @@ MemoryAdapter.prototype.query = function query(type, qs) {
 };
 
 MemoryAdapter.prototype._queryState = function queryState(qs) {
-  const { state, caller /* activityStatus: [] limit, offset, order_by*/ } = qs;
+  const { state, caller, exclude /* activityStatus: [] limit, offset, order_by*/ } = qs;
 
   const result = [];
   for (const [ key, value ] of this.storage.entries()) {
@@ -56,6 +66,13 @@ MemoryAdapter.prototype._queryState = function queryState(qs) {
       if (engineState.caller.token !== caller.token) continue;
       if (engineState.caller.executionId !== caller.executionId) continue;
     }
+
+    if (exclude?.length) {
+      for (const field of exclude) {
+        delete engineState[field];
+      }
+    }
+
     result.push(engineState);
   }
 
