@@ -56,7 +56,16 @@ export function bpmnEngineMiddleware(options) {
   router.delete('(*)?/internal/stop', middleware.internalStopAll);
   router.delete('(*)?/internal/stop/:token', middleware.internalStopByToken);
 
-  Object.defineProperties(router, { engines: { value: engines } });
+  Object.defineProperties(router, {
+    engines: {
+      value: engines,
+      enumerable: true,
+    },
+    middleware: {
+      value: middleware,
+      enumerable: true,
+    },
+  });
 
   return router;
 }

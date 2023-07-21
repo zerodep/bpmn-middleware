@@ -10,6 +10,8 @@ export function Engines(options) {
   this.idleTimeout = options.idleTimeout;
   this.adapter = options.adapter;
   this.engineCache = options.engineCache || new LRUCache({ max: 1000 });
+
+  this._onStateMessage = this._onStateMessage.bind(this);
 }
 
 Engines.prototype.execute = async function execute(executeOptions) {
@@ -223,7 +225,6 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   const parentBroker = this.broker;
   const engineBroker = engine.broker;
   const engineOptions = engine.options;
-  const listener = engineOptions.listener;
 
   engineOptions.sequenceNumber = engineOptions.sequenceNumber ?? 0;
 
@@ -261,23 +262,29 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   engineBroker.assertQueue('state-q', { durable: false, autoDelete: false, maxLength: 2 });
   engineBroker.bindQueue('state-q', 'state', '#');
 
-  engineBroker.consume('state-q', async (routingKey, message) => {
-    if (message.content.isRecovered) return message.ack();
+  engineBroker.consume('state-q', this._onStateMessage, { consumerTag: 'state-listener' });
+};
 
+Engines.prototype._onStateMessage = async function onStateMessage(routingKey, message, engine) {
+  if (message.content.isRecovered) return message.ack();
+
+  const engineOptions = engine.options;
+
+  try {
     switch (routingKey) {
       case 'engine.end':
         this._teardownEngine(engine);
         engineOptions.expireAt = undefined;
-        listener.emit(message.properties.type, engine);
+        engineOptions.listener.emit(message.properties.type, engine);
         break;
       case 'engine.stop':
         this._teardownEngine(engine);
-        listener.emit(message.properties.type, engine);
+        engineOptions.listener.emit(message.properties.type, engine);
         break;
       case 'engine.error':
         this._teardownEngine(engine);
         engineOptions.expireAt = undefined;
-        listener.emit('error', message.content, engine);
+        engineOptions.listener.emit('error', message.content, engine);
         break;
       case 'activity.timer': {
         if (message.content.expireAt) {
@@ -292,16 +299,14 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
         break;
     }
 
-    try {
-      await this._saveEngineState(engine);
-    } catch (err) {
-      this._teardownEngine(engine);
-      engine.stop();
-      return listener.emit('error', err, engine);
-    }
+    await this._saveEngineState(engine);
+  } catch (err) {
+    this._teardownEngine(engine);
+    engine.stop();
+    return engineOptions.listener?.emit('error', err, engine);
+  }
 
-    message.ack();
-  }, { consumerTag: 'state-listener' });
+  message.ack();
 };
 
 Engines.prototype._saveEngineState = async function saveEngineState(engine) {

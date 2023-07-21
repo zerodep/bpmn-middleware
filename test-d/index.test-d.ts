@@ -2,10 +2,11 @@ import { expectAssignable, expectType } from 'tsd';
 import { Router } from 'express';
 import { LRUCache } from 'lru-cache';
 
-import { bpmnEngineMiddleware, Engines, MemoryAdapter, MiddlewareEngine, EngineStatus } from '../';
+import { bpmnEngineMiddleware, BpmnEngineMiddleware, Engines, MemoryAdapter, MiddlewareEngine, EngineStatus } from '../';
 
 expectAssignable<Router>(bpmnEngineMiddleware());
 expectType<Engines>(bpmnEngineMiddleware().engines);
+expectType<BpmnEngineMiddleware>(bpmnEngineMiddleware().middleware);
 
 expectType<Engines>(new Engines({
   adapter: new MemoryAdapter(),

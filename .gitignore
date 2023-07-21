@@ -130,6 +130,7 @@ out
 .pnp.*
 
 package-lock.json
+tmp/
 
 dist/**/*
 !dist/package.json

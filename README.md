@@ -29,13 +29,20 @@ function errorHandler(err, req, res, next) {
 
 # Middleware
 
-## Options
+## `bpmnEngineMiddleware([options])``
 
+Create BPMN engine middleware.
+
+Options:
 - `adapter`: Optional [storage adapter](#storage-adapter). Defaults to in-memory adapter based on LRU cache
 - `engineOptions`: Optional BPMN Engine [options](https://github.com/paed01/bpmn-engine/blob/master/docs/API.md)
 - `engineCache`: Optional engine LRU cache, defaults to `new LRUCache({ max: 1000 })`
 - `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines
 - `idleTimeout`: Optional positive integer, engine execution timeout in milliseconds before engine execution is considered idle and is stopped, defaults to 120000ms
+
+Returns Expressjs Router with extra properties:
+- `middleware`: middleware route functions
+- `engines`: BPMN engines handler
 
 # Routes
 

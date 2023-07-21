@@ -193,6 +193,7 @@ export class BpmnEngineMiddleware {
 }
 
 interface MiddlewareReturnType extends Router {
+  middleware: BpmnEngineMiddleware;
   engines: Engines;
 }
 

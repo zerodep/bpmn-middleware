@@ -50,6 +50,16 @@ describe('express-middleware', () => {
     });
   });
 
+  describe('bpmnEngineMiddleware()', () => {
+    it('exposes middleware instance', () => {
+      expect(middleware.bpmnEngineMiddleware().middleware).to.be.instanceof(middleware.BpmnEngineMiddleware);
+    });
+
+    it('exposes engines', () => {
+      expect(middleware.bpmnEngineMiddleware().engines).to.be.instanceof(middleware.Engines);
+    });
+  });
+
   describe('init', () => {
     it('is only initialized once', async () => {
       const engineMiddleware = new middleware.BpmnEngineMiddleware({});
