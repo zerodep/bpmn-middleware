@@ -29,7 +29,7 @@ function errorHandler(err, req, res, next) {
 
 # Middleware
 
-## `bpmnEngineMiddleware([options])``
+## `bpmnEngineMiddleware([options])`
 
 Create BPMN engine middleware.
 
