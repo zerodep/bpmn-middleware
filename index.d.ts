@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction, Handler, Router } from 'express'
-import { Engine, BpmnEngineOptions, BpmnEngineExecutionState, BpmnMessage } from 'bpmn-engine'
+import { Request, Response, NextFunction, Router, Locals } from 'express';
+import { ParamsDictionary } from 'express-serve-static-core';
+import { Engine, BpmnEngineOptions, BpmnEngineExecutionState, BpmnMessage } from 'bpmn-engine';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
 
@@ -83,6 +84,8 @@ export interface PostponedActivity extends BpmnMessage {
   executing?: BpmnMessage[];
 }
 
+type ExecutionListener = BpmnEngineOptions['listener'];
+
 export class Engines {
   constructor(options: BpmnEngineMiddlewareOptions);
   adapter: IStorageAdapter;
@@ -144,13 +147,19 @@ export interface SignalRequestBody {
   [x: string]: any;
 }
 
-type tokenParam = {
-  token: string,
-};
+interface TokenParam extends ParamsDictionary {
+  token: string;
+}
 
-type activityIdParam = {
-  activityId: string,
-};
+interface TokenActivityIdParam extends TokenParam {
+  activityId: string;
+}
+
+export interface EngineResponseLocals extends Locals {
+  engines: Engines;
+  adapter: IStorageAdapter;
+  listener: ExecutionListener;
+}
 
 export class BpmnEngineMiddleware {
   readonly adapter?: IStorageAdapter;
@@ -159,37 +168,37 @@ export class BpmnEngineMiddleware {
   constructor(options?: { adapter?: IStorageAdapter, engines?: Engines, engineOptions?: BpmnEngineOptions });
   init(req: Request, res: Response, next: NextFunction): void;
   /** Add adapter, engines, and app engine listener to res.locals */
-  addEngineLocals(req: Request, res: Response, next: NextFunction): void;
+  addEngineLocals(req: Request, res: Response<undefined, EngineResponseLocals>, next: NextFunction): void;
   /** GET (*)?/version */
-  getVersion(req: Request, res: Response<{version: string}>, next: NextFunction): void;
+  getVersion(req: Request, res: Response<{version: string}>, next: NextFunction): Promise<void>;
   /** GET (*)?/deployment */
   getDeployment(req: Request, res: Response<{name: string}>, next: NextFunction): Promise<void>;
   /** POST (*)?/deployment/create */
   create(req: Request<any, CreateRequestBody, CreateResponseBody>, res: Response<CreateResponseBody>, next: NextFunction): Promise<void>;
   /** POST (*)?/process-definition/:deploymentName/start */
-  start(req: Request<{deploymentName: string}, StartRequestBody, ExecutionInstance>, res: Response<ExecutionInstance>, next: NextFunction): Promise<void>;
+  start(req: Request<{deploymentName: string}, StartRequestBody, ExecutionInstance>, res: Response<ExecutionInstance, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** GET (*)?/running */
   getRunning(req: Request, res: Response<RunningResult>, next: NextFunction): Promise<void>;
   /** GET (*)?/status/:token */
-  getStatusByToken(req: Request<tokenParam>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
+  getStatusByToken(req: Request<TokenParam>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
   /** GET (*)?/status/:token/:activityId */
-  getActivityStatus(req: Request<tokenParam & activityIdParam>, res: Response<PostponedActivity>, next: NextFunction): Promise<void>;
+  getActivityStatus(req: Request<TokenActivityIdParam>, res: Response<PostponedActivity, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** POST (*)?/resume/:token */
-  resumeByToken(req: Request<tokenParam>, res: Response, next: NextFunction): Promise<void>;
+  resumeByToken(req: Request<TokenParam>, res: Response<EngineStatus, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** POST (*)?/signal/:token */
-  signalActivity(req: Request<tokenParam, any, SignalRequestBody>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
+  signalActivity(req: Request<TokenParam, EngineStatus, SignalRequestBody>, res: Response<EngineStatus, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** POST (*)?/cancel/:token */
-  cancelActivity(req: Request<tokenParam, any, SignalRequestBody>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
+  cancelActivity(req: Request<TokenParam, EngineStatus, SignalRequestBody>, res: Response<EngineStatus, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** POST (*)?/fail/:token */
-  failActivity(req: Request<tokenParam, any, SignalRequestBody>, res: Response<EngineStatus>, next: NextFunction): Promise<void>;
+  failActivity(req: Request<TokenParam, EngineStatus, SignalRequestBody>, res: Response<EngineStatus, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** GET (*)?/state/:token */
-  getStateByToken(req: Request<tokenParam>, res: Response<EngineState>, next: NextFunction): Promise<void>;
+  getStateByToken(req: Request<TokenParam>, res: Response<EngineState>, next: NextFunction): Promise<void>;
   /** DELETE (*)?/state/:token */
-  deleteStateByToken(req: Request<tokenParam>, res: Response, next: NextFunction): Promise<void>;
+  deleteStateByToken(req: Request<TokenParam>, res: Response, next: NextFunction): Promise<void>;
   /** DELETE (*)?/internal/stop */
   internalStopAll(req: Request, res: Response, next: NextFunction): void;
   /** DELETE (*)?/internal/stop/:token */
-  internalStopByToken(req: Request<tokenParam>, res: Response, next: NextFunction): void;
+  internalStopByToken(req: Request<TokenParam>, res: Response, next: NextFunction): void;
 }
 
 interface MiddlewareReturnType extends Router {

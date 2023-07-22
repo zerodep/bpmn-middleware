@@ -184,7 +184,7 @@ BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToke
 BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivityStatus(req, res, next) {
   try {
     const { token, activityId } = req.params;
-    const postponed = await this.engines.getPostponed(token, new BpmnPrefixListener(req.app));
+    const postponed = await this.engines.getPostponed(token, res.locals.listener);
     const activity = postponed.find((p) => p.id === activityId);
 
     if (!activity) throw new HttpError(`Token ${token} has no running activity with id ${activityId}`, 400);
