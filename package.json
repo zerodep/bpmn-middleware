@@ -59,7 +59,9 @@
   },
   "dependencies": {
     "lru-cache": "^10.0.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "swagger-ui-express": "^5.0.0",
+    "yaml": "^2.3.1"
   },
   "peerDependencies": {
     "bpmn-engine": ">=15",
@@ -71,6 +73,8 @@
     "index.d.ts"
   ],
   "c8": {
-    "include": ["src/"]
+    "include": [
+      "src/"
+    ]
   }
 }

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Router, json } from 'express';
 import fs from 'node:fs';
 import multer from 'multer';
+import YAML from 'yaml'
 
 import { STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE, DEFAULT_IDLE_TIMER } from './constants.js';
 import { MulterAdapterStorage } from './MulterAdapterStorage.js';
@@ -11,6 +12,7 @@ import { MemoryAdapter } from './MemoryAdapter.js';
 import { HttpError } from './Errors.js';
 import { MiddlewareEngine } from './MiddlewareEngine.js';
 import { fromActivityApi } from './Caller.js';
+import swaggerUi from "swagger-ui-express";
 
 const packageInfo = fs.promises.readFile(join(process.cwd(), 'package.json')).then((content) => JSON.parse(content));
 const kInitilialized = Symbol.for('initialized');
@@ -40,6 +42,21 @@ export function bpmnEngineMiddleware(options) {
     initialized = true;
     return middleware.init(req, res, next);
   });
+  router.use(
+    "/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(null, { explorer: true, swaggerUrl: '../openapi.json' })
+  );
+  var swaggerUiDoc = {}
+  packageInfo.then(p => {
+    let swaggerInfo = fs.readFileSync(join(process.cwd(), 'src/openapi.yml')).toString();
+    swaggerUiDoc = YAML.parse(swaggerInfo)
+    swaggerUiDoc.info.version = p.version
+    swaggerUiDoc.info.title = p.name
+    swaggerUiDoc.info.description = p.description
+    swaggerUiDoc.info.license.name = p.license
+  });
+  router.get('(*)?/openapi.json', (req, res) => { res.send(swaggerUiDoc) })
   router.get('(*)?/version', middleware.getVersion);
   router.get('(*)?/deployment', middleware.getDeployment);
   router.post('(*)?/deployment/create', multer({ storage }).any(), middleware.create);
@@ -295,7 +312,7 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
 
 BpmnEngineMiddleware.prototype._startProcessByCallActivity = function startProcessByCallActivity(callActivityApi) {
   const { owner: activity, content } = callActivityApi;
-  const [ category, ...rest ] = content.calledElement.split(':');
+  const [category, ...rest] = content.calledElement.split(':');
 
   if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
   const deploymentName = rest.join(':');
@@ -313,7 +330,7 @@ BpmnEngineMiddleware.prototype._startProcessByCallActivity = function startProce
 };
 
 BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function cancelProcessByCallActivity(callActivityApi) {
-  const [ category, ...rest ] = callActivityApi.content.calledElement.split(':');
+  const [category, ...rest] = callActivityApi.content.calledElement.split(':');
 
   if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
 
