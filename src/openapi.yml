@@ -1,0 +1,410 @@
+openapi: 3.0.2
+info:
+  description: BPMN Middleware
+  version: 1.0.0
+  title: BPMN Middleware
+  license:
+    name: LICENSE-TBD
+    url: "https://LICENSE-TBD"
+servers:
+  - url: "http://{domain}:{port}/{prefix}"
+    description: The development API server
+    variables:
+      domain:
+        default: localhost
+      prefix:
+        default: rest
+      port:
+        default: "3000"
+paths:
+  /version:
+    get:
+      description: "Get middleware version"
+      summary: "Get middleware version"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                x-examples:
+                  Example 1:
+                    version: 0.0.1
+            application/xml:
+              schema:
+                type: object
+                properties: {}
+      tags:
+        - Info
+  /deployment:
+    get:
+      description: ""
+      summary: ""
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                x-examples:
+                  Example 1:
+                    name: bpmn-app
+      tags:
+        - Info
+  /deployment/create:
+    post:
+      tags:
+        - Process
+      description: "Store a deployment, given a name and a file definition"
+      summary: "Store a deployment, given a name and a file definition"
+      parameters: []
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateResponseBody"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                deployment-name:
+                  type: string
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+              required:
+                - deployment-name
+                - files
+        description: ""
+  /process-definition/{deploymentName}/start:
+    post:
+      tags:
+        - Process
+      description: "Create a new engine instance from a deployment name and a set of context data"
+      summary: "Instantiate a deployment engine"
+      parameters: []
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartRequestBody"
+    parameters:
+      - schema:
+          type: string
+        name: deploymentName
+        in: path
+        required: true
+  /running:
+    get:
+      tags:
+        - Process
+      description: "List running processes"
+      summary: "List running processes"
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  engines:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EngineStatus"
+  /status/{token}:
+    get:
+      tags:
+        - Process
+      description: ""
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineStatus"
+        "404":
+          description: Not Found
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+  /status/{token}/{activityId}:
+    get:
+      tags:
+        - Process
+      description: ""
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostponedActivity"
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: activityId
+        in: path
+        required: true
+
+  /resume/{token}:
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    post:
+      tags:
+        - Process
+      parameters: []
+      description: ""
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineStatus"
+
+  /signal/{token}:
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignalRequestBody"
+      tags:
+        - Process
+      parameters: []
+      description: ""
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineStatus"
+
+  /cancel/{token}:
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    post:
+      tags:
+        - Process
+      parameters: []
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignalRequestBody"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineStatus"
+
+  /fail/{token}:
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    post:
+      tags:
+        - Process
+      parameters: []
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignalRequestBody"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineStatus"
+
+  /state/{token}:
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    get:
+      tags:
+        - Process
+      description: ""
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineStatus"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+        - Process
+      description: ""
+      responses:
+        "204":
+          description: OK
+  /internal/stop:
+    delete:
+      tags:
+        - Internal
+      description: ""
+      responses:
+        "204":
+          description: OK
+  /internal/stop/{token}:
+    parameters:
+      - schema:
+          type: string
+        name: token
+        in: path
+        required: true
+    delete:
+      tags:
+        - Internal
+      description: ""
+      responses:
+        "204":
+          description: OK
+
+components:
+  schemas:
+    CreateResponseBody:
+      title: CreateDeploymentResponse
+      type: object
+      properties:
+        id:
+          type: string
+        deploymentType:
+          type: string
+        deployedProcessDefinitions:
+          type: object
+    EngineStatus:
+      title: EngineStatus
+      type: object
+      properties:
+        token:
+          type: string
+        name:
+          type: string
+        state:
+          type: object
+        activityStatus:
+          type: object
+        sequenceNumber:
+          type: number
+        postponed:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              executionId:
+                type: string
+              type:
+                type: string
+              caller:
+                type: object
+              expireAt:
+                type: string
+    PostponedActivity:
+      title: PostponedActivity
+      type: object
+      properties:
+        token:
+          type: string
+        executing:
+          type: array
+          items:
+            type: object
+    StartRequestBody:
+      title: StartRequestBody
+      type: object
+      properties:
+        variables:
+          type: object
+        businessKey:
+          type: string
+        idleTimeout:
+          type: number
+    SignalRequestBody:
+      title: SignalRequestBody
+      type: object
+      properties:
+        id:
+          type: string
+        executionId:
+          type: string
+        message:
+          type: object
+
+tags:
+  - name: Info
+    description: Info
+  - name: Process
+    description: Process
+  - name: Internal
+    description: Internal
