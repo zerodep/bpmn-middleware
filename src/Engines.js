@@ -125,11 +125,11 @@ Engines.prototype.getStateByToken = function getStateByToken(token, options) {
 };
 
 Engines.prototype.getStatusByToken = function getStatusByToken(token) {
-  return this.getStateByToken(token, { exclude: [ 'engine' ] });
+  return this.getStateByToken(token, { exclude: ['engine'] });
 };
 
 Engines.prototype.getRunning = async function getRunning(query) {
-  const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: [ 'engine' ] });
+  const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: ['engine'] });
   return { engines: records, ...rest };
 };
 
@@ -156,7 +156,7 @@ Engines.prototype.stopByToken = function stopByToken(token) {
 };
 
 Engines.prototype.stopAll = function stopAll() {
-  for (const token of [ ...this.engineCache.keys() ]) {
+  for (const token of [...this.engineCache.keys()]) {
     this.stopByToken(token);
   }
 };

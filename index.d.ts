@@ -22,18 +22,18 @@ export interface IStorageAdapter {
   upsert<T>(type: StorageType, key: string, value: T, options?: any): Promise<any>;
   fetch<T>(type: StorageType, key: string, options?: any): Promise<T>;
   delete(type: StorageType, key: string): Promise<any>;
-  query<T>(type: StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[], [x: string]: any}>;
+  query<T>(type: StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[], [x: string]: any }>;
 }
 
 export class MemoryAdapter implements IStorageAdapter {
   upsert<T>(type: StorageType, key: string, value: T, options?: any): Promise<any>;
   fetch<T>(type: StorageType, key: string, options?: any): Promise<T>;
   delete(type: StorageType, key: string): Promise<any>;
-  query<T>(type: StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[], [x: string]: any}>;
+  query<T>(type: StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[], [x: string]: any }>;
 }
 
 interface BpmnEngineMiddlewareOptions {
-  adapter: IStorageAdapter;
+  adapter?: IStorageAdapter;
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;
   /** Executing engines */
@@ -65,7 +65,7 @@ export interface EngineStatus {
   state: Engine['state'];
   activityStatus: Engine['activityStatus'];
   sequenceNumber: number;
-  postponed: {id: string, executionId: string, type: string}[];
+  postponed: { id: string, executionId: string, type: string }[];
   caller?: Caller;
   expireAt?: Date;
 }
@@ -106,6 +106,8 @@ export class Engines {
   terminateByToken(token: string): void;
   deleteByToken(token: string): void;
   discardByToken(token: string): void;
+  stopAll(): void;
+  stopByToken(token: string): void;
 }
 
 export interface CreateRequestBody {
@@ -170,13 +172,13 @@ export class BpmnEngineMiddleware {
   /** Add adapter, engines, and app engine listener to res.locals */
   addEngineLocals(req: Request, res: Response<undefined, EngineResponseLocals>, next: NextFunction): void;
   /** GET (*)?/version */
-  getVersion(req: Request, res: Response<{version: string}>, next: NextFunction): Promise<void>;
+  getVersion(req: Request, res: Response<{ version: string }>, next: NextFunction): Promise<void>;
   /** GET (*)?/deployment */
-  getDeployment(req: Request, res: Response<{name: string}>, next: NextFunction): Promise<void>;
+  getDeployment(req: Request, res: Response<{ name: string }>, next: NextFunction): Promise<void>;
   /** POST (*)?/deployment/create */
   create(req: Request<any, CreateRequestBody, CreateResponseBody>, res: Response<CreateResponseBody>, next: NextFunction): Promise<void>;
   /** POST (*)?/process-definition/:deploymentName/start */
-  start(req: Request<{deploymentName: string}, StartRequestBody, ExecutionInstance>, res: Response<ExecutionInstance, EngineResponseLocals>, next: NextFunction): Promise<void>;
+  start(req: Request<{ deploymentName: string }, StartRequestBody, ExecutionInstance>, res: Response<ExecutionInstance, EngineResponseLocals>, next: NextFunction): Promise<void>;
   /** GET (*)?/running */
   getRunning(req: Request, res: Response<RunningResult>, next: NextFunction): Promise<void>;
   /** GET (*)?/status/:token */
