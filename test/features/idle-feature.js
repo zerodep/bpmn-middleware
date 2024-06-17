@@ -29,7 +29,10 @@ Feature('idle engine', () => {
     });
 
     And('a process with a user task with a long running non-interrupting bound timeout', () => {
-      return createDeployment(app2, 'idle-engine', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        app2,
+        'idle-engine',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -40,21 +43,19 @@ Feature('idle engine', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await request(app1)
-        .post('/rest/process-definition/idle-engine/start')
-        .expect(201);
+      response = await request(app1).post('/rest/process-definition/idle-engine/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is timer with expire at', async () => {
-      response = await request(app2)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app2).get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'timer');
@@ -84,9 +85,7 @@ Feature('idle engine', () => {
     When('process is resumed close to timer timeout', () => {
       ck.travel(new Date(expireAt) - 2 * DEFAULT_IDLE_TIMER + 1000);
 
-      return request(app2)
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      return request(app2).post(`/rest/resume/${bp.id}`).expect(200);
     });
 
     Then('status is still running with expire date', () => {
@@ -108,10 +107,7 @@ Feature('idle engine', () => {
     let end;
     When('user task is signalled', () => {
       end = waitForProcess(app2, bp.id).end();
-      return request(app2)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -139,7 +135,10 @@ Feature('idle engine', () => {
     });
 
     And('a process with a long running service task and a bound timer', () => {
-      return createDeployment(app, 'long-running-service', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        app,
+        'long-running-service',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -150,21 +149,19 @@ Feature('idle engine', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await request(app)
-        .post('/rest/process-definition/long-running-service/start')
-        .expect(201);
+      response = await request(app).post('/rest/process-definition/long-running-service/start').expect(201);
 
       bp = response.body;
     });
 
     Then('activity status is executing and expire at is set to timer', async () => {
-      response = await request(app)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app).get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'executing');
@@ -181,8 +178,7 @@ Feature('idle engine', () => {
     });
 
     And('state has been saved', async () => {
-      response = await request(app)
-        .get('/rest/running');
+      response = await request(app).get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body.engines).to.have.length(1);
@@ -208,26 +204,27 @@ Feature('idle engine', () => {
     });
 
     Given('process is modified to just a long running service task', () => {
-      return createDeployment(app, 'long-running-service', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        app,
+        'long-running-service',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <serviceTask id="task" implementation="\${environment.services.get}" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     When('modified process is started', async () => {
-      response = await request(app)
-        .post('/rest/process-definition/long-running-service/start')
-        .expect(201);
+      response = await request(app).post('/rest/process-definition/long-running-service/start').expect(201);
 
       bp = response.body;
     });
 
     Then('state has been saved', async () => {
-      response = await request(app)
-        .get('/rest/running');
+      response = await request(app).get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body.engines).to.have.length(1);
@@ -236,8 +233,7 @@ Feature('idle engine', () => {
     });
 
     And('activity status is executing and nulled expire at', async () => {
-      response = await request(app)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app).get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'executing');
@@ -254,8 +250,7 @@ Feature('idle engine', () => {
     });
 
     And('state has been saved', async () => {
-      response = await request(app)
-        .get('/rest/running');
+      response = await request(app).get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body.engines).to.have.length(1);
@@ -284,7 +279,10 @@ Feature('idle engine', () => {
     });
 
     And('a process with a user task with a long running non-interrupting bound timeout', () => {
-      return createDeployment(app, 'override-idle-timeout', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        app,
+        'override-idle-timeout',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -295,22 +293,19 @@ Feature('idle engine', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started with overridden idle timeout', async () => {
-      response = await request(app)
-        .post('/rest/process-definition/override-idle-timeout/start')
-        .send({ idleTimeout: 3000 })
-        .expect(201);
+      response = await request(app).post('/rest/process-definition/override-idle-timeout/start').send({ idleTimeout: 3000 }).expect(201);
 
       bp = response.body;
     });
 
     Then('activity status is executing and expire at is set to timer', async () => {
-      response = await request(app)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app).get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'timer');
@@ -329,9 +324,7 @@ Feature('idle engine', () => {
     });
 
     When('engine is resumed', async () => {
-      response = await request(app)
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      response = await request(app).post(`/rest/resume/${bp.id}`).expect(200);
     });
 
     Then('idle timeout is preserved', () => {

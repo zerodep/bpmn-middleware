@@ -16,18 +16,22 @@ class StorageAdapter {
   async upsert(type, key, value /* options */) {
     const data = typeof value === 'string' ? value : { ...(await this.fetch(type, key)), ...value };
 
-    return new Promise((resolve) => process.nextTick(() => {
-      resolve(this[type].set(key, JSON.stringify(data)));
-    }));
+    return new Promise((resolve) =>
+      process.nextTick(() => {
+        resolve(this[type].set(key, JSON.stringify(data)));
+      }),
+    );
   }
   deleteByKey(/* type, key */) {
     throw new Error('not implemented');
   }
   fetch(type, key /*  options */) {
-    return new Promise((resolve) => process.nextTick(() => {
-      const value = this[type].get(key);
-      resolve(value && JSON.parse(value));
-    }));
+    return new Promise((resolve) =>
+      process.nextTick(() => {
+        const value = this[type].get(key);
+        resolve(value && JSON.parse(value));
+      }),
+    );
   }
   query(/* type, qs */) {
     throw new Error('not implemented');
@@ -49,7 +53,10 @@ Feature('storage adapter', () => {
     });
 
     And('a process with a user task with a non-interrupting bound timeout', () => {
-      return createDeployment(apps.balance(), 'memory-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'memory-adapter',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -60,21 +67,19 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await apps.request()
-        .post('/rest/process-definition/memory-adapter/start')
-        .expect(201);
+      response = await apps.request().post('/rest/process-definition/memory-adapter/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is running timer', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -83,14 +88,11 @@ Feature('storage adapter', () => {
     });
 
     Given('process run is stopped', () => {
-      return apps.request()
-        .delete(`/rest/internal/stop/${bp.id}`)
-        .expect(204);
+      return apps.request().delete(`/rest/internal/stop/${bp.id}`).expect(204);
     });
 
     When('process status is fetched', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
     });
 
     Then('status is still running', () => {
@@ -104,10 +106,7 @@ Feature('storage adapter', () => {
     When('process user task is signaled', () => {
       const app = apps.balance();
       end = waitForProcess(app, bp.id).end();
-      return request(app)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${bp.id}`).send({ id: 'task' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -115,33 +114,32 @@ Feature('storage adapter', () => {
     });
 
     And('first app also has the completed process', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'idle');
     });
 
     When('second app signals the completed process', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('bad request is returned with completed message', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body).to.have.property('message').that.match(/completed/i);
+      expect(response.body)
+        .to.have.property('message')
+        .that.match(/completed/i);
     });
 
     When('first app attempts to signal the completed process', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('bad request is returned with completed message', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body).to.have.property('message').that.match(/completed/i);
+      expect(response.body)
+        .to.have.property('message')
+        .that.match(/completed/i);
     });
 
     Given('the state is purged', () => {
@@ -149,9 +147,7 @@ Feature('storage adapter', () => {
     });
 
     When('first app attempts to signal the completed process', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('not found is returned', () => {
@@ -159,9 +155,7 @@ Feature('storage adapter', () => {
     });
 
     When('process is ran again', async () => {
-      response = await apps.request()
-        .post('/rest/process-definition/memory-adapter/start')
-        .expect(201);
+      response = await apps.request().post('/rest/process-definition/memory-adapter/start').expect(201);
 
       bp = response.body;
     });
@@ -179,27 +173,28 @@ Feature('storage adapter', () => {
     });
 
     And('a process with a user task with a non-interrupting bound timeout', () => {
-      return createDeployment(apps.balance(), 'fast-process', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'fast-process',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <startEvent id="start" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await apps.request()
-        .post('/rest/process-definition/fast-process/start')
-        .expect(201);
+      response = await apps.request().post('/rest/process-definition/fast-process/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is completed', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'idle');
@@ -220,7 +215,10 @@ Feature('storage adapter', () => {
     });
 
     And('a process with a user task with a non-interrupting bound timeout', () => {
-      return createDeployment(apps.balance(), 'multi-user-task', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'multi-user-task',
+        `<?xml version="1.0" encoding="UTF-8"?>
         <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -232,21 +230,19 @@ Feature('storage adapter', () => {
           <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await apps.request()
-        .post('/rest/process-definition/multi-user-task/start')
-        .expect(201);
+      response = await apps.request().post('/rest/process-definition/multi-user-task/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is running', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -255,36 +251,27 @@ Feature('storage adapter', () => {
     });
 
     When('process resumed so it is running on both apps', async () => {
-      response = await apps.request()
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      response = await apps.request().post(`/rest/resume/${bp.id}`).expect(200);
 
-      response = await apps.request()
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      response = await apps.request().post(`/rest/resume/${bp.id}`).expect(200);
     });
 
     Then('both processes have the same sequence number', () => {
-      const [ engine1, engine2 ] = apps.getRunningByToken(bp.id);
+      const [engine1, engine2] = apps.getRunningByToken(bp.id);
       expect(engine1.options.sequenceNumber).to.equal(engine2.options.sequenceNumber);
     });
 
     When('first user task is signalled', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task1' })
-        .expect(200);
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task1' }).expect(200);
     });
 
     Then('process sequence numbers has diverged', () => {
-      const [ engine1, engine2 ] = apps.getRunningByToken(bp.id);
+      const [engine1, engine2] = apps.getRunningByToken(bp.id);
       expect(engine1.options.sequenceNumber).to.not.equal(engine2.options.sequenceNumber);
     });
 
     When('first user task is signalled again from the other app instance', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task1' });
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task1' });
     });
 
     Then('ok is returned', () => {
@@ -311,8 +298,7 @@ Feature('storage adapter', () => {
     });
 
     And('status is running', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -322,17 +308,13 @@ Feature('storage adapter', () => {
     });
 
     When('process resumed so it is running on both apps', async () => {
-      response = await apps.request()
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      response = await apps.request().post(`/rest/resume/${bp.id}`).expect(200);
 
-      response = await apps.request()
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      response = await apps.request().post(`/rest/resume/${bp.id}`).expect(200);
     });
 
     Then('both processes are resumed with the same sequence number', () => {
-      const [ engine1, engine2 ] = apps.getRunningByToken(bp.id);
+      const [engine1, engine2] = apps.getRunningByToken(bp.id);
       expect(engine1.options.sequenceNumber, 'resumed sequence number').to.equal(sequenceNumber);
       expect(engine1.options.sequenceNumber).to.equal(engine2.options.sequenceNumber);
     });
@@ -357,7 +339,10 @@ Feature('storage adapter', () => {
     });
 
     And('a process with a user task with a non-interrupting bound timeout', () => {
-      return createDeployment(app2, 'memory-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        app2,
+        'memory-adapter',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -368,21 +353,19 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await request(app1)
-        .post('/rest/process-definition/memory-adapter/start')
-        .expect(201);
+      response = await request(app1).post('/rest/process-definition/memory-adapter/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is running timer', async () => {
-      response = await request(app2)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app2).get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -391,14 +374,11 @@ Feature('storage adapter', () => {
     });
 
     Given('process run is stopped', () => {
-      return request(app1)
-        .delete(`/rest/internal/stop/${bp.id}`)
-        .expect(204);
+      return request(app1).delete(`/rest/internal/stop/${bp.id}`).expect(204);
     });
 
     When('process status is fetched', async () => {
-      response = await request(app2)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app2).get(`/rest/status/${bp.id}`);
     });
 
     Then('status is still running', () => {
@@ -411,10 +391,7 @@ Feature('storage adapter', () => {
     let end;
     When('process user task is signaled', () => {
       end = waitForProcess(app2, bp.id).end();
-      return request(app2)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -422,33 +399,32 @@ Feature('storage adapter', () => {
     });
 
     And('first app also has the completed process', async () => {
-      response = await request(app1)
-        .get(`/rest/status/${bp.id}`);
+      response = await request(app1).get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'idle');
     });
 
     When('second app signals the completed process', async () => {
-      response = await request(app2)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('bad request is returned with completed message', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body).to.have.property('message').that.match(/completed/i);
+      expect(response.body)
+        .to.have.property('message')
+        .that.match(/completed/i);
     });
 
     When('first app attempts to signal the completed process', async () => {
-      response = await request(app2)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('bad request is returned with completed message', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body).to.have.property('message').that.match(/completed/i);
+      expect(response.body)
+        .to.have.property('message')
+        .that.match(/completed/i);
     });
 
     Given('the state is purged', () => {
@@ -456,9 +432,7 @@ Feature('storage adapter', () => {
     });
 
     When('first app attempts to signal the completed process', async () => {
-      response = await request(app2)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('not found is returned', () => {
@@ -466,9 +440,7 @@ Feature('storage adapter', () => {
     });
 
     When('process is ran again', async () => {
-      response = await request(app1)
-        .post('/rest/process-definition/memory-adapter/start')
-        .expect(201);
+      response = await request(app1).post('/rest/process-definition/memory-adapter/start').expect(201);
 
       bp = response.body;
     });
@@ -497,13 +469,17 @@ Feature('storage adapter', () => {
 
     let response;
     And('a process is deployed', async () => {
-      response = await createDeployment(apps.balance(), 'faulty-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      response = await createDeployment(
+        apps.balance(),
+        'faulty-adapter',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     Then('error is returned', () => {
@@ -534,7 +510,10 @@ Feature('storage adapter', () => {
     });
 
     And('a process with a user task with bound timers', () => {
-      return createDeployment(apps.balance(), 'faulty-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'faulty-adapter',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -555,16 +534,15 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let app, response, errored;
     When('process is started', async () => {
       app = apps.balance();
       errored = new Promise((resolve) => app.once('bpmn/error', resolve));
-      response = await request(app)
-        .post('/rest/process-definition/faulty-adapter/start')
-        .expect(201);
+      response = await request(app).post('/rest/process-definition/faulty-adapter/start').expect(201);
 
       expect(response.body.id).to.be.ok;
     });
@@ -608,7 +586,10 @@ Feature('storage adapter', () => {
     });
 
     And('a process with a user task with bound timers', () => {
-      return createDeployment(apps.balance(), 'faulty-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'faulty-adapter',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
@@ -629,23 +610,21 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let app, response, token;
     And('process is started', async () => {
       app = apps.balance();
-      response = await request(app)
-        .post('/rest/process-definition/faulty-adapter/start')
-        .expect(201);
+      response = await request(app).post('/rest/process-definition/faulty-adapter/start').expect(201);
 
       expect(response.body.id).to.be.ok;
       token = response.body.id;
     });
 
     When('running processes are fetched', async () => {
-      response = await request(app)
-        .get('/rest/running');
+      response = await request(app).get('/rest/running');
     });
 
     Then('error response', () => {
@@ -654,8 +633,7 @@ Feature('storage adapter', () => {
     });
 
     When('process status is fetched', async () => {
-      response = await request(app)
-        .get(`/rest/status/${token}`);
+      response = await request(app).get(`/rest/status/${token}`);
     });
 
     Then('error response', () => {
@@ -691,13 +669,17 @@ Feature('storage adapter', () => {
 
     let response;
     And('a process is deployed', async () => {
-      response = await createDeployment(apps.balance(), 'faulty-adapter', `<?xml version="1.0" encoding="UTF-8"?>
+      response = await createDeployment(
+        apps.balance(),
+        'faulty-adapter',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     Then('error is returned', () => {
@@ -733,20 +715,21 @@ Feature('storage adapter', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`, `${deploymentName}.bpmn`);
+      </definitions>`,
+        `${deploymentName}.bpmn`,
+      );
 
       form.append(`${deploymentName}.json`, Buffer.from('{"foo":"bar"}'), `${deploymentName}.json`);
 
-      response = await apps.request()
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString());
+      response = await apps.request().post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
     });
 
     Then('error is returned', () => {
@@ -794,20 +777,21 @@ Feature('storage adapter', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`, `${deploymentName}.bpmn`);
+      </definitions>`,
+        `${deploymentName}.bpmn`,
+      );
 
       form.append(`${deploymentName}.json`, Buffer.from('{"foo":"bar"}'), `${deploymentName}.json`);
 
-      response = await apps.request()
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString());
+      response = await apps.request().post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
     });
 
     Then('error is returned', () => {

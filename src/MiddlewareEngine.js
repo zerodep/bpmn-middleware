@@ -1,9 +1,17 @@
 import { Engine } from 'bpmn-engine';
 
 export class MiddlewareEngine extends Engine {
-  constructor(token, ...args) {
-    super(...args);
+  /**
+   * @param {string} token
+   * @param {import('types').MiddlewareEngineOptions} [options]
+   */
+  constructor(token, options) {
+    super(options);
+    /** @type {import('types').MiddlewareEngineOptions} */
+    this.options = options;
+    /** @type {string} */
     this.token = token;
+    /** @type {import('bpmn-elements').Timer | void} */
     this.idleTimer = null;
     this.engineTimers = this.environment.timers.register({ id: token });
   }

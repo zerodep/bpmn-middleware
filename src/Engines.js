@@ -4,17 +4,26 @@ import { MiddlewareEngine } from './MiddlewareEngine.js';
 import { STORAGE_TYPE_STATE } from './constants.js';
 import { HttpError } from './Errors.js';
 
-export function Engines(options) {
+/**
+ * Engines class
+ * @param {import('types').BpmnMiddlewareOptions} options
+ */
+export function BpmnEngines(options) {
   this.broker = options.broker;
   this.engineOptions = options.engineOptions;
   this.idleTimeout = options.idleTimeout;
   this.adapter = options.adapter;
   this.engineCache = options.engineCache || new LRUCache({ max: 1000 });
 
-  this._onStateMessage = this._onStateMessage.bind(this);
+  // @ts-ignore
+  this.__onStateMessage = this._onStateMessage.bind(this);
 }
 
-Engines.prototype.execute = async function execute(executeOptions) {
+/**
+ *
+ * @param {import('types').MiddlewareEngineOptions} executeOptions
+ */
+BpmnEngines.prototype.execute = async function execute(executeOptions) {
   const { token } = executeOptions;
 
   try {
@@ -37,10 +46,17 @@ Engines.prototype.execute = async function execute(executeOptions) {
   }
 };
 
-Engines.prototype.resume = async function resume(token, listener) {
+/**
+ * Resume engine execution
+ * @param {string} token
+ * @param {import('events').EventEmitter} [listener]
+ * @returns {Promise<MiddlewareEngine>}
+ */
+BpmnEngines.prototype.resume = async function resume(token, listener) {
   try {
     const engineCache = this.engineCache;
 
+    /** @type {MiddlewareEngine} */
     let engine = engineCache.get(token);
     const state = await this.adapter.fetch(STORAGE_TYPE_STATE, token);
 
@@ -52,6 +68,7 @@ Engines.prototype.resume = async function resume(token, listener) {
       throw new HttpError(`Token ${token} has already completed`, 400);
     }
 
+    // @ts-ignore
     if (state?.sequenceNumber > engine?.options.sequenceNumber) {
       this.terminateByToken(token);
       return this.resume(token, listener);
@@ -59,6 +76,7 @@ Engines.prototype.resume = async function resume(token, listener) {
 
     if (engine) return engine;
 
+    // @ts-ignore
     engine = new MiddlewareEngine(token, {
       listener,
       ...this.engineOptions,
@@ -84,7 +102,13 @@ Engines.prototype.resume = async function resume(token, listener) {
   }
 };
 
-Engines.prototype.signalActivity = async function signalActivity(token, listener, body) {
+/**
+ * Signal activity
+ * @param {string} token
+ * @param {import('events').EventEmitter} listener
+ * @param {any} body
+ */
+BpmnEngines.prototype.signalActivity = async function signalActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
 
   engine.execution.signal(body);
@@ -92,21 +116,38 @@ Engines.prototype.signalActivity = async function signalActivity(token, listener
   return engine;
 };
 
-Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body) {
+/**
+ * Cancel activity
+ * @param {string} token
+ * @param {import('events').EventEmitter} listener
+ * @param {any} body
+ */
+BpmnEngines.prototype.cancelActivity = async function cancelActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
   const api = this._getActivityApi(engine, body);
   api.cancel();
   return engine;
 };
 
-Engines.prototype.failActivity = async function failActivity(token, listener, body) {
+/**
+ * Fail activity
+ * @param {string} token
+ * @param {import('events').EventEmitter} listener
+ * @param {any} body
+ */
+BpmnEngines.prototype.failActivity = async function failActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
   const api = this._getActivityApi(engine, body);
   api.sendApiMessage('error', body, { type: 'error' });
   return engine;
 };
 
-Engines.prototype.getPostponed = async function getPostponed(token, listener) {
+/**
+ * Get postponed activities by token
+ * @param {string} token
+ * @param {import('events').EventEmitter} listener
+ */
+BpmnEngines.prototype.getPostponed = async function getPostponed(token, listener) {
   const engine = await this.resume(token, listener);
 
   const postponed = engine.execution.getPostponed();
@@ -120,20 +161,37 @@ Engines.prototype.getPostponed = async function getPostponed(token, listener) {
   });
 };
 
-Engines.prototype.getStateByToken = function getStateByToken(token, options) {
+/**
+ * Get engine state by token
+ * @param {string} token
+ * @param {any} options
+ */
+BpmnEngines.prototype.getStateByToken = function getStateByToken(token, options) {
   return this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
 };
 
-Engines.prototype.getStatusByToken = function getStatusByToken(token) {
-  return this.getStateByToken(token, { exclude: [ 'engine' ] });
+/**
+ * Get engine status by token
+ * @param {string} token
+ */
+BpmnEngines.prototype.getStatusByToken = function getStatusByToken(token) {
+  return this.getStateByToken(token, { exclude: ['engine'] });
 };
 
-Engines.prototype.getRunning = async function getRunning(query) {
-  const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: [ 'engine' ] });
+/**
+ * Get running engines by query
+ * @param {any} [query]
+ */
+BpmnEngines.prototype.getRunning = async function getRunning(query) {
+  const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: ['engine'] });
   return { engines: records, ...rest };
 };
 
-Engines.prototype.discardByToken = async function discardByToken(token) {
+/**
+ * Discards engine by token
+ * @param {string} [token]
+ */
+BpmnEngines.prototype.discardByToken = async function discardByToken(token) {
   const engine = await this.resume(token);
 
   const definitions = engine.execution?.definitions;
@@ -144,24 +202,39 @@ Engines.prototype.discardByToken = async function discardByToken(token) {
   }
 };
 
-Engines.prototype.deleteByToken = function deleteByToken(token) {
+/**
+ * Delete and stop engine by token
+ * @param {string} token
+ */
+BpmnEngines.prototype.deleteByToken = function deleteByToken(token) {
   this.terminateByToken(token);
   return this.adapter.delete(STORAGE_TYPE_STATE, token);
 };
 
-Engines.prototype.stopByToken = function stopByToken(token) {
+/**
+ * Stop engine by token
+ * @param {string} token
+ */
+BpmnEngines.prototype.stopByToken = function stopByToken(token) {
   const engine = this.engineCache.get(token);
   if (!engine) return;
   engine.stop();
 };
 
-Engines.prototype.stopAll = function stopAll() {
-  for (const token of [ ...this.engineCache.keys() ]) {
+/**
+ * Stop all running engines
+ */
+BpmnEngines.prototype.stopAll = function stopAll() {
+  for (const token of [...this.engineCache.keys()]) {
     this.stopByToken(token);
   }
 };
 
-Engines.prototype.terminateByToken = function terminateByToken(token) {
+/**
+ * Terminate engine by token
+ * @param {string} token
+ */
+BpmnEngines.prototype.terminateByToken = function terminateByToken(token) {
   const engine = this.engineCache.get(token);
   if (!engine) return false;
   this._teardownEngine(engine);
@@ -169,7 +242,12 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
   return true;
 };
 
-Engines.prototype.createEngine = function createEngine(executeOptions) {
+/**
+ * Create middleware bpmn engine
+ * @param {import('types').MiddlewareEngineOptions} executeOptions
+ * @returns
+ */
+BpmnEngines.prototype.createEngine = function createEngine(executeOptions) {
   const { name, token, source, listener, variables, caller, settings, idleTimeout } = executeOptions;
   return new MiddlewareEngine(token, {
     ...this.engineOptions,
@@ -192,13 +270,22 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
   });
 };
 
-Engines.prototype.getEngineStatusByToken = function getEngineStatusByToken(token) {
+/**
+ * Get running engine status by token
+ * @param {string} token
+ */
+BpmnEngines.prototype.getEngineStatusByToken = function getEngineStatusByToken(token) {
   const engine = this.engineCache.get(token);
   if (!engine) return;
   return this.getEngineStatus(engine);
 };
 
-Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
+/**
+ * Get engine status
+ * @param {MiddlewareEngine} engine
+ */
+BpmnEngines.prototype.getEngineStatus = function getEngineStatus(engine) {
+  /** @type {import('types').MiddlewareEngineStatus} */
   const result = {
     token: engine.token,
     name: engine.name,
@@ -221,7 +308,12 @@ Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
   return result;
 };
 
-Engines.prototype._setupEngine = function setupEngine(engine) {
+/**
+ * Get engine status
+ * @param {MiddlewareEngine} engine
+ * @returns
+ */
+BpmnEngines.prototype._setupEngine = function setupEngine(engine) {
   const parentBroker = this.broker;
   const engineBroker = engine.broker;
   const engineOptions = engine.options;
@@ -230,22 +322,31 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
 
   if (parentBroker) {
     parentBroker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
-    engineBroker.createShovel('app-shovel', { exchange: 'event' }, {
-      broker: parentBroker,
-      exchange: 'event',
-      publishProperties: {
-        token: engineOptions.token,
-        deployment: engine.name,
+    engineBroker.createShovel(
+      'app-shovel',
+      { exchange: 'event' },
+      {
+        broker: parentBroker,
+        exchange: 'event',
+        publishProperties: {
+          token: engineOptions.token,
+          deployment: engine.name,
+        },
       },
-    });
+    );
   }
 
-  engineBroker.subscribeTmp('event', 'activity.#', (routingKey, message) => {
-    if (routingKey === 'activity.stop') return;
-    else if (message.fields.redelivered) return;
-    else if (message.content.isRecovered) return;
-    engineOptions.sequenceNumber++;
-  }, { noAck: true, consumerTag: 'sequence-listener' });
+  engineBroker.subscribeTmp(
+    'event',
+    'activity.#',
+    (routingKey, message) => {
+      if (routingKey === 'activity.stop') return;
+      else if (message.fields.redelivered) return;
+      else if (message.content.isRecovered) return;
+      engineOptions.sequenceNumber++;
+    },
+    { noAck: true, consumerTag: 'sequence-listener' },
+  );
 
   engineBroker.assertExchange('state', 'topic', { durable: false, autoDelete: false });
   engineBroker.bindExchange('event', 'state', 'activity.wait');
@@ -262,10 +363,16 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   engineBroker.assertQueue('state-q', { durable: false, autoDelete: false, maxLength: 2 });
   engineBroker.bindQueue('state-q', 'state', '#');
 
-  engineBroker.consume('state-q', this._onStateMessage, { consumerTag: 'state-listener' });
+  engineBroker.consume('state-q', this.__onStateMessage, { consumerTag: 'state-listener' });
 };
 
-Engines.prototype._onStateMessage = async function onStateMessage(routingKey, message, engine) {
+/**
+ * Internal on state message
+ * @param {string} routingKey
+ * @param {import('smqp').Message} message
+ * @param {MiddlewareEngine} engine
+ */
+BpmnEngines.prototype._onStateMessage = async function onStateMessage(routingKey, message, engine) {
   if (message.content.isRecovered) return message.ack();
 
   const engineOptions = engine.options;
@@ -288,7 +395,7 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
         break;
       case 'activity.timer': {
         if (message.content.expireAt) {
-          const currentExpireAt = engineOptions.expireAt = engine.expireAt;
+          const currentExpireAt = (engineOptions.expireAt = engine.expireAt);
           const contentExpireAt = new Date(message.content.expireAt);
           if (!currentExpireAt || contentExpireAt < currentExpireAt) engineOptions.expireAt = contentExpireAt;
         }
@@ -309,8 +416,13 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
   message.ack();
 };
 
-Engines.prototype._saveEngineState = async function saveEngineState(engine) {
+/**
+ * Internal save engine state
+ * @param {MiddlewareEngine} engine
+ */
+BpmnEngines.prototype._saveEngineState = async function saveEngineState(engine) {
   const { token, expireAt, sequenceNumber, caller } = engine.options;
+  /** @type {import('types').MiddlewareEngineState} */
   const state = {
     token,
     name: engine.name,
@@ -319,7 +431,8 @@ Engines.prototype._saveEngineState = async function saveEngineState(engine) {
     ...(caller && { caller }),
   };
 
-  const postponed = state.postponed = [];
+  /** @type {import('types').postponed[]} */
+  const postponed = (state.postponed = []);
   for (const elm of engine.execution.getPostponed()) {
     postponed.push({ id: elm.id, type: elm.type });
   }
@@ -334,7 +447,11 @@ Engines.prototype._saveEngineState = async function saveEngineState(engine) {
   await this.adapter.upsert(STORAGE_TYPE_STATE, token, state);
 };
 
-Engines.prototype._teardownEngine = function teardownEngine(engine) {
+/**
+ * Internal teardown engine, remove listeners and stuff
+ * @param {MiddlewareEngine} engine
+ */
+BpmnEngines.prototype._teardownEngine = function teardownEngine(engine) {
   const broker = engine.broker;
   this.engineCache.delete(engine.token);
   broker.cancel('sequence-listener');
@@ -342,17 +459,27 @@ Engines.prototype._teardownEngine = function teardownEngine(engine) {
   broker.closeShovel('app-shovel');
 };
 
-Engines.prototype._getActivityApi = function getActivityApi(engine, body) {
+/**
+ * Internal get actvity
+ * @param {MiddlewareEngine} engine
+ * @param {{id?: string, executionId?: string}} body
+ * @returns
+ */
+BpmnEngines.prototype._getActivityApi = function getActivityApi(engine, body) {
   const { id, executionId } = body;
 
+  // @ts-ignore
   const activity = engine.execution.getActivityById(id);
   if (!activity) throw new HttpError(`Token ${engine.token} has no activity with id ${id}`, 400);
 
+  // @ts-ignore
   if (executionId) return activity.getApi({ content: { id, executionId } });
 
+  // @ts-ignore
   if (!activity.isRunning) {
     throw new HttpError(`Token ${engine.token} has no running activity with id ${id}`, 400);
   }
 
+  // @ts-ignore
   return activity.getApi();
 };

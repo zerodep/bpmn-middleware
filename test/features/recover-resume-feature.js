@@ -16,7 +16,10 @@ Feature('recover resume', () => {
     });
 
     Given('a process with one user task with a bound timeout deployed on second app', () => {
-      return createDeployment(apps.balance(), 'shared', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'shared',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
@@ -26,21 +29,19 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
-      response = await apps.request()
-        .post('/rest/process-definition/shared/start')
-        .expect(201);
+      response = await apps.request().post('/rest/process-definition/shared/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is running', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -50,10 +51,7 @@ Feature('recover resume', () => {
     When('process is signalled', () => {
       const app = apps.balance();
       end = waitForProcess(app, bp.id).end();
-      return request(app)
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${bp.id}`).send({ id: 'task' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -61,32 +59,32 @@ Feature('recover resume', () => {
     });
 
     And('process status is completed', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'idle');
     });
 
     When('completed process is signalled', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('bad request is returned with message completed', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body).to.have.property('message').that.match(/completed/i);
+      expect(response.body)
+        .to.have.property('message')
+        .that.match(/completed/i);
     });
 
     When('completed process is resumed', async () => {
-      response = await apps.request()
-        .post(`/rest/resume/${bp.id}`);
+      response = await apps.request().post(`/rest/resume/${bp.id}`);
     });
 
     Then('bad request is returned with message completed', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body).to.have.property('message').that.match(/completed/i);
+      expect(response.body)
+        .to.have.property('message')
+        .that.match(/completed/i);
     });
 
     Given('the state is purged', () => {
@@ -94,9 +92,7 @@ Feature('recover resume', () => {
     });
 
     When('attempting to signal the completed process', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${bp.id}`)
-        .send({ id: 'task' });
+      response = await apps.request().post(`/rest/signal/${bp.id}`).send({ id: 'task' });
     });
 
     Then('not found is returned', () => {
@@ -115,7 +111,10 @@ Feature('recover resume', () => {
     });
 
     And('a process with one user task with two bound timeouts deployed on second app', () => {
-      return createDeployment(apps.balance(), 'mulitple-timers', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'mulitple-timers',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
@@ -130,22 +129,20 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response, bp;
     When('process is started', async () => {
       ck.freeze(2023, 5, 15, 12, 0);
-      response = await apps.request()
-        .post('/rest/process-definition/mulitple-timers/start')
-        .expect(201);
+      response = await apps.request().post('/rest/process-definition/mulitple-timers/start').expect(201);
 
       bp = response.body;
     });
 
     Then('process status is running', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -163,8 +160,7 @@ Feature('recover resume', () => {
     });
 
     Then('process status is still running', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
@@ -186,8 +182,7 @@ Feature('recover resume', () => {
     });
 
     Then('process status can be fetched from second app', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${bp.id}`);
+      response = await apps.request().get(`/rest/status/${bp.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'idle');
@@ -208,16 +203,23 @@ Feature('recover resume', () => {
     });
 
     Given('a process with one user task', () => {
-      return createDeployment(apps.balance(), 'user-task', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'user-task',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp1" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     And('another process with one manual task with bound timer', () => {
-      return createDeployment(apps.balance(), 'manual-task', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'manual-task',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp2" isExecutable="true">
           <manualTask id="task" />
@@ -227,37 +229,29 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response;
     When('user task process is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/user-task/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/user-task/start').expect(201);
     });
 
     And('another user task process', () => {
-      return apps.request()
-        .post('/rest/process-definition/user-task/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/user-task/start').expect(201);
     });
 
     And('manual task process is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/manual-task/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/manual-task/start').expect(201);
     });
 
     And('another manual task process is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/manual-task/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/manual-task/start').expect(201);
     });
 
     Then('four process is started', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(4);
@@ -265,8 +259,7 @@ Feature('recover resume', () => {
 
     let running;
     And('running processes has the expected properties', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(4);
@@ -282,16 +275,14 @@ Feature('recover resume', () => {
     });
 
     And('status of first process is timer', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${running[0].token}`);
+      response = await apps.request().get(`/rest/status/${running[0].token}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'timer');
     });
 
     And('as well as second process', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${running[0].token}`);
+      response = await apps.request().get(`/rest/status/${running[0].token}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'timer');
@@ -308,7 +299,10 @@ Feature('recover resume', () => {
     });
 
     Given('a process with two succeeding user tasks and a parallel timer', () => {
-      return createDeployment(apps.balance(), 'user-tasks', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'user-tasks',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp1" isExecutable="true">
@@ -324,26 +318,22 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </intermediateThrowEvent>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let response;
     When('process is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/user-tasks/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/user-tasks/start').expect(201);
     });
 
     And('another process is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/user-tasks/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/user-tasks/start').expect(201);
     });
 
     let running;
     Then('two running process exists', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(2);
@@ -356,16 +346,13 @@ Feature('recover resume', () => {
     });
 
     When('first process is signaled', async () => {
-      response = await apps.request()
-        .post(`/rest/signal/${running[0].token}`)
-        .send({ id: 'task1' });
+      response = await apps.request().post(`/rest/signal/${running[0].token}`).send({ id: 'task1' });
 
       expect(response.statusCode, response.text).to.equal(200);
     });
 
     Then('two running processes still exists', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(2);
@@ -379,16 +366,14 @@ Feature('recover resume', () => {
     });
 
     And('activity status is timer', async () => {
-      response = await apps.request()
-        .get(`/rest/status/${running[0].token}`);
+      response = await apps.request().get(`/rest/status/${running[0].token}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'timer');
     });
 
     When('first process is resumed', async () => {
-      response = await apps.request()
-        .post(`/rest/resume/${running[0].token}`);
+      response = await apps.request().post(`/rest/resume/${running[0].token}`);
 
       expect(response.statusCode, response.text).to.equal(200);
     });
@@ -406,8 +391,7 @@ Feature('recover resume', () => {
     });
 
     Then('two running processes still exists', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(2);
@@ -437,33 +421,32 @@ Feature('recover resume', () => {
     });
 
     Given('a process with two succeeding user tasks and a parallel timer', () => {
-      return createDeployment(apps.balance(), 'user-tasks', `<?xml version="1.0" encoding="UTF-8"?>
+      return createDeployment(
+        apps.balance(),
+        'user-tasks',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp1" isExecutable="true">
           <userTask id="task1" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let app, response;
     When('process is started', () => {
       app = apps.balance();
-      return request(app)
-        .post('/rest/process-definition/user-tasks/start')
-        .expect(201);
+      return request(app).post('/rest/process-definition/user-tasks/start').expect(201);
     });
 
     And('another process is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/user-tasks/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/user-tasks/start').expect(201);
     });
 
     let running;
     Then('two running process exists', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(2);
@@ -471,22 +454,18 @@ Feature('recover resume', () => {
     });
 
     When('first process state is deleted', async () => {
-      response = await apps.request()
-        .delete(`/rest/state/${running[0].token}`)
-        .expect(204);
+      response = await apps.request().delete(`/rest/state/${running[0].token}`).expect(204);
     });
 
     Then('one running processes still exists', async () => {
-      response = await apps.request()
-        .get('/rest/running');
+      response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('engines').with.length(1);
     });
 
     When('attempting to resume first process', async () => {
-      response = await apps.request()
-        .post(`/rest/resume/${running[0].token}`);
+      response = await apps.request().post(`/rest/resume/${running[0].token}`);
     });
 
     Then('not found is returned', () => {

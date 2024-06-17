@@ -1,7 +1,0 @@
-{
-  "root": true,
-  "extends": [ "exp" ],
-  "rules": {
-    "quotes": [ "error", "single", { "avoidEscape": true } ]
-  }
-}

@@ -15,32 +15,30 @@ describe('routes', () => {
   before('two parallel app instances with a shared adapter source', () => {
     adapter = new MemoryAdapter();
     apps = horizontallyScaled(2, { adapter });
-    return createDeployment(apps.balance(), 'test-process', `
+    return createDeployment(
+      apps.balance(),
+      'test-process',
+      `
       <definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp1" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+    );
   });
   after(() => apps.stop());
   afterEach(ck.reset);
 
   describe('GET (*)?/version', () => {
     it('returns package version', () => {
-      return apps.request()
-        .get('/rest/version')
-        .expect(200)
-        .expect({ version: packageInfo.version });
+      return apps.request().get('/rest/version').expect(200).expect({ version: packageInfo.version });
     });
   });
 
   describe('GET (*)?/deployment', () => {
     it('returns package name', () => {
-      return apps.request()
-        .get('/rest/deployment')
-        .expect(200)
-        .expect({ name: packageInfo.name });
+      return apps.request().get('/rest/deployment').expect(200).expect({ name: packageInfo.name });
     });
   });
 
@@ -53,13 +51,18 @@ describe('routes', () => {
       const form = new FormData();
       form.append('deployment-name', name);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${name}.bpmn`, `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      form.append(
+        `${name}.bpmn`,
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <task id="task" />
         </process>
-      </definitions>`, `${name}.bpmn`);
+      </definitions>`,
+        `${name}.bpmn`,
+      );
 
-      const response = await apps.request()
+      const response = await apps
+        .request()
         .post('/rest/deployment/create')
         .set(form.getHeaders())
         .send(form.getBuffer().toString())
@@ -77,13 +80,18 @@ describe('routes', () => {
 
       const form = new FormData();
       form.append('deployment-source', 'Test modeler');
-      form.append(`${name}.bpmn`, `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      form.append(
+        `${name}.bpmn`,
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <task id="task" />
         </process>
-      </definitions>`, `${name}.bpmn`);
+      </definitions>`,
+        `${name}.bpmn`,
+      );
 
-      return apps.request()
+      return apps
+        .request()
         .post('/rest/deployment/create')
         .set(form.getHeaders())
         .send(form.getBuffer().toString())
@@ -98,7 +106,8 @@ describe('routes', () => {
       form.append('deployment-name', name);
       form.append('deployment-source', 'Test modeler');
 
-      return apps.request()
+      return apps
+        .request()
         .post('/rest/deployment/create')
         .set(form.getHeaders())
         .send(form.getBuffer().toString())
@@ -109,7 +118,8 @@ describe('routes', () => {
 
   describe('POST (*)?/process-definition/:deploymentName/start', () => {
     it('returns 404 if deployment is not found', () => {
-      return apps.request()
+      return apps
+        .request()
         .post('/rest/process-definition/no-test-process/start')
         .expect(404)
         .expect({ message: 'Deployment no-test-process not found' });
@@ -128,29 +138,27 @@ describe('routes', () => {
 
       const app = getAppWithExtensions({ adapter: new VolatileAdapter() });
 
-      await createDeployment(app, 'test-process', `
+      await createDeployment(
+        app,
+        'test-process',
+        `
       <definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp1" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
 
-      return request(app)
-        .post('/rest/process-definition/test-process/start')
-        .expect(502)
-        .expect({ message: 'DB file error' });
+      return request(app).post('/rest/process-definition/test-process/start').expect(502).expect({ message: 'DB file error' });
     });
   });
 
   describe('GET (*)?/running', () => {
     it('returns running engines status but not engine state', async () => {
-      await apps.request()
-        .post('/rest/process-definition/test-process/start')
-        .expect(201);
+      await apps.request().post('/rest/process-definition/test-process/start').expect(201);
 
-      const response = await apps.request()
-        .get('/rest/running');
+      const response = await apps.request().get('/rest/running');
 
       expect(response.statusCode, response.text).to.equal(200);
 
@@ -171,12 +179,9 @@ describe('routes', () => {
 
   describe('GET (*)?/status/:token', () => {
     it('returns engine status but not engine state', async () => {
-      const { body } = await apps.request()
-        .post('/rest/process-definition/test-process/start')
-        .expect(201);
+      const { body } = await apps.request().post('/rest/process-definition/test-process/start').expect(201);
 
-      const response = await apps.request()
-        .get(`/rest/status/${body.id}`);
+      const response = await apps.request().get(`/rest/status/${body.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('token', body.id);
@@ -198,8 +203,7 @@ describe('routes', () => {
 
       const app = getAppWithExtensions({ adapter: new VolatileAdapter() });
 
-      const response = await request(app)
-        .get('/rest/status/token');
+      const response = await request(app).get('/rest/status/token');
 
       expect(response.statusCode, response.text).to.equal(502);
     });
@@ -207,19 +211,13 @@ describe('routes', () => {
 
   describe('GET (*)?/status/:token/:activityId', () => {
     it('returns 404 if token was not found', () => {
-      return apps.request()
-        .get('/rest/status/no-token/activity-id')
-        .expect(404);
+      return apps.request().get('/rest/status/no-token/activity-id').expect(404);
     });
 
     it('returns 400 if no running activity was found', async () => {
-      const response = await apps.request()
-        .post('/rest/process-definition/test-process/start')
-        .expect(201);
+      const response = await apps.request().post('/rest/process-definition/test-process/start').expect(201);
 
-      return apps.request()
-        .get(`/rest/status/${response.body.id}/no-activity-id`)
-        .expect(400);
+      return apps.request().get(`/rest/status/${response.body.id}/no-activity-id`).expect(400);
     });
   });
 
@@ -237,9 +235,7 @@ describe('routes', () => {
 
       const app = getAppWithExtensions({ adapter: new VolatileAdapter() });
 
-      const response = await request(app)
-        .post('/rest/resume/token')
-        .send({ id: 'task' });
+      const response = await request(app).post('/rest/resume/token').send({ id: 'task' });
 
       expect(response.statusCode, response.text).to.equal(502);
     });
@@ -259,9 +255,7 @@ describe('routes', () => {
 
       const app = getAppWithExtensions({ adapter: new VolatileAdapter() });
 
-      const response = await request(app)
-        .post('/rest/signal/token')
-        .send({ id: 'task' });
+      const response = await request(app).post('/rest/signal/token').send({ id: 'task' });
 
       expect(response.statusCode, response.text).to.equal(502);
     });
@@ -281,9 +275,7 @@ describe('routes', () => {
 
       const app = getAppWithExtensions({ adapter: new VolatileAdapter() });
 
-      const response = await request(app)
-        .post('/rest/cancel/token')
-        .send({ id: 'task' });
+      const response = await request(app).post('/rest/cancel/token').send({ id: 'task' });
 
       expect(response.statusCode, response.text).to.equal(502);
     });
@@ -291,18 +283,13 @@ describe('routes', () => {
 
   describe('POST (*)?/fail/:token', () => {
     it('returns 404 if token was not found', () => {
-      return apps.request()
-        .post('/rest/fail/no-token')
-        .send({})
-        .expect(404);
+      return apps.request().post('/rest/fail/no-token').send({}).expect(404);
     });
   });
 
   describe('GET (*)?/state/:token', () => {
     it('returns 404 if token was not found', () => {
-      return apps.request()
-        .get('/rest/state/no-token')
-        .expect(404);
+      return apps.request().get('/rest/state/no-token').expect(404);
     });
   });
 
@@ -325,26 +312,19 @@ describe('routes', () => {
 
       app = getAppWithExtensions({ adapter: new VolatileAdapter() });
 
-      return request(app)
-        .delete('/rest/state/no-token')
-        .expect(502)
-        .expect({ message: 'DB delete error' });
+      return request(app).delete('/rest/state/no-token').expect(502).expect({ message: 'DB delete error' });
     });
   });
 
   describe('DELETE (*)?/internal/stop', () => {
     it('responds', () => {
-      return request(apps.balance())
-        .delete('/rest/internal/stop')
-        .expect(204);
+      return request(apps.balance()).delete('/rest/internal/stop').expect(204);
     });
   });
 
   describe('DELETE (*)?/internal/stop/:token', () => {
     it('responds', () => {
-      return request(apps.balance())
-        .delete('/rest/internal/stop/token')
-        .expect(204);
+      return request(apps.balance()).delete('/rest/internal/stop/token').expect(204);
     });
   });
 });

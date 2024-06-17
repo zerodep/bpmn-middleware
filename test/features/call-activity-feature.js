@@ -17,7 +17,10 @@ Feature('call activity', () => {
     after(() => apps.stop());
 
     Given('a process with a call activity referencing a process in the same diagram', () => {
-      return createDeployment(apps.balance(), 'call-internal-process', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      return createDeployment(
+        apps.balance(),
+        'call-internal-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -28,7 +31,8 @@ Feature('call activity', () => {
         <process id="called-process" isExecutable="false">
           <task id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let end;
@@ -36,9 +40,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       end = waitForProcess(app, 'call-internal-process').end();
 
-      await request(app)
-        .post('/rest/process-definition/call-internal-process/start')
-        .expect(201);
+      await request(app).post('/rest/process-definition/call-internal-process/start').expect(201);
     });
 
     Then('run completes', () => {
@@ -46,7 +48,10 @@ Feature('call activity', () => {
     });
 
     Given('a process with a call activity referencing a process with user task', () => {
-      return createDeployment(apps.balance(), 'call-internal-user-process', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      return createDeployment(
+        apps.balance(),
+        'call-internal-user-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -57,7 +62,8 @@ Feature('call activity', () => {
         <process id="called-process" isExecutable="false">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let token, wait;
@@ -65,9 +71,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'call-internal-user-process').wait('task');
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-internal-user-process/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-internal-user-process/start').expect(201);
 
       token = response.body.id;
     });
@@ -80,10 +84,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, token).end();
 
-      return request(app)
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'task' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -94,9 +95,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'call-internal-user-process').wait('task');
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-internal-user-process/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-internal-user-process/start').expect(201);
 
       token = response.body.id;
     });
@@ -109,10 +108,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, token).end();
 
-      return request(app)
-        .post(`/rest/fail/${token}`)
-        .send({ id: 'task', message: 'foo' })
-        .expect(200);
+      return request(app).post(`/rest/fail/${token}`).send({ id: 'task', message: 'foo' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -129,7 +125,10 @@ Feature('call activity', () => {
     after(() => apps.stop());
 
     Given('a process with a call activity referencing another deployed process', async () => {
-      await createDeployment(apps.balance(), 'call-deployment', `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -143,13 +142,18 @@ Feature('call activity', () => {
           <endEvent id="end" />
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
 
-      await createDeployment(apps.balance(), 'called-deployment', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <task id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let end1, end2;
@@ -158,9 +162,7 @@ Feature('call activity', () => {
       end1 = waitForProcess(app, 'call-deployment').end();
       end2 = waitForProcess(app, 'called-deployment').end();
 
-      await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
     });
 
     Then('called deployment completes', () => {
@@ -172,7 +174,10 @@ Feature('call activity', () => {
     });
 
     Given('called process is updated to wait for user input', async () => {
-      await createDeployment(apps.balance(), 'called-deployment', `<definitions id="Def_called"
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Def_called"
         xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
@@ -185,7 +190,8 @@ Feature('call activity', () => {
             </extensionElements>
           </userTask>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let wait, callingToken;
@@ -193,9 +199,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
 
       callingToken = response.body.id;
     });
@@ -207,15 +211,15 @@ Feature('call activity', () => {
     });
 
     And('called process has caller process info', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${calledToken}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${calledToken}`).expect(200);
 
       expect(response.body).to.have.property('caller');
       expect(response.body.caller).to.have.property('token', callingToken);
       expect(response.body.caller).to.have.property('deployment', 'call-deployment');
       expect(response.body.caller).to.have.property('id', 'call-activity');
-      expect(response.body.caller).to.have.property('executionId').that.match(/^call-activity.+/);
+      expect(response.body.caller)
+        .to.have.property('executionId')
+        .that.match(/^call-activity.+/);
       expect(response.body.caller).to.have.property('type', 'bpmn:CallActivity');
     });
 
@@ -242,23 +246,22 @@ Feature('call activity', () => {
     });
 
     And('called process has output', async () => {
-      const response = await apps.request()
-        .get(`/rest/state/${calledToken}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/state/${calledToken}`).expect(200);
 
       expect(response.body.engine.environment.output).to.deep.equal({ user: { foo: 'bar' } });
     });
 
     And('calling process has output from called process', async () => {
-      const response = await apps.request()
-        .get(`/rest/state/${callingToken}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/state/${callingToken}`).expect(200);
 
       expect(response.body.engine.environment.output).to.deep.equal({ from: { user: { foo: 'bar' } } });
     });
 
     Given('called deployed process will fail for some reason', async () => {
-      await createDeployment(apps.balance(), 'called-deployment', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <scriptTask id="task" scriptFormat="javascript">
             <script>
@@ -266,7 +269,8 @@ Feature('call activity', () => {
             </script>
           </scriptTask>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let err1, err2;
@@ -275,9 +279,7 @@ Feature('call activity', () => {
       err1 = waitForProcess(app, 'call-deployment').error();
       err2 = waitForProcess(app, 'called-deployment').error();
 
-      await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
     });
 
     Then('called deployment fails', async () => {
@@ -300,7 +302,10 @@ Feature('call activity', () => {
     after(() => apps.stop());
 
     Given('a process that times out if no response from call activity', async () => {
-      await createDeployment(apps.balance(), 'call-deployment', `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -313,13 +318,18 @@ Feature('call activity', () => {
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
 
-      await createDeployment(apps.balance(), 'called-deployment', `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let wait, bp;
@@ -327,9 +337,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
 
       bp = response.body;
 
@@ -337,16 +345,12 @@ Feature('call activity', () => {
     });
 
     And('another process instance is started', () => {
-      return apps.request()
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      return apps.request().post('/rest/process-definition/call-deployment/start').expect(201);
     });
 
     let calledToken, expireAt;
     Then('both processes have started', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines.length).to.be.above(1);
 
@@ -363,7 +367,7 @@ Feature('call activity', () => {
     When('calling process times out', () => {
       ck.travel(expireAt);
 
-      const [ engine ] = apps.getRunningByToken(bp.id);
+      const [engine] = apps.getRunningByToken(bp.id);
       const completed = engine.waitFor('end');
       const timer = engine.environment.timers.executing.find((t) => t.owner.id === 'bound-timer');
       timer.callback();
@@ -371,9 +375,7 @@ Feature('call activity', () => {
     });
 
     Then('only the second processes are running', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines.length).to.equal(2);
 
@@ -382,17 +384,13 @@ Feature('call activity', () => {
     });
 
     And('calling process is idle', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${bp.id}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${bp.id}`).expect(200);
 
       expect(response.body.state).to.equal('idle');
     });
 
     And('called process is idle', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${calledToken}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${calledToken}`).expect(200);
 
       expect(response.body.state).to.equal('idle');
     });
@@ -411,7 +409,10 @@ Feature('call activity', () => {
     after(() => apps.stop());
 
     Given('a process with call activity that starts deployment', async () => {
-      await createDeployment(apps.balance(), 'call-deployment', `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -419,13 +420,18 @@ Feature('call activity', () => {
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
 
-      await createDeployment(apps.balance(), 'called-deployment', `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let wait, bp;
@@ -433,9 +439,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
 
       bp = response.body;
 
@@ -443,9 +447,7 @@ Feature('call activity', () => {
     });
 
     Then('both processes have started', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines.length).to.equal(2);
     });
@@ -458,16 +460,12 @@ Feature('call activity', () => {
     Given('calling process is deleted from database', () => {
       ck.travel(Date.now() + 1000 * 60 * 60 * 24);
 
-      return apps.request()
-        .delete(`/rest/state/${bp.id}`)
-        .expect(204);
+      return apps.request().delete(`/rest/state/${bp.id}`).expect(204);
     });
 
     let calledToken, warn;
     When('called process is signaled', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines).to.have.length(1);
       calledToken = response.body.engines[0].token;
@@ -475,16 +473,11 @@ Feature('call activity', () => {
       const app = apps.balance();
       warn = new Promise((resolve) => app.once('bpmn/warn', resolve));
 
-      return request(app)
-        .post(`/rest/signal/${calledToken}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${calledToken}`).send({ id: 'task' }).expect(200);
     });
 
     Then('called process is idle', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${calledToken}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${calledToken}`).expect(200);
 
       expect(response.body.state).to.equal('idle');
     });
@@ -503,9 +496,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
 
       bp = response.body;
 
@@ -513,9 +504,7 @@ Feature('call activity', () => {
     });
 
     Then('both processes have started', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines.length).to.equal(2);
     });
@@ -528,15 +517,11 @@ Feature('call activity', () => {
     Given('calling process is deleted from database', () => {
       ck.travel(Date.now() + 1000 * 60 * 60 * 24);
 
-      return apps.request()
-        .delete(`/rest/state/${bp.id}`)
-        .expect(204);
+      return apps.request().delete(`/rest/state/${bp.id}`).expect(204);
     });
 
     When('called process task is considered failed', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines).to.have.length(1);
       calledToken = response.body.engines[0].token;
@@ -544,16 +529,11 @@ Feature('call activity', () => {
       const app = apps.balance();
       warn = new Promise((resolve) => app.once('bpmn/warn', resolve));
 
-      return request(app)
-        .post(`/rest/fail/${calledToken}`)
-        .send({ id: 'task' })
-        .expect(200);
+      return request(app).post(`/rest/fail/${calledToken}`).send({ id: 'task' }).expect(200);
     });
 
     Then('called process is errored', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${calledToken}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${calledToken}`).expect(200);
 
       expect(response.body.state).to.equal('error');
     });
@@ -578,7 +558,10 @@ Feature('call activity', () => {
     after(() => apps.stop());
 
     Given('a process with call activity that starts deployment and a timer', async () => {
-      await createDeployment(apps.balance(), 'call-deployment', `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -591,13 +574,18 @@ Feature('call activity', () => {
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
 
-      await createDeployment(apps.balance(), 'called-deployment', `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let wait, bp;
@@ -605,9 +593,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
 
       bp = response.body;
 
@@ -616,9 +602,7 @@ Feature('call activity', () => {
 
     let calledToken;
     Then('both processes have started', async () => {
-      const response = await apps.request()
-        .get('/rest/running')
-        .expect(200);
+      const response = await apps.request().get('/rest/running').expect(200);
 
       expect(response.body.engines.length).to.equal(2);
       calledToken = response.body.engines.find((e) => e.name === 'called-deployment').token;
@@ -631,9 +615,7 @@ Feature('call activity', () => {
 
     let end;
     Given('called process is deleted from database', () => {
-      return apps.request()
-        .delete(`/rest/state/${calledToken}`)
-        .expect(204);
+      return apps.request().delete(`/rest/state/${calledToken}`).expect(204);
     });
 
     When('calling process is resumed', () => {
@@ -642,9 +624,7 @@ Feature('call activity', () => {
       const app = apps.balance();
       end = waitForProcess(app, bp.id).end();
 
-      return request(app)
-        .post(`/rest/resume/${bp.id}`)
-        .expect(200);
+      return request(app).post(`/rest/resume/${bp.id}`).expect(200);
     });
 
     Then('calling process completes', () => {
@@ -652,9 +632,7 @@ Feature('call activity', () => {
     });
 
     And('calling process is idle', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${bp.id}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${bp.id}`).expect(200);
 
       expect(response.body.state).to.equal('idle');
     });
@@ -666,13 +644,14 @@ Feature('call activity', () => {
       app = getAppWithExtensions();
     });
     after(() => {
-      return request(app)
-        .delete('/rest/internal/stop')
-        .expect(204);
+      return request(app).delete('/rest/internal/stop').expect(204);
     });
 
     Given('a process with a call activity referencing another deployed process', async () => {
-      await createDeployment(app, 'call-deployment', `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        app,
+        'call-deployment',
+        `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
@@ -686,13 +665,18 @@ Feature('call activity', () => {
           <endEvent id="end" />
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
 
-      await createDeployment(app, 'called-deployment', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      await createDeployment(
+        app,
+        'called-deployment',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="called-deployment" isExecutable="true">
           <task id="task" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let end1, end2;
@@ -700,9 +684,7 @@ Feature('call activity', () => {
       end1 = waitForProcess(app, 'call-deployment').end();
       end2 = waitForProcess(app, 'called-deployment').end();
 
-      await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
     });
 
     Then('called deployment completes', () => {
@@ -714,7 +696,10 @@ Feature('call activity', () => {
     });
 
     Given('called process is updated to wait for user input', async () => {
-      await createDeployment(app, 'called-deployment', `<definitions id="Def_called"
+      await createDeployment(
+        app,
+        'called-deployment',
+        `<definitions id="Def_called"
         xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
@@ -727,16 +712,15 @@ Feature('call activity', () => {
             </extensionElements>
           </userTask>
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let wait, callingToken;
     When('when process is started', async () => {
       wait = waitForProcess(app, 'called-deployment').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/call-deployment/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
 
       callingToken = response.body.id;
     });
@@ -748,15 +732,15 @@ Feature('call activity', () => {
     });
 
     And('called process has caller process info', async () => {
-      const response = await request(app)
-        .get(`/rest/status/${calledToken}`)
-        .expect(200);
+      const response = await request(app).get(`/rest/status/${calledToken}`).expect(200);
 
       expect(response.body).to.have.property('caller');
       expect(response.body.caller).to.have.property('token', callingToken);
       expect(response.body.caller).to.have.property('deployment', 'call-deployment');
       expect(response.body.caller).to.have.property('id', 'call-activity');
-      expect(response.body.caller).to.have.property('executionId').that.match(/^call-activity.+/);
+      expect(response.body.caller)
+        .to.have.property('executionId')
+        .that.match(/^call-activity.+/);
       expect(response.body.caller).to.have.property('type', 'bpmn:CallActivity');
     });
 
@@ -782,17 +766,13 @@ Feature('call activity', () => {
     });
 
     And('called process has output', async () => {
-      const response = await request(app)
-        .get(`/rest/state/${calledToken}`)
-        .expect(200);
+      const response = await request(app).get(`/rest/state/${calledToken}`).expect(200);
 
       expect(response.body.engine.environment.output).to.deep.equal({ user: { foo: 'bar' } });
     });
 
     And('calling process has output from called process', async () => {
-      const response = await request(app)
-        .get(`/rest/state/${callingToken}`)
-        .expect(200);
+      const response = await request(app).get(`/rest/state/${callingToken}`).expect(200);
 
       expect(response.body.engine.environment.output).to.deep.equal({ from: { user: { foo: 'bar' } } });
     });

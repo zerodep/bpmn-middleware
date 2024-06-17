@@ -23,9 +23,7 @@ const elements = {
 
 export function horizontallyScaled(instances = 2, options) {
   const storage = new LRUCache({ max: 1000 });
-  const apps = new Array(instances)
-    .fill()
-    .map(() => getAppWithExtensions({ adapter: new MemoryAdapter(storage), ...options }));
+  const apps = new Array(instances).fill().map(() => getAppWithExtensions({ adapter: new MemoryAdapter(storage), ...options }));
 
   return {
     storage,
@@ -37,9 +35,11 @@ export function horizontallyScaled(instances = 2, options) {
       return request(balance());
     },
     stop() {
-      return Promise.all(apps.map((app) => {
-        return request(app).delete('/rest/internal/stop').expect(204);
-      }));
+      return Promise.all(
+        apps.map((app) => {
+          return request(app).delete('/rest/internal/stop').expect(204);
+        }),
+      );
     },
     getRunning() {
       return apps.reduce((result, app) => {
@@ -65,10 +65,10 @@ export function horizontallyScaled(instances = 2, options) {
 
 export function getAppWithExtensions(options = {}) {
   const app = express();
-  const broker = app.locals.broker = options.broker ?? new Broker(app);
+  const broker = (app.locals.broker = options.broker ?? new Broker(app));
   broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
 
-  const engineCache = app.locals.engineCache = options.engineCache ?? new LRUCache({ max: 1000 });
+  const engineCache = (app.locals.engineCache = options.engineCache ?? new LRUCache({ max: 1000 }));
 
   const { engineOptions, ...middlewareOptions } = options;
   const middleware = bpmnEngineMiddleware({
@@ -93,10 +93,7 @@ export async function createDeployment(app, name, source) {
   form.append('deployment-source', 'Test modeler');
   form.append(`${name}.bpmn`, source, `${name}.bpmn`);
 
-  const response = await request(app)
-    .post('/rest/deployment/create')
-    .set(form.getHeaders())
-    .send(form.getBuffer().toString());
+  const response = await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
 
   return response;
 }
@@ -141,21 +138,31 @@ export function waitForProcess(app, nameOrToken) {
       const rnd = randomInt(10000);
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
-      broker.subscribeTmp('event', eventRoutingKey, (_, msg) => {
-        if (filterByNameOrToken(msg, expectFn)) {
-          broker.cancel(msg.fields.consumerTag);
-          broker.cancel(errConsumerTag);
-          resolve(msg);
-        }
-      }, { noAck: true, consumerTag: waitConsumerTag });
+      broker.subscribeTmp(
+        'event',
+        eventRoutingKey,
+        (_, msg) => {
+          if (filterByNameOrToken(msg, expectFn)) {
+            broker.cancel(msg.fields.consumerTag);
+            broker.cancel(errConsumerTag);
+            resolve(msg);
+          }
+        },
+        { noAck: true, consumerTag: waitConsumerTag },
+      );
 
-      broker.subscribeTmp('event', 'engine.error', (_, msg) => {
-        if (filterByNameOrToken(msg)) {
-          broker.cancel(msg.fields.consumerTag);
-          broker.cancel(waitConsumerTag);
-          reject(msg.content);
-        }
-      }, { noAck: true, consumerTag: errConsumerTag });
+      broker.subscribeTmp(
+        'event',
+        'engine.error',
+        (_, msg) => {
+          if (filterByNameOrToken(msg)) {
+            broker.cancel(msg.fields.consumerTag);
+            broker.cancel(waitConsumerTag);
+            reject(msg.content);
+          }
+        },
+        { noAck: true, consumerTag: errConsumerTag },
+      );
     });
   }
 
@@ -164,21 +171,31 @@ export function waitForProcess(app, nameOrToken) {
       const rnd = randomInt(10000);
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
-      broker.subscribeTmp('event', 'engine.end', (_, msg) => {
-        if (filterByNameOrToken(msg)) {
-          broker.cancel(msg.fields.consumerTag);
-          broker.cancel(errConsumerTag);
-          reject(new Error('Expected error but ended'));
-        }
-      }, { noAck: true, consumerTag: waitConsumerTag });
+      broker.subscribeTmp(
+        'event',
+        'engine.end',
+        (_, msg) => {
+          if (filterByNameOrToken(msg)) {
+            broker.cancel(msg.fields.consumerTag);
+            broker.cancel(errConsumerTag);
+            reject(new Error('Expected error but ended'));
+          }
+        },
+        { noAck: true, consumerTag: waitConsumerTag },
+      );
 
-      broker.subscribeTmp('event', 'engine.error', (_, msg) => {
-        if (filterByNameOrToken(msg)) {
-          broker.cancel(msg.fields.consumerTag);
-          broker.cancel(waitConsumerTag);
-          resolve(msg.content);
-        }
-      }, { noAck: true, consumerTag: errConsumerTag });
+      broker.subscribeTmp(
+        'event',
+        'engine.error',
+        (_, msg) => {
+          if (filterByNameOrToken(msg)) {
+            broker.cancel(msg.fields.consumerTag);
+            broker.cancel(waitConsumerTag);
+            resolve(msg.content);
+          }
+        },
+        { noAck: true, consumerTag: errConsumerTag },
+      );
     });
   }
 

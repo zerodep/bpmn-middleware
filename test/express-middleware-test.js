@@ -68,13 +68,9 @@ describe('express-middleware', () => {
       myApp.get('/rest/version', engineMiddleware.init.bind(engineMiddleware), engineMiddleware.getVersion);
       myApp.use(errorHandler);
 
-      await request(myApp)
-        .get('/rest/version')
-        .expect(200);
+      await request(myApp).get('/rest/version').expect(200);
 
-      await request(myApp)
-        .get('/rest/version')
-        .expect(200);
+      await request(myApp).get('/rest/version').expect(200);
 
       expect(myApp.listenerCount('bpmn/end')).to.equal(1);
     });
@@ -83,14 +79,11 @@ describe('express-middleware', () => {
   describe('addEngineLocals', () => {
     it('adds engines, adapter, and listener to res.locals', async () => {
       const adapter = new middleware.MemoryAdapter();
-      const engineMiddleware = new middleware.BpmnEngineMiddleware({
-        adapter,
-        engines: new middleware.Engines({ adapter }),
-      });
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter }, new middleware.Engines({ adapter }));
 
       const myApp = express();
       myApp.use('/rest', engineMiddleware.init.bind(engineMiddleware));
-      myApp.get('/rest/locals', engineMiddleware.addEngineLocals, (req, res) => {
+      myApp.get('/rest/locals', engineMiddleware._addEngineLocals, (req, res) => {
         res.send({
           engines: !!res.locals.engines,
           adapter: !!res.locals.adapter,
@@ -100,34 +93,25 @@ describe('express-middleware', () => {
 
       myApp.use(errorHandler);
 
-      await request(myApp)
-        .get('/rest/locals')
-        .expect(200)
-        .expect({
-          engines: true,
-          adapter: true,
-          listener: true,
-        });
+      await request(myApp).get('/rest/locals').expect(200).expect({
+        engines: true,
+        adapter: true,
+        listener: true,
+      });
 
-      await request(myApp)
-        .get('/rest/locals')
-        .expect(200)
-        .expect({
-          engines: true,
-          adapter: true,
-          listener: true,
-        });
+      await request(myApp).get('/rest/locals').expect(200).expect({
+        engines: true,
+        adapter: true,
+        listener: true,
+      });
     });
 
     it('adds locals even if init has not ran', async () => {
       const adapter = new middleware.MemoryAdapter();
-      const engineMiddleware = new middleware.BpmnEngineMiddleware({
-        adapter,
-        engines: new middleware.Engines({ adapter }),
-      });
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter }, new middleware.Engines({ adapter }));
 
       const myApp = express();
-      myApp.use('/rest/locals', engineMiddleware.addEngineLocals, (req, res) => {
+      myApp.use('/rest/locals', engineMiddleware._addEngineLocals, (req, res) => {
         res.send({
           engines: !!res.locals.engines,
           adapter: !!res.locals.adapter,
@@ -137,32 +121,23 @@ describe('express-middleware', () => {
 
       myApp.use(errorHandler);
 
-      await request(myApp)
-        .get('/rest/locals')
-        .expect(200)
-        .expect({
-          engines: true,
-          adapter: true,
-          listener: true,
-        });
+      await request(myApp).get('/rest/locals').expect(200).expect({
+        engines: true,
+        adapter: true,
+        listener: true,
+      });
     });
   });
 
   describe('modeler integration', () => {
     it('has version route', async () => {
       const { version } = await packageInfo;
-      await request(app)
-        .get('/rest/version')
-        .expect(200)
-        .expect({ version });
+      await request(app).get('/rest/version').expect(200).expect({ version });
     });
 
     it('has deployment route', async () => {
       const { name } = await packageInfo;
-      await request(app)
-        .get('/rest/deployment')
-        .expect(200)
-        .expect({ name });
+      await request(app).get('/rest/deployment').expect(200).expect({ name });
     });
   });
 
@@ -175,10 +150,7 @@ describe('express-middleware', () => {
       form.append('deployment-source', 'Test modeler');
       form.append('test-deploy.bpmn', '<?xml version="1.0" encoding="UTF-8"?>', 'test-deploy.bpmn');
 
-      const response = await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString());
+      const response = await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
 
       expect(response.statusCode, response.text).to.equal(201);
       expect(response.body).to.deep.equal({
@@ -191,27 +163,25 @@ describe('express-middleware', () => {
 
   describe('start', () => {
     after(() => {
-      return request(app)
-        .delete('/rest/internal/stop')
-        .expect(204);
+      return request(app).delete('/rest/internal/stop').expect(204);
     });
 
     it('has deployment start route', async () => {
       const form = new FormData();
       form.append('deployment-name', 'test-deploy-start');
       form.append('deployment-source', 'Test modeler');
-      form.append('test-deploy-start.bpmn', `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        'test-deploy-start.bpmn',
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
         </process>
       </definitions>
-      `, 'test-deploy-start.bpmn');
+      `,
+        'test-deploy-start.bpmn',
+      );
 
-      await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
 
       const response = await request(app)
         .post('/rest/process-definition/test-deploy-start/start')
@@ -235,7 +205,9 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
@@ -258,13 +230,11 @@ describe('express-middleware', () => {
             </extensionElements>
           </serviceTask>
         </process>
-      </definitions>`, `${deploymentName}.bpmn`);
+      </definitions>`,
+        `${deploymentName}.bpmn`,
+      );
 
-      await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
 
       const ended = waitForProcess(app, 'test-service').end();
 
@@ -278,15 +248,13 @@ describe('express-middleware', () => {
 
       expect(response.statusCode, response.text).to.equal(201);
 
-      response = await request(app)
-        .get(`/rest/status/${response.body.id}`)
-        .expect(200);
+      response = await request(app).get(`/rest/status/${response.body.id}`).expect(200);
 
       expect(response.statusCode, response.text).to.equal(200);
 
       expect(response.body).to.have.property('activityStatus', 'executing');
       expect(getServiceCalls).to.have.length(1);
-      const [ args ] = getServiceCalls;
+      const [args] = getServiceCalls;
       expect(args[0]).to.have.property('options').that.deep.equal({
         uri: 'http://example.com/plata/bar',
         json: true,
@@ -303,7 +271,9 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
@@ -326,13 +296,11 @@ describe('express-middleware', () => {
             </extensionElements>
           </serviceTask>
         </process>
-      </definitions>`, `${deploymentName}.bpmn`);
+      </definitions>`,
+        `${deploymentName}.bpmn`,
+      );
 
-      await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
 
       const ended = waitForProcess(app, 'test-service').end();
 
@@ -346,15 +314,13 @@ describe('express-middleware', () => {
 
       expect(response.statusCode, response.text).to.equal(201);
 
-      response = await request(app)
-        .get(`/rest/status/${response.body.id}`)
-        .expect(200);
+      response = await request(app).get(`/rest/status/${response.body.id}`).expect(200);
 
       expect(response.statusCode, response.text).to.equal(200);
 
       expect(response.body).to.have.property('activityStatus', 'executing');
       expect(getServiceCalls).to.have.length(1);
-      const [ args ] = getServiceCalls;
+      const [args] = getServiceCalls;
       expect(args[0]).to.have.property('options').that.deep.equal({
         uri: 'http://example.com/plata/bar',
         json: true,
@@ -374,26 +340,23 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
-      return request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      return request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
     });
 
     it('has running route', () => {
-      return request(app)
-        .get('/rest/running')
-        .expect(200)
-        .expect({ engines: [] });
+      return request(app).get('/rest/running').expect(200).expect({ engines: [] });
     });
 
     it('returns running tokens', async () => {
@@ -402,9 +365,7 @@ describe('express-middleware', () => {
         .expect(201)
         .expect('content-type', 'application/json; charset=utf-8');
 
-      const response = await request(app)
-        .get('/rest/running')
-        .expect(200);
+      const response = await request(app).get('/rest/running').expect(200);
 
       expect(response.body).to.have.property('engines').with.length(1);
       expect(response.body.engines[0]).to.have.property('token', started.id);
@@ -417,8 +378,7 @@ describe('express-middleware', () => {
         .expect(201)
         .expect('content-type', 'application/json; charset=utf-8');
 
-      response = await request(app)
-        .get(`/rest/status/${response.body.id}`);
+      response = await request(app).get(`/rest/status/${response.body.id}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('token');
@@ -428,10 +388,7 @@ describe('express-middleware', () => {
     });
 
     it('non running token returns 404', async () => {
-      await request(app)
-        .get('/rest/status/non-running-token')
-        .expect(404)
-        .expect({ message: 'Token non-running-token not found' });
+      await request(app).get('/rest/status/non-running-token').expect(404).expect({ message: 'Token non-running-token not found' });
     });
   });
 
@@ -442,19 +399,19 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
-      return request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      return request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
     });
 
     it('signals running instances', async () => {
@@ -468,16 +425,11 @@ describe('express-middleware', () => {
 
       await waiting;
 
-      const response = await request(app)
-        .get(`/rest/status/${body.id}`)
-        .expect(200);
+      const response = await request(app).get(`/rest/status/${body.id}`).expect(200);
 
       expect(response.body.postponed).to.have.length(1);
 
-      await request(app)
-        .post(`/rest/signal/${body.id}`)
-        .send({ id: response.body.postponed[0].id })
-        .expect(200);
+      await request(app).post(`/rest/signal/${body.id}`).send({ id: response.body.postponed[0].id }).expect(200);
 
       return ended;
     });
@@ -490,25 +442,23 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
-      return request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      return request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
     });
 
     it('has stop route that stops all running engines on this app instance', async () => {
-      await request(app)
-        .delete('/rest/internal/stop')
-        .expect(204);
+      await request(app).delete('/rest/internal/stop').expect(204);
 
       expect(engineCache.size, 'number of running engines').to.equal(0);
     });
@@ -519,13 +469,9 @@ describe('express-middleware', () => {
         .expect(201)
         .expect('content-type', 'application/json; charset=utf-8');
 
-      const startResponse = await request(app)
-        .get(`/rest/status/${response.body.id}`)
-        .expect(200);
+      const startResponse = await request(app).get(`/rest/status/${response.body.id}`).expect(200);
 
-      await request(app)
-        .delete(`/rest/internal/stop/${response.body.id}`)
-        .expect(204);
+      await request(app).delete(`/rest/internal/stop/${response.body.id}`).expect(204);
 
       expect(engineCache.has(startResponse.body.token)).to.be.false;
     });
@@ -536,9 +482,7 @@ describe('express-middleware', () => {
         .expect(201)
         .expect('content-type', 'application/json; charset=utf-8');
 
-      const startResponse = await request(app)
-        .get(`/rest/status/${response.body.id}`)
-        .expect(200);
+      const startResponse = await request(app).get(`/rest/status/${response.body.id}`).expect(200);
 
       const token = startResponse.body.token;
       const engine = app.locals.engineCache.get(token);
@@ -549,18 +493,14 @@ describe('express-middleware', () => {
       const idleTimer = executingTimers[0];
       expect(idleTimer.timerRef, 'idle timer ref').to.be.ok;
 
-      await request(app)
-        .delete(`/rest/internal/stop/${response.body.id}`)
-        .expect(204);
+      await request(app).delete(`/rest/internal/stop/${response.body.id}`).expect(204);
 
       expect(engine.environment.timers.executing.length, 'timers after stop').to.equal(0);
       expect(idleTimer.timerRef, 'idle timer ref').to.not.be.ok;
     });
 
     it('stop by token route returns 204', async () => {
-      await request(app)
-        .delete('/rest/internal/stop/non-running-instance')
-        .expect(204);
+      await request(app).delete('/rest/internal/stop/non-running-instance').expect(204);
     });
   });
 
@@ -571,7 +511,9 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="task" />
@@ -582,18 +524,14 @@ describe('express-middleware', () => {
           </boundaryEvent>
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
-      return request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      return request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
     });
     after(() => {
-      return request(app)
-        .delete('/rest/internal/stop')
-        .expect(204);
+      return request(app).delete('/rest/internal/stop').expect(204);
     });
 
     it('emits bpmn events on app', async () => {
@@ -617,9 +555,7 @@ describe('express-middleware', () => {
         .expect(201)
         .expect('content-type', 'application/json; charset=utf-8');
 
-      await request(app)
-        .delete(`/rest/internal/stop/${response.body.id}`)
-        .expect(204);
+      await request(app).delete(`/rest/internal/stop/${response.body.id}`).expect(204);
 
       await stopped;
     });
@@ -631,7 +567,9 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <scriptTask id="task" scriptFormat="javascript">
@@ -639,19 +577,15 @@ describe('express-middleware', () => {
           </scriptTask>
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
       const errored = waitForProcess(app, deploymentName).error();
 
-      await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
 
-      await request(app)
-        .post(`/rest/process-definition/${deploymentName}/start`)
-        .expect(201);
+      await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
 
       const err = await errored;
       expect(err?.message).to.match(/Unexpected/);
@@ -662,7 +596,9 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <userTask id="start" />
@@ -672,27 +608,20 @@ describe('express-middleware', () => {
           </scriptTask>
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
-      await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
 
-      const response = await request(app)
-        .post(`/rest/process-definition/${deploymentName}/start`)
-        .expect(201);
+      const response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
 
       const engine = app.locals.engineCache.get(response.body.id);
       const idleTimer = engine.idleTimer;
 
       const errored = waitForProcess(app, deploymentName).error();
 
-      await request(app)
-        .post(`/rest/signal/${response.body.id}`)
-        .send({ id: 'start' })
-        .expect(200);
+      await request(app).post(`/rest/signal/${response.body.id}`).send({ id: 'start' }).expect(200);
 
       await errored;
 
@@ -704,24 +633,22 @@ describe('express-middleware', () => {
       const form = new FormData();
       form.append('deployment-name', deploymentName);
       form.append('deployment-source', 'Test modeler');
-      form.append(`${deploymentName}.bpmn`, `<?xml version="1.0" encoding="UTF-8"?>
+      form.append(
+        `${deploymentName}.bpmn`,
+        `<?xml version="1.0" encoding="UTF-8"?>
       <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp" isExecutable="true">
           <scriptTask id="task" scriptFormat="javascript">
             <script>next(new Error('Unexpected'));</script>
         </process>
       </definitions>
-      `, `${deploymentName}.bpmn`);
+      `,
+        `${deploymentName}.bpmn`,
+      );
 
-      await request(app)
-        .post('/rest/deployment/create')
-        .set(form.getHeaders())
-        .send(form.getBuffer().toString())
-        .expect(201);
+      await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString()).expect(201);
 
-      const response = await request(app)
-        .post(`/rest/process-definition/${deploymentName}/start`)
-        .expect(502);
+      const response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(502);
 
       expect(response.body.message).to.match(/unparsable content/i);
     });
@@ -734,14 +661,9 @@ describe('express-middleware', () => {
       parentApp.use(errorHandler);
 
       const { version } = await packageInfo;
-      await request(parentApp)
-        .get('/bpmn/version')
-        .expect(200)
-        .expect({ version });
+      await request(parentApp).get('/bpmn/version').expect(200).expect({ version });
 
-      await request(parentApp)
-        .get('/rest/version')
-        .expect(404);
+      await request(parentApp).get('/rest/version').expect(404);
     });
 
     it('respects no route but responds to all suffixed routes', async () => {
@@ -750,18 +672,11 @@ describe('express-middleware', () => {
       parentApp.use(errorHandler);
 
       const { version } = await packageInfo;
-      await request(parentApp)
-        .get('/version')
-        .expect(200)
-        .expect({ version });
+      await request(parentApp).get('/version').expect(200).expect({ version });
 
-      await request(parentApp)
-        .get('/rest/version')
-        .expect({ version });
+      await request(parentApp).get('/rest/version').expect({ version });
 
-      await request(parentApp)
-        .get('/rest/bpmn/version')
-        .expect({ version });
+      await request(parentApp).get('/rest/bpmn/version').expect({ version });
     });
   });
 });

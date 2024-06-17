@@ -17,7 +17,10 @@ Feature('signal activity', () => {
     after(() => apps.stop());
 
     Given('a process with two signal event definitions with same signal reference', () => {
-      return createDeployment(apps.balance(), 'signal-process', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      return createDeployment(
+        apps.balance(),
+        'signal-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-signal1" sourceRef="start" targetRef="signal1" />
@@ -33,7 +36,8 @@ Feature('signal activity', () => {
           <endEvent id="end" />
         </process>
         <signal id="Signal_0" name="One and only signal" />
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let token, wait;
@@ -41,9 +45,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'signal-process').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/signal-process/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/signal-process/start').expect(201);
 
       token = response.body.id;
     });
@@ -56,10 +58,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'signal-process').wait();
 
-      return request(app)
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'Signal_0' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'Signal_0' }).expect(200);
     });
 
     Then('run still waits for next signal', () => {
@@ -71,10 +70,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       end = waitForProcess(app, 'signal-process').end();
 
-      return request(app)
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'Signal_0' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'Signal_0' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -91,7 +87,10 @@ Feature('signal activity', () => {
     after(() => apps.stop());
 
     Given('a process with two message event definitions', () => {
-      return createDeployment(apps.balance(), 'message-process', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      return createDeployment(
+        apps.balance(),
+        'message-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-message1" sourceRef="start" targetRef="message1" />
@@ -108,7 +107,8 @@ Feature('signal activity', () => {
         </process>
         <message id="Message_0" name="First message" />
         <message id="Message_1" name="Second message" />
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let token, wait;
@@ -116,9 +116,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'message-process').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/message-process/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/message-process/start').expect(201);
 
       token = response.body.id;
     });
@@ -131,10 +129,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'message-process').wait();
 
-      return request(app)
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'Message_1' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'Message_1' }).expect(200);
     });
 
     Then('run still waits', () => {
@@ -146,10 +141,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       end = waitForProcess(app, 'message-process').end();
 
-      return request(app)
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'Message_0' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'Message_0' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -166,7 +158,10 @@ Feature('signal activity', () => {
     after(() => apps.stop());
 
     Given('a process', () => {
-      return createDeployment(apps.balance(), 'user-and-receive-process', `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+      return createDeployment(
+        apps.balance(),
+        'user-and-receive-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="main-process" isExecutable="true">
           <startEvent id="start" />
           <sequenceFlow id="to-msg" sourceRef="start" targetRef="msg" />
@@ -177,7 +172,8 @@ Feature('signal activity', () => {
           <sequenceFlow id="from-usr" sourceRef="usr" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`);
+      </definitions>`,
+      );
     });
 
     let token, wait;
@@ -185,9 +181,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'user-and-receive-process').wait();
 
-      const response = await request(app)
-        .post('/rest/process-definition/user-and-receive-process/start')
-        .expect(201);
+      const response = await request(app).post('/rest/process-definition/user-and-receive-process/start').expect(201);
 
       token = response.body.id;
     });
@@ -197,9 +191,7 @@ Feature('signal activity', () => {
     });
 
     And('process status has postponed user and receive task', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${token}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${token}`).expect(200);
 
       expect(response.body).to.have.property('postponed').with.length(2);
       expect(response.body.postponed[0]).to.have.property('id', 'msg');
@@ -212,9 +204,7 @@ Feature('signal activity', () => {
     });
 
     Then('process status still has postponed user and receive task', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${token}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${token}`).expect(200);
 
       expect(response.body).to.have.property('postponed').with.length(2);
       expect(response.body.postponed[0]).to.have.property('id', 'msg');
@@ -222,16 +212,11 @@ Feature('signal activity', () => {
     });
 
     When('receive task is signalled', () => {
-      return apps.request()
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'msg' })
-        .expect(200);
+      return apps.request().post(`/rest/signal/${token}`).send({ id: 'msg' }).expect(200);
     });
 
     Then('process status has postponed activities', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${token}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${token}`).expect(200);
 
       expect(response.body).to.have.property('postponed').with.length(2);
       expect(response.body.postponed[0]).to.have.property('id', 'usr');
@@ -244,9 +229,7 @@ Feature('signal activity', () => {
     });
 
     Then('process status only has postponed user task', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${token}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${token}`).expect(200);
 
       expect(response.body).to.have.property('postponed').with.length(1);
       expect(response.body.postponed[0]).to.have.property('id', 'usr');
@@ -257,10 +240,7 @@ Feature('signal activity', () => {
       const app = apps.balance();
       end = waitForProcess(app, 'user-and-receive-process').end();
 
-      return request(app)
-        .post(`/rest/signal/${token}`)
-        .send({ id: 'usr' })
-        .expect(200);
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'usr' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -268,9 +248,7 @@ Feature('signal activity', () => {
     });
 
     Then('process status is idle with empty postponed', async () => {
-      const response = await apps.request()
-        .get(`/rest/status/${token}`)
-        .expect(200);
+      const response = await apps.request().get(`/rest/status/${token}`).expect(200);
 
       expect(response.body).to.have.property('state', 'idle');
       expect(response.body).to.have.property('postponed').with.length(0);

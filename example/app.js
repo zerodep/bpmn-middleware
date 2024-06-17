@@ -17,8 +17,8 @@ const elements = {
 };
 
 const app = express();
-const broker = app.locals.broker = new Broker(app);
-const engineCache = app.locals.engineCache = new LRUCache({ max: 1000 });
+const broker = (app.locals.broker = new Broker(app));
+const engineCache = (app.locals.engineCache = new LRUCache({ max: 1000 }));
 
 broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
 

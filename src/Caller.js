@@ -19,6 +19,10 @@ export class Caller {
   }
 }
 
+/**
+ * Create caller from activity Api
+ * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} activityApi
+ */
 export function fromActivityApi(activityApi) {
   const { token, name: deployment } = activityApi.environment.options;
   const { id, type, executionId } = activityApi.content;
