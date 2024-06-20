@@ -13,7 +13,7 @@ import express from 'express';
 import { Broker } from 'smqp';
 import { LRUCache } from 'lru-cache';
 import { createRequire } from 'node:module';
-import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
+import { extensions, OnifySequenceFlow, OnifyTimerEventDefinition, extendFn } from '@onify/flow-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
 import { bpmnEngineMiddleware, HttpError } from 'bpmn-middleware';
