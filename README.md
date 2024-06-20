@@ -10,17 +10,48 @@ Under construction so breaking changes will occur until v1.
 
 ```javascript
 import express from 'express';
+import { Broker } from 'smqp';
+import { LRUCache } from 'lru-cache';
+import { createRequire } from 'node:module';
+import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
+import * as bpmnElements from 'bpmn-elements';
+
 import { bpmnEngineMiddleware, HttpError } from 'bpmn-middleware';
 
+const nodeRequire = createRequire(import.meta.url);
+
+const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
+
+const elements = {
+  ...bpmnElements,
+  SequenceFlow: OnifySequenceFlow,
+  TimerEventDefinition: OnifyTimerEventDefinition,
+};
+
 const app = express();
-app.use('/rest', bpmnEngineMiddleware({ idleTimeout: 90000 }));
+const broker = (app.locals.broker = new Broker(app));
+const engineCache = (app.locals.engineCache = new LRUCache({ max: 1000 }));
+
+broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
+
+const middleware = bpmnEngineMiddleware({
+  broker,
+  engineCache,
+  engineOptions: {
+    moddleOptions: { camunda },
+    elements,
+    extensions: { onify: extensions },
+    extendFn,
+  },
+});
+
+app.use('/rest', middleware);
 
 app.use(errorHandler);
 
-app.listen(3000);
-
 function errorHandler(err, req, res, next) {
   if (!(err instanceof Error)) return next();
+  console.log({ err });
   if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
   res.status(502).send({ message: err.message });
 }
@@ -51,6 +82,7 @@ Returns Expressjs Router with extra properties:
 - [`GET (*)?/deployment`](#get-deployment)
 - [`POST (*)?/deployment/create`](#post-deploymentcreate)
 - [`POST (*)?/process-definition/:deploymentName/start`](#post-process-definitiondeploymentnamestart)
+- [`GET (*)?/script/:deploymentName`](#get-scriptdeploymentname)
 - [`GET (*)?/running`](#get-running)
 - [`GET (*)?/status/:token`](#get-statustoken)
 - [`GET (*)?/status/:token/:activityId`](#get-statustokenactivityid)
@@ -114,6 +146,15 @@ Request body:
 Response body:
 
 - `id`: string, unique execution token
+
+### `GET (*)?/script/:deploymentName`
+
+Get all declared scripts for deployment
+
+Response:
+
+- `content-type: text/javascript`
+- `body`: module script, exported javascript functions where function name non-word characters are replaced with `_`
 
 ### `GET (*)?/running`
 

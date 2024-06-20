@@ -1,14 +1,5 @@
-import { Request, Response, NextFunction, Router, Locals } from 'express';
-import { ParamsDictionary } from 'express-serve-static-core';
-import {
-  Engine,
-  BpmnEngineOptions,
-  BpmnEngineExecutionState,
-  BpmnMessage,
-  BpmnEngineRunningStatus,
-  BpmnEngineDefinitionState,
-} from 'bpmn-engine';
-import { ActivityStatus } from 'bpmn-elements';
+import { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus } from 'bpmn-engine';
+import { ActivityStatus, ElementMessageContent } from 'bpmn-elements';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
 
@@ -82,8 +73,29 @@ export interface MiddlewareEngineStatus {
   postponed?: postponed[];
   caller?: Caller;
   expireAt?: Date;
+  [x: string]: any;
 }
 
 export interface MiddlewareEngineState extends MiddlewareEngineStatus {
   engine?: BpmnEngineExecutionState;
+}
+
+export interface PostponedElement extends ElementMessageContent {
+  token: string;
+  /**
+   * Activity executions, e.g. executing multi-instance tasks or event definitions
+   */
+  executing?: ElementMessageContent[];
+}
+
+export interface SignalBody {
+  /**
+   * Activity id
+   */
+  id?: string;
+  /**
+   * Activity execution id, required when signalling a parallel multi-instance tasks
+   */
+  executionId?: string;
+  [x: string]: any;
 }

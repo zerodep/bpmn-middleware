@@ -1,11 +1,12 @@
-import FormData from 'form-data';
+import { randomInt } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { extensions, OnifySequenceFlow } from '@onify/flow-extensions';
+
+import FormData from 'form-data';
+import { extensions, extendFn, OnifySequenceFlow, OnifyTimerEventDefinition } from '@onify/flow-extensions';
 import * as bpmnElements from 'bpmn-elements';
 import express from 'express';
 import request from 'supertest';
 import { Broker } from 'smqp';
-import { randomInt } from 'crypto';
 import { LRUCache } from 'lru-cache';
 
 import { bpmnEngineMiddleware } from '../../src/index.js';
@@ -19,6 +20,7 @@ const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
 const elements = {
   ...bpmnElements,
   SequenceFlow: OnifySequenceFlow,
+  TimerEventDefinition: OnifyTimerEventDefinition,
 };
 
 export function horizontallyScaled(instances = 2, options) {
@@ -78,6 +80,7 @@ export function getAppWithExtensions(options = {}) {
       moddleOptions: { camunda },
       elements,
       extensions: { onify: extensions },
+      extendFn,
       ...engineOptions,
     },
     ...middlewareOptions,

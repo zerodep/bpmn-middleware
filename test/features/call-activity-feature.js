@@ -114,6 +114,30 @@ Feature('call activity', () => {
     Then('run completes', () => {
       return end;
     });
+
+    When('when process is started again again', async () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, 'call-internal-user-process').wait('task');
+
+      const response = await request(app).post('/rest/process-definition/call-internal-user-process/start').expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('internal process user task is waiting', () => {
+      return wait;
+    });
+
+    When('main process call activity is cancelled', () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, token).end();
+
+      return request(app).post(`/rest/cancel/${token}`).send({ id: 'call-activity' }).expect(200);
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
   });
 
   Scenario('call deployed process', () => {

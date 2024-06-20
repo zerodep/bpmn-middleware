@@ -1,14 +1,14 @@
 import { Broker } from 'smqp';
 import { EventEmitter } from 'events';
 
-import { BpmnEngines } from '../../src/Engines.js';
+import { Engines } from '../../src/Engines.js';
 import { MemoryAdapter } from '../../src/MemoryAdapter.js';
 
 describe('Engines', () => {
   it('clears added listeners when run completes', async () => {
     const broker = new Broker();
 
-    const engines = new BpmnEngines({
+    const engines = new Engines({
       idleTimeout: 1000,
       adapter: new MemoryAdapter(),
       broker,
