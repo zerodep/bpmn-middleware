@@ -6,7 +6,7 @@ declare module 'bpmn-middleware' {
 	/// <reference types="node" />
 	/// <reference types="moddle-context-serializer" />
 	/**
-	 * BPMN 2 Engines middleware
+	 * BPMN 2 Engine middleware
 	 * */
 	export function bpmnEngineMiddleware(options: BpmnMiddlewareOptions): import("express-serve-static-core").Router;
 	/**
@@ -71,9 +71,6 @@ declare module 'bpmn-middleware' {
 		}>): import("express").Response<{
 			name: string;
 		}, Record<string, any>>;
-		/**
-		 * Create deployment result
-		 * */
 		/**
 		 * Create deployment
 		 * */
@@ -198,7 +195,6 @@ declare module 'bpmn-middleware' {
 		 * */
 		emit(eventName: string, ...args: any[]): boolean;
 	}
-	export default bpmnEngineMiddleware;
 	/**
 	 * BPMN middleware locals
 	 */
@@ -344,7 +340,9 @@ declare module 'bpmn-middleware' {
 		adapter: IStorageAdapter;
 		engineCache: LRUCache<string, any, unknown>;
 		__onStateMessage: (routingKey: string, message: import('smqp').Message, engine: MiddlewareEngine) => Promise<boolean | void>;
-		
+		/**
+		 * Execute engine
+		 * */
 		execute(executeOptions: MiddlewareEngineOptions): Promise<MiddlewareEngine>;
 		/**
 		 * Resume engine execution
@@ -412,7 +410,7 @@ declare module 'bpmn-middleware' {
 		 * */
 		getEngineStatus(engine: MiddlewareEngine): MiddlewareEngineStatus;
 		/**
-		 * Get engine status
+		 * Internal setup engine listeners
 		 * */
 		_setupEngine(engine: MiddlewareEngine): void;
 		/**
@@ -437,15 +435,23 @@ declare module 'bpmn-middleware' {
 		constructor(token: string, options?: MiddlewareEngineOptions);
 		
 		options: MiddlewareEngineOptions;
-		
+		/**
+		 * Engine execution token
+		 * */
 		token: string;
 		
-		idleTimer: import('bpmn-elements').Timer | void;
+		idleTimer: import('bpmn-elements').Timer | null | void;
 		engineTimers: import("bpmn-elements").RegisteredTimer;
-		get expireAt(): any;
+		/**
+		 * Closest due time when a registered timer expires
+		 */
+		get expireAt(): Date;
+		/**
+		 * Start/Restart execution idle timer
+		 */
 		startIdleTimer(): void;
 		_getCurrentStatus(): {
-			expireAt: any;
+			expireAt: Date;
 			name: string;
 			token: string;
 			activityStatus: import("bpmn-elements").ActivityStatus;

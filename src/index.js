@@ -18,14 +18,13 @@ const nodeRequire = createRequire(fileURLToPath(import.meta.url));
 const packageInfo = nodeRequire(join(process.cwd(), 'package.json'));
 const kInitilialized = Symbol.for('initialized');
 
-export default bpmnEngineMiddleware;
 export { Engines, MemoryAdapter, HttpError, MiddlewareEngine };
 export * from './constants.js';
 
 const snakeReplacePattern = /\W/g;
 
 /**
- * BPMN 2 Engines middleware
+ * BPMN 2 Engine middleware
  * @param {import('types').BpmnMiddlewareOptions} options
  */
 export function bpmnEngineMiddleware(options) {
@@ -160,14 +159,6 @@ BpmnEngineMiddleware.prototype.getVersion = function getVersion(_, res) {
 BpmnEngineMiddleware.prototype.getDeployment = function getDeployment(_, res) {
   return res.send({ name: packageInfo.name });
 };
-
-/**
- * Create deployment result
- * @typedef {Object} CreateDeploymentResponseBody
- * @property {string} id - Deployment name
- * @property {Date} deploymentTime - Storage adapter
- * @property {any} deployedProcessDefinitions - Deployed process definitions
- */
 
 /**
  * Create deployment
@@ -559,3 +550,11 @@ function slugify(...args) {
   }
   return slugs.join('_');
 }
+
+/**
+ * Create deployment result
+ * @typedef {Object} CreateDeploymentResponseBody
+ * @property {string} id - Deployment name
+ * @property {Date} deploymentTime - Storage adapter
+ * @property {any} deployedProcessDefinitions - Deployed process definitions
+ */

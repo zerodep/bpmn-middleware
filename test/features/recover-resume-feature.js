@@ -303,22 +303,22 @@ Feature('recover resume', () => {
         apps.balance(),
         'user-tasks',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp1" isExecutable="true">
-          <userTask id="task1" />
-          <sequenceFlow id="to-fork" sourceRef="task1" targetRef="fork" />
-          <parallelGateway id="fork" />
-          <sequenceFlow id="to-task2" sourceRef="fork" targetRef="task2" />
-          <sequenceFlow id="to-timer" sourceRef="fork" targetRef="timer" />
-          <userTask id="task2" />
-          <intermediateThrowEvent id="timer">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
-            </timerEventDefinition>
-          </intermediateThrowEvent>
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp1" isExecutable="true">
+            <userTask id="task1" />
+            <sequenceFlow id="to-fork" sourceRef="task1" targetRef="fork" />
+            <parallelGateway id="fork" />
+            <sequenceFlow id="to-task2" sourceRef="fork" targetRef="task2" />
+            <sequenceFlow id="to-timer" sourceRef="fork" targetRef="timer" />
+            <userTask id="task2" />
+            <intermediateThrowEvent id="timer">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+              </timerEventDefinition>
+            </intermediateThrowEvent>
+          </process>
+        </definitions>`,
       );
     });
 
@@ -420,17 +420,17 @@ Feature('recover resume', () => {
       return apps.stop();
     });
 
-    Given('a process with two succeeding user tasks and a parallel timer', () => {
+    Given('a process with a user task', () => {
       return createDeployment(
         apps.balance(),
         'user-tasks',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp1" isExecutable="true">
-          <userTask id="task1" />
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp1" isExecutable="true">
+            <userTask id="task1" />
+          </process>
+        </definitions>`,
       );
     });
 
@@ -471,6 +471,39 @@ Feature('recover resume', () => {
     Then('not found is returned', () => {
       expect(response.statusCode, response.text).to.equal(404);
       expect(response.body.message).to.match(/Token .+? not found/i);
+    });
+
+    let complete;
+    When('second process completes by signalling user task', async () => {
+      const app = apps.balance();
+      complete = waitForProcess(app, 'user-tasks').end();
+
+      response = await request(app).post(`/rest/signal/${running[1].token}`).send({ id: 'task1' }).expect(200);
+    });
+
+    Then('no running processes', async () => {
+      await complete;
+
+      response = await apps.request().get('/rest/running');
+
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('engines').with.length(0);
+    });
+
+    And('second process is idle', async () => {
+      response = await apps.request().get(`/rest/status/${running[1].token}`);
+
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('state', 'idle');
+    });
+
+    When('attempting to signal second process user task again', async () => {
+      response = await apps.request().post(`/rest/signal/${running[1].token}`).send({ id: 'task1' });
+    });
+
+    Then('bad request is returned', () => {
+      expect(response.statusCode, response.text).to.equal(400);
+      expect(response.body.message).to.match(/Token .+? completed/i);
     });
   });
 });

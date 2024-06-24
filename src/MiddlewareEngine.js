@@ -9,13 +9,20 @@ export class MiddlewareEngine extends Engine {
     super(options);
     /** @type {import('types').MiddlewareEngineOptions} */
     this.options = options;
-    /** @type {string} */
+    /**
+     * Engine execution token
+     * @type {string}
+     */
     this.token = token;
-    /** @type {import('bpmn-elements').Timer | void} */
+    /** @type {import('bpmn-elements').Timer | null | void} */
     this.idleTimer = null;
     this.engineTimers = this.environment.timers.register({ id: token });
   }
+  /**
+   * Closest due time when a registered timer expires
+   */
   get expireAt() {
+    /** @type {Date?} */
     let expireAt = null;
     const token = this.token;
     for (const timer of this.environment.timers.executing) {
@@ -25,6 +32,9 @@ export class MiddlewareEngine extends Engine {
     }
     return expireAt;
   }
+  /**
+   * Start/Restart execution idle timer
+   */
   startIdleTimer() {
     const delay = this.environment.settings.idleTimeout ?? 120000;
     const timers = this.engineTimers;

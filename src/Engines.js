@@ -20,7 +20,7 @@ export function Engines(options) {
 }
 
 /**
- *
+ * Execute engine
  * @param {import('types').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.execute = async function execute(executeOptions) {
@@ -106,7 +106,7 @@ Engines.prototype.resume = async function resume(token, listener) {
  * Signal activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @param {any} body
+ * @param {import('types').SignalBody} body
  */
 Engines.prototype.signalActivity = async function signalActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
@@ -120,7 +120,7 @@ Engines.prototype.signalActivity = async function signalActivity(token, listener
  * Cancel activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @param {any} body
+ * @param {import('types').SignalBody} body
  */
 Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
@@ -133,7 +133,7 @@ Engines.prototype.cancelActivity = async function cancelActivity(token, listener
  * Fail activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @param {any} body
+ * @param {import('types').SignalBody} body
  */
 Engines.prototype.failActivity = async function failActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
@@ -250,7 +250,6 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
 /**
  * Create middleware bpmn engine
  * @param {import('types').MiddlewareEngineOptions} executeOptions
- * @returns
  */
 Engines.prototype.createEngine = function createEngine(executeOptions) {
   const { name, token, source, listener, variables, caller, settings, idleTimeout } = executeOptions;
@@ -315,9 +314,8 @@ Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
 };
 
 /**
- * Get engine status
+ * Internal setup engine listeners
  * @param {MiddlewareEngine} engine
- * @returns
  */
 Engines.prototype._setupEngine = function setupEngine(engine) {
   const parentBroker = this.broker;
