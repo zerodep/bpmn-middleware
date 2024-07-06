@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache';
 
-import { STORAGE_TYPE_STATE } from './constants.js';
+import { StorageError } from './Errors.js';
+import { STORAGE_TYPE_STATE, ERR_STORAGE_KEY_NOT_FOUND } from './constants.js';
 
 /**
  * Memory adapter
@@ -13,10 +14,10 @@ export function MemoryAdapter(storage) {
 
 /**
  * Upsert
- * @param {string} type
- * @param {string} key
- * @param {any} value
- * @param {any} [options]
+ * @param {string} type storage type
+ * @param {string} key storage key
+ * @param {any} value value to store
+ * @param {any} [options] storage set options
  */
 MemoryAdapter.prototype.upsert = function upsert(type, key, value, options) {
   const storageKey = `${type}:${key}`;
@@ -35,6 +36,23 @@ MemoryAdapter.prototype.upsert = function upsert(type, key, value, options) {
 };
 
 /**
+ * Update existing
+ * @param {string} type storage type
+ * @param {string} key storage key
+ * @param {any} value value to store
+ * @param {any} [options] storage set options
+ * @throws {StorageError}
+ */
+MemoryAdapter.prototype.update = function upsert(type, key, value, options) {
+  const storageKey = `${type}:${key}`;
+  if (!this.storage.has(storageKey)) {
+    return Promise.reject(new StorageError(`${storageKey} not found`, ERR_STORAGE_KEY_NOT_FOUND));
+  }
+
+  return this.upsert(type, key, value, options);
+};
+
+/**
  * Delete
  * @param {string} type
  * @param {string} key
@@ -48,7 +66,7 @@ MemoryAdapter.prototype.delete = function deleteByKey(type, key) {
  * Fetch
  * @param {string} type
  * @param {string} key
- * @param {any} [options]
+ * @param {any} [options] Passed as fetch options to LRU cache
  */
 MemoryAdapter.prototype.fetch = async function fetch(type, key, options) {
   const value = await this.storage.fetch(`${type}:${key}`, options);

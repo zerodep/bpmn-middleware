@@ -208,29 +208,29 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
-        <process id="bp" isExecutable="true">
-          <serviceTask id="start">
-            <extensionElements>
-              <camunda:connector>
-                <camunda:connectorId>get</camunda:connectorId>
-                <camunda:inputOutput>
-                  <camunda:inputParameter name="options">
-                    <camunda:map>
-                      <camunda:entry key="uri">http://example.com/\${environment.variables.businessKey}/\${environment.variables.foo}</camunda:entry>
-                      <camunda:entry key="json">\${environment.variables.json}</camunda:entry>
-                      <camunda:entry key="setting">\${environment.settings.enableDummyService}</camunda:entry>
-                    </camunda:map>
-                  </camunda:inputParameter>
-                  <camunda:outputParameter name="statusCode">\${result[0].statusCode}</camunda:outputParameter>
-                </camunda:inputOutput>
-              </camunda:connector>
-            </extensionElements>
-          </serviceTask>
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+          <process id="bp" isExecutable="true">
+            <serviceTask id="start">
+              <extensionElements>
+                <camunda:connector>
+                  <camunda:connectorId>get</camunda:connectorId>
+                  <camunda:inputOutput>
+                    <camunda:inputParameter name="options">
+                      <camunda:map>
+                        <camunda:entry key="uri">http://example.com/\${environment.variables.businessKey}/\${environment.variables.foo}</camunda:entry>
+                        <camunda:entry key="json">\${environment.variables.json}</camunda:entry>
+                        <camunda:entry key="setting">\${environment.settings.enableDummyService}</camunda:entry>
+                      </camunda:map>
+                    </camunda:inputParameter>
+                    <camunda:outputParameter name="statusCode">\${result[0].statusCode}</camunda:outputParameter>
+                  </camunda:inputOutput>
+                </camunda:connector>
+              </extensionElements>
+            </serviceTask>
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`,
       );
 
@@ -274,29 +274,29 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
-        <process id="bp" isExecutable="true" camunda:historyTimeToLive="PT10M">
-          <serviceTask id="start">
-            <extensionElements>
-              <camunda:connector>
-                <camunda:connectorId>get</camunda:connectorId>
-                <camunda:inputOutput>
-                  <camunda:inputParameter name="options">
-                    <camunda:map>
-                      <camunda:entry key="uri">http://example.com/\${environment.variables.businessKey}/\${environment.variables.foo}</camunda:entry>
-                      <camunda:entry key="json">\${environment.variables.json}</camunda:entry>
-                      <camunda:entry key="setting">\${environment.settings.enableDummyService}</camunda:entry>
-                    </camunda:map>
-                  </camunda:inputParameter>
-                  <camunda:outputParameter name="statusCode">\${result[0].statusCode}</camunda:outputParameter>
-                </camunda:inputOutput>
-              </camunda:connector>
-            </extensionElements>
-          </serviceTask>
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+          <process id="bp" isExecutable="true" camunda:historyTimeToLive="PT10M">
+            <serviceTask id="start">
+              <extensionElements>
+                <camunda:connector>
+                  <camunda:connectorId>get</camunda:connectorId>
+                  <camunda:inputOutput>
+                    <camunda:inputParameter name="options">
+                      <camunda:map>
+                        <camunda:entry key="uri">http://example.com/\${environment.variables.businessKey}/\${environment.variables.foo}</camunda:entry>
+                        <camunda:entry key="json">\${environment.variables.json}</camunda:entry>
+                        <camunda:entry key="setting">\${environment.settings.enableDummyService}</camunda:entry>
+                      </camunda:map>
+                    </camunda:inputParameter>
+                    <camunda:outputParameter name="statusCode">\${result[0].statusCode}</camunda:outputParameter>
+                  </camunda:inputOutput>
+                </camunda:connector>
+              </extensionElements>
+            </serviceTask>
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`,
       );
 

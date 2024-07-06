@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_19hstvm" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.25.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.21.0">
+  <bpmn:process id="Process_0" isExecutable="true" camunda:historyTimeToLive="P1D">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_1nwcici</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="sub">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="continued">${content.output.continuedWithMessage}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1nwcici</bpmn:incoming>
+      <bpmn:outgoing>to-is-continued</bpmn:outgoing>
+      <bpmn:startEvent id="Event_1ezzjai">
+        <bpmn:outgoing>Flow_0ntsbez</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="Flow_0ntsbez" sourceRef="Event_1ezzjai" targetRef="save-state" />
+      <bpmn:serviceTask id="save-state" name="Save state">
+        <bpmn:extensionElements>
+          <camunda:connector>
+            <camunda:connectorId>saveState</camunda:connectorId>
+          </camunda:connector>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_0ntsbez</bpmn:incoming>
+        <bpmn:outgoing>Flow_1cynmye</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:sequenceFlow id="Flow_1cynmye" sourceRef="save-state" targetRef="Gateway_0qosno0" />
+      <bpmn:eventBasedGateway id="Gateway_0qosno0">
+        <bpmn:incoming>Flow_1cynmye</bpmn:incoming>
+        <bpmn:outgoing>to-continue</bpmn:outgoing>
+        <bpmn:outgoing>to-timeout</bpmn:outgoing>
+      </bpmn:eventBasedGateway>
+      <bpmn:intermediateCatchEvent id="continue">
+        <bpmn:extensionElements>
+          <camunda:inputOutput>
+            <camunda:outputParameter name="continuedWithMessage">${true}</camunda:outputParameter>
+          </camunda:inputOutput>
+        </bpmn:extensionElements>
+        <bpmn:incoming>to-continue</bpmn:incoming>
+        <bpmn:outgoing>Flow_1898rbq</bpmn:outgoing>
+        <bpmn:messageEventDefinition id="MessageEventDefinition_13xfw8k" messageRef="Message_0" />
+      </bpmn:intermediateCatchEvent>
+      <bpmn:sequenceFlow id="to-continue" sourceRef="Gateway_0qosno0" targetRef="continue" />
+      <bpmn:intermediateCatchEvent id="timeout">
+        <bpmn:incoming>to-timeout</bpmn:incoming>
+        <bpmn:outgoing>Flow_0zxbq2e</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerEventDefinition_0db7mbh">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT10S</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:intermediateCatchEvent>
+      <bpmn:sequenceFlow id="to-timeout" sourceRef="Gateway_0qosno0" targetRef="timeout" />
+      <bpmn:sequenceFlow id="Flow_0zxbq2e" sourceRef="timeout" targetRef="Event_07zt0z3" />
+      <bpmn:endEvent id="Event_07zt0z3">
+        <bpmn:incoming>Flow_0zxbq2e</bpmn:incoming>
+        <bpmn:terminateEventDefinition id="TerminateEventDefinition_0pkzsr6" />
+      </bpmn:endEvent>
+      <bpmn:endEvent id="Event_0e6c6xr">
+        <bpmn:incoming>Flow_1898rbq</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_1898rbq" sourceRef="continue" targetRef="Event_0e6c6xr">
+        <bpmn:extensionElements />
+      </bpmn:sequenceFlow>
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="Flow_1nwcici" sourceRef="StartEvent_1" targetRef="sub" />
+    <bpmn:endEvent id="end">
+      <bpmn:incoming>to-end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="to-is-continued" sourceRef="sub" targetRef="is-continued" />
+    <bpmn:sequenceFlow id="to-end" sourceRef="enable-save-state" targetRef="end" />
+    <bpmn:exclusiveGateway id="is-continued" name="Is continued with message&#10;" default="Flow_06oy5wv">
+      <bpmn:incoming>to-is-continued</bpmn:incoming>
+      <bpmn:outgoing>to-enable-save-state</bpmn:outgoing>
+      <bpmn:outgoing>Flow_06oy5wv</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="to-enable-save-state" sourceRef="is-continued" targetRef="enable-save-state">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${environment.output.continued}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_06oy5wv" sourceRef="is-continued" targetRef="Event_0gpe6ep" />
+    <bpmn:endEvent id="Event_0gpe6ep">
+      <bpmn:incoming>Flow_06oy5wv</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerminateEventDefinition_0m6c4q0" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="enable-save-state" name="Enable save state" camunda:expression="${environment.services.enableSaveState}">
+      <bpmn:incoming>to-enable-save-state</bpmn:incoming>
+      <bpmn:outgoing>to-end</bpmn:outgoing>
+    </bpmn:serviceTask>
+  </bpmn:process>
+  <bpmn:message id="Message_0" name="ContinueMessage" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0o81492_di" bpmnElement="end">
+        <dc:Bounds x="1272" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1rs4y0y_di" bpmnElement="is-continued" isMarkerVisible="true">
+        <dc:Bounds x="1015" y="195" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1000" y="165" width="82" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0e2eo0h_di" bpmnElement="Event_0gpe6ep">
+        <dc:Bounds x="1122" y="312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0b8c9hf_di" bpmnElement="enable-save-state">
+        <dc:Bounds x="1120" y="180" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_025bkh7_di" bpmnElement="sub" isExpanded="true">
+        <dc:Bounds x="320" y="120" width="630" height="290" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1ezzjai_di" bpmnElement="Event_1ezzjai">
+        <dc:Bounds x="360" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0wws7pu_di" bpmnElement="save-state">
+        <dc:Bounds x="450" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0z27whi_di" bpmnElement="Gateway_0qosno0">
+        <dc:Bounds x="605" y="195" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_16sz97u_di" bpmnElement="continue">
+        <dc:Bounds x="712" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_12zkigo_di" bpmnElement="timeout">
+        <dc:Bounds x="712" y="312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0a9dz90_di" bpmnElement="Event_07zt0z3">
+        <dc:Bounds x="812" y="312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0e6c6xr_di" bpmnElement="Event_0e6c6xr">
+        <dc:Bounds x="812" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0ntsbez_di" bpmnElement="Flow_0ntsbez">
+        <di:waypoint x="396" y="220" />
+        <di:waypoint x="450" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1cynmye_di" bpmnElement="Flow_1cynmye">
+        <di:waypoint x="550" y="220" />
+        <di:waypoint x="605" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1pmunry_di" bpmnElement="to-continue">
+        <di:waypoint x="655" y="220" />
+        <di:waypoint x="712" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1n1bspr_di" bpmnElement="to-timeout">
+        <di:waypoint x="630" y="245" />
+        <di:waypoint x="630" y="330" />
+        <di:waypoint x="712" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0zxbq2e_di" bpmnElement="Flow_0zxbq2e">
+        <di:waypoint x="748" y="330" />
+        <di:waypoint x="812" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1898rbq_di" bpmnElement="Flow_1898rbq">
+        <di:waypoint x="748" y="220" />
+        <di:waypoint x="812" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1nwcici_di" bpmnElement="Flow_1nwcici">
+        <di:waypoint x="215" y="220" />
+        <di:waypoint x="320" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0selssr_di" bpmnElement="to-is-continued">
+        <di:waypoint x="950" y="220" />
+        <di:waypoint x="1015" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1y4iq7k_di" bpmnElement="to-end">
+        <di:waypoint x="1220" y="220" />
+        <di:waypoint x="1272" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vyy5s2_di" bpmnElement="to-enable-save-state">
+        <di:waypoint x="1065" y="220" />
+        <di:waypoint x="1120" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06oy5wv_di" bpmnElement="Flow_06oy5wv">
+        <di:waypoint x="1040" y="245" />
+        <di:waypoint x="1040" y="330" />
+        <di:waypoint x="1122" y="330" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

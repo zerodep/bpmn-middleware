@@ -14,12 +14,16 @@ export class MiddlewareEngine extends Engine {
      * @type {string}
      */
     this.token = token;
-    /** @type {import('bpmn-elements').Timer | null | void} */
+    /**
+     * Execution idle timer
+     * @type {import('bpmn-elements').Timer | null | void}
+     */
     this.idleTimer = null;
     this.engineTimers = this.environment.timers.register({ id: token });
   }
   /**
    * Closest due time when a registered timer expires
+   * Ignores idle timer
    */
   get expireAt() {
     /** @type {Date?} */
@@ -37,21 +41,26 @@ export class MiddlewareEngine extends Engine {
    */
   startIdleTimer() {
     const delay = this.environment.settings.idleTimeout ?? 120000;
-    const timers = this.engineTimers;
+    const engineTimers = this.engineTimers;
     const current = this.idleTimer;
-    if (current) this.idleTimer = timers.clearTimeout(current);
+    if (current) this.idleTimer = engineTimers.clearTimeout(current);
     if (this.state !== 'running') return;
 
-    this.idleTimer = timers.setTimeout(() => {
+    this.idleTimer = engineTimers.setTimeout(() => {
       const status = this._getCurrentStatus();
       switch (status.activityStatus) {
         case 'executing':
           break;
-        default: {
-          const expireAt = status.expireAt;
-          if (expireAt !== null && expireAt < new Date(Date.now() + delay * 2)) break;
+        case 'wait': {
           this.idleTimer = null;
           return this.stop();
+        }
+        case 'timer': {
+          if (status.expireAt > new Date(Date.now() + delay * 2)) {
+            this.idleTimer = null;
+            return this.stop();
+          }
+          break;
         }
       }
 

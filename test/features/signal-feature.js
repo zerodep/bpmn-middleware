@@ -162,17 +162,17 @@ Feature('signal activity', () => {
         apps.balance(),
         'user-and-receive-process',
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="main-process" isExecutable="true">
-          <startEvent id="start" />
-          <sequenceFlow id="to-msg" sourceRef="start" targetRef="msg" />
-          <sequenceFlow id="to-usr" sourceRef="start" targetRef="usr" />
-          <userTask id="usr" />
-          <receiveTask id="msg" />
-          <sequenceFlow id="from-msg" sourceRef="msg" targetRef="end" />
-          <sequenceFlow id="from-usr" sourceRef="usr" targetRef="end" />
-          <endEvent id="end" />
-        </process>
-      </definitions>`,
+           <process id="main-process" isExecutable="true">
+           <startEvent id="start" />
+             <sequenceFlow id="to-msg" sourceRef="start" targetRef="msg" />
+             <sequenceFlow id="to-usr" sourceRef="start" targetRef="usr" />
+             <userTask id="usr" />
+             <receiveTask id="msg" />
+             <sequenceFlow id="from-msg" sourceRef="msg" targetRef="end" />
+             <sequenceFlow id="from-usr" sourceRef="usr" targetRef="end" />
+             <endEvent id="end" />
+           </process>
+         </definitions>`,
       );
     });
 
@@ -253,5 +253,48 @@ Feature('signal activity', () => {
       expect(response.body).to.have.property('state', 'idle');
       expect(response.body).to.have.property('postponed').with.length(0);
     });
+  });
+
+  Scenario('signal with different type of payloads', () => {
+    let apps, adapter;
+    before(() => {
+      adapter = new MemoryAdapter();
+      apps = horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    let deploymentName;
+    Given('a process', () => {
+      deploymentName = 'user-task-process';
+      return createDeployment(
+        apps.balance(),
+        deploymentName,
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+           <process id="main-process" isExecutable="true">
+             <userTask id="task" />
+           </process>
+         </definitions>`,
+      );
+    });
+
+    let token, wait;
+    When('when process is started', async () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, deploymentName).wait();
+
+      const response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('run is waiting', () => {
+      return wait;
+    });
+
+    When('task is signalled with an empty buffer', () => {
+      return apps.request().post(`/rest/signal/${token}`).send({ id: 0 }).expect(200);
+    });
+
+    Then('nothing happens', () => {});
   });
 });

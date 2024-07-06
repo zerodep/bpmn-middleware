@@ -85,6 +85,7 @@ export default [
         ...globals.mocha,
         expect: 'readonly',
         beforeEachScenario: 'readonly',
+        afterEachScenario: 'readonly',
         Buffer: 'readonly',
         Feature: 'readonly',
         Scenario: 'readonly',

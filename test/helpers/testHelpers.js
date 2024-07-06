@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { createRequire } from 'node:module';
+import fs from 'node:fs';
 
 import FormData from 'form-data';
 import { extensions, extendFn, OnifySequenceFlow, OnifyTimerEventDefinition } from '@onify/flow-extensions';
@@ -23,7 +24,13 @@ const elements = {
   TimerEventDefinition: OnifyTimerEventDefinition,
 };
 
+/**
+ * Create apps with middleware options
+ * @param {number} [instances] Number of instances, defaults to 2
+ * @param {import('../../types/interfaces.js').BpmnMiddlewareOptions} [options]
+ */
 export function horizontallyScaled(instances = 2, options) {
+  /** @type {LRUCache<string, any, any>} */
   const storage = new LRUCache({ max: 1000 });
   const apps = new Array(instances).fill().map(() => getAppWithExtensions({ adapter: new MemoryAdapter(storage), ...options }));
 
@@ -49,6 +56,9 @@ export function horizontallyScaled(instances = 2, options) {
         return result;
       }, []);
     },
+    /**
+     * @param {string} token
+     */
     getRunningByToken(token) {
       return apps.reduce((result, app) => {
         const engine = app.locals.engineCache.get(token);
@@ -65,6 +75,9 @@ export function horizontallyScaled(instances = 2, options) {
   }
 }
 
+/**
+ * @param {import('../../types/interfaces.js').MiddlewareEngineOptions} options
+ */
 export function getAppWithExtensions(options = {}) {
   const app = express();
   const broker = (app.locals.broker = options.broker ?? new Broker(app));
@@ -90,6 +103,12 @@ export function getAppWithExtensions(options = {}) {
   return app;
 }
 
+/**
+ * Create deployment multi-part-form
+ * @param {import('express').Express} app
+ * @param {string} name
+ * @param {string | Buffer} source
+ */
 export async function createDeployment(app, name, source) {
   const form = new FormData();
   form.append('deployment-name', name);
@@ -101,6 +120,11 @@ export async function createDeployment(app, name, source) {
   return response;
 }
 
+/**
+ * Wait for process event
+ * @param {import('express').Express} app
+ * @param {string} nameOrToken
+ */
 export function waitForProcess(app, nameOrToken) {
   const broker = app.locals.broker;
   return {
@@ -110,6 +134,7 @@ export function waitForProcess(app, nameOrToken) {
     wait,
     event,
     idle,
+    timer,
   };
 
   function end() {
@@ -120,9 +145,22 @@ export function waitForProcess(app, nameOrToken) {
     return event('engine.stop');
   }
 
+  /**
+   * @param {string} activityId
+   */
   function wait(activityId) {
     if (!activityId) return event('activity.wait');
     return event('activity.wait', (msg) => {
+      return msg.content.id === activityId;
+    });
+  }
+
+  /**
+   * @param {string} activityId
+   */
+  function timer(activityId) {
+    if (!activityId) return event('activity.timer');
+    return event('activity.timer', (msg) => {
       return msg.content.id === activityId;
     });
   }
@@ -136,6 +174,10 @@ export function waitForProcess(app, nameOrToken) {
     }
   }
 
+  /**
+   * @param {string} eventRoutingKey
+   * @param {CallableFunction} [expectFn]
+   */
   function event(eventRoutingKey, expectFn) {
     return new Promise((resolve, reject) => {
       const rnd = randomInt(10000);
@@ -202,6 +244,10 @@ export function waitForProcess(app, nameOrToken) {
     });
   }
 
+  /**
+   * @param {import('bpmn-elements').ElementBrokerMessage} msg
+   * @param {CallableFunction} [expectFn]
+   */
   function filterByNameOrToken(msg, expectFn) {
     const matchToken = msg.properties.token === nameOrToken || msg.properties.deployment === nameOrToken;
     if (matchToken && expectFn && !expectFn(msg)) return false;
@@ -211,10 +257,12 @@ export function waitForProcess(app, nameOrToken) {
 
 export function fakeTimers() {
   let counter = 0;
+  /** @type {any[]} */
   const registered = [];
 
   return new bpmnElements.Timers({
     registered,
+    // @ts-ignore
     setTimeout: function fakeSetTimeout() {
       const ref = counter++;
       registered.push(ref);
@@ -227,10 +275,24 @@ export function fakeTimers() {
   });
 }
 
-export function errorHandler(err, req, res, next) {
+/**
+ * Express error handler middleware
+ * @param {Error} err
+ * @param {import('express').Request} _req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+export function errorHandler(err, _req, res, next) {
   if (!(err instanceof Error)) return next();
   // eslint-disable-next-line no-console
   if (process.env.TEST_ERR) console.log({ err });
   if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
   res.status(502).send({ message: err.message });
+}
+
+/**
+ * @param {string} name
+ */
+export function getResource(name) {
+  return fs.readFileSync('./test/resources/' + name);
 }

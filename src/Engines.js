@@ -1,8 +1,14 @@
 import { LRUCache } from 'lru-cache';
 
 import { MiddlewareEngine } from './MiddlewareEngine.js';
-import { STORAGE_TYPE_STATE } from './constants.js';
 import { HttpError } from './Errors.js';
+import {
+  STORAGE_TYPE_STATE,
+  SAVE_STATE_ROUTINGKEY,
+  ENABLE_SAVE_STATE_ROUTINGKEY,
+  DISABLE_SAVE_STATE_ROUTINGKEY,
+  ERR_STORAGE_KEY_NOT_FOUND,
+} from './constants.js';
 
 /**
  * Engines class
@@ -10,10 +16,11 @@ import { HttpError } from './Errors.js';
  */
 export function Engines(options) {
   this.broker = options.broker;
-  this.engineOptions = options.engineOptions;
+  this.engineOptions = options.engineOptions || {};
   this.idleTimeout = options.idleTimeout;
   this.adapter = options.adapter;
   this.engineCache = options.engineCache || new LRUCache({ max: 1000 });
+  this.autosaveEngineState = options.autosaveEngineState;
 
   // @ts-ignore
   this.__onStateMessage = this._onStateMessage.bind(this);
@@ -64,8 +71,10 @@ Engines.prototype.resume = async function resume(token, listener) {
       throw new HttpError(`Token ${token} not found`, 404);
     }
 
-    if (state?.state === 'idle') {
+    if (state.state === 'idle') {
       throw new HttpError(`Token ${token} has already completed`, 400);
+    } else if (state.state === 'error') {
+      throw new HttpError(`Token ${token} has failed`, 400);
     }
 
     // @ts-ignore
@@ -111,7 +120,12 @@ Engines.prototype.resume = async function resume(token, listener) {
 Engines.prototype.signalActivity = async function signalActivity(token, listener, body) {
   const engine = await this.resume(token, listener);
 
-  engine.execution.signal(body);
+  await new Promise((resolve) => {
+    process.nextTick(() => {
+      engine.execution.signal(body);
+      resolve();
+    });
+  });
 
   return engine;
 };
@@ -157,6 +171,7 @@ Engines.prototype.getPostponed = async function getPostponed(token, listener) {
     return {
       token,
       ...api.content,
+      // @ts-ignore
       executing: api.getExecuting()?.map((e) => ({ ...e.content })),
     };
   });
@@ -259,6 +274,7 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
     source,
     listener,
     settings: {
+      autosaveEngineState: this.autosaveEngineState,
       ...this.engineOptions?.settings,
       idleTimeout,
       ...settings,
@@ -267,6 +283,9 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
       ...this.engineOptions?.variables,
       ...variables,
       token,
+    },
+    services: {
+      ...this.engineOptions?.services,
     },
     token,
     sequenceNumber: 0,
@@ -314,6 +333,64 @@ Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
 };
 
 /**
+ * Create engine state
+ * @param {MiddlewareEngine} engine
+ */
+Engines.prototype.createEngineState = function createEngineState(engine) {
+  const { token, expireAt, sequenceNumber, caller } = engine.options;
+  /** @type {import('types').MiddlewareEngineState} */
+  const state = {
+    token,
+    name: engine.name,
+    expireAt,
+    sequenceNumber,
+    ...(caller && { caller }),
+  };
+
+  /** @type {import('types').postponed[]} */
+  const postponed = (state.postponed = []);
+  for (const elmApi of engine.execution.getPostponed()) {
+    postponed.push({ id: elmApi.id, type: elmApi.type });
+
+    if (elmApi.content.isSubProcess) {
+      for (const subElmApi of elmApi.getPostponed()) {
+        if (subElmApi.id === elmApi.id) continue;
+        postponed.push({ id: subElmApi.id, type: subElmApi.type });
+      }
+    }
+  }
+
+  if (!engine.stopped) {
+    state.activityStatus = engine.activityStatus;
+    state.state = engine.state;
+  }
+
+  state.engine = engine.execution.getState();
+
+  return state;
+};
+
+/**
+ * Save engine state
+ * @param {MiddlewareEngine} engine
+ * @param {boolean} [ifExists] save engine state if existing state
+ */
+Engines.prototype.saveEngineState = async function saveEngineState(engine, ifExists) {
+  const state = this.createEngineState(engine);
+  if (ifExists) {
+    try {
+      await this.adapter.update(STORAGE_TYPE_STATE, state.token, state);
+    } catch (err) {
+      // @ts-ignore
+      if (err.code === ERR_STORAGE_KEY_NOT_FOUND) return;
+      throw err;
+    }
+  } else {
+    await this.adapter.upsert(STORAGE_TYPE_STATE, state.token, state);
+  }
+};
+
+/**
  * Internal setup engine listeners
  * @param {MiddlewareEngine} engine
  */
@@ -323,6 +400,10 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   const engineOptions = engine.options;
 
   engineOptions.sequenceNumber = engineOptions.sequenceNumber ?? 0;
+
+  engine.environment.addService('saveState', saveState);
+  engine.environment.addService('enableSaveState', enableSaveState);
+  engine.environment.addService('disableSaveState', disableSaveState);
 
   if (parentBroker) {
     parentBroker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
@@ -353,6 +434,10 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   );
 
   engineBroker.assertExchange('state', 'topic', { durable: false, autoDelete: false });
+
+  engineBroker.bindExchange('event', 'state', SAVE_STATE_ROUTINGKEY);
+  engineBroker.bindExchange('event', 'state', ENABLE_SAVE_STATE_ROUTINGKEY);
+  engineBroker.bindExchange('event', 'state', DISABLE_SAVE_STATE_ROUTINGKEY);
   engineBroker.bindExchange('event', 'state', 'activity.wait');
   engineBroker.bindExchange('event', 'state', 'activity.call');
   engineBroker.bindExchange('event', 'state', 'activity.timer');
@@ -380,9 +465,28 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
   if (message.content.isRecovered) return message.ack();
 
   const engineOptions = engine.options;
+  /** @type {boolean} */
+  const autosaveEngineState = engine.environment.settings.autosaveEngineState;
+
+  let saveState = autosaveEngineState;
+  let saveStateIfExists = false;
 
   try {
     switch (routingKey) {
+      case SAVE_STATE_ROUTINGKEY: {
+        saveState = true;
+        break;
+      }
+      case ENABLE_SAVE_STATE_ROUTINGKEY: {
+        engine.environment.settings.autosaveEngineState = true;
+        saveState = false;
+        break;
+      }
+      case DISABLE_SAVE_STATE_ROUTINGKEY: {
+        engine.environment.settings.autosaveEngineState = false;
+        saveState = false;
+        break;
+      }
       case 'engine.end':
         this._teardownEngine(engine);
         engineOptions.expireAt = undefined;
@@ -392,11 +496,14 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
         this._teardownEngine(engine);
         engineOptions.listener.emit(message.properties.type, engine);
         break;
-      case 'engine.error':
+      case 'engine.error': {
         this._teardownEngine(engine);
         engineOptions.expireAt = undefined;
         engineOptions.listener.emit('error', message.content, engine);
+        saveState = true;
+        saveStateIfExists = true;
         break;
+      }
       case 'activity.timer': {
         if (message.content.expireAt) {
           const currentExpireAt = (engineOptions.expireAt = engine.expireAt);
@@ -410,7 +517,9 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
         break;
     }
 
-    await this._saveEngineState(engine);
+    if (saveState) {
+      await this.saveEngineState(engine, saveStateIfExists);
+    }
   } catch (err) {
     this._teardownEngine(engine);
     engine.stop();
@@ -418,37 +527,6 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
   }
 
   message.ack();
-};
-
-/**
- * Internal save engine state
- * @param {MiddlewareEngine} engine
- */
-Engines.prototype._saveEngineState = async function saveEngineState(engine) {
-  const { token, expireAt, sequenceNumber, caller } = engine.options;
-  /** @type {import('types').MiddlewareEngineState} */
-  const state = {
-    token,
-    name: engine.name,
-    expireAt,
-    sequenceNumber,
-    ...(caller && { caller }),
-  };
-
-  /** @type {import('types').postponed[]} */
-  const postponed = (state.postponed = []);
-  for (const elm of engine.execution.getPostponed()) {
-    postponed.push({ id: elm.id, type: elm.type });
-  }
-
-  if (!engine.stopped) {
-    state.activityStatus = engine.activityStatus;
-    state.state = engine.state;
-  }
-
-  state.engine = engine.execution.getState();
-
-  await this.adapter.upsert(STORAGE_TYPE_STATE, token, state);
 };
 
 /**
@@ -486,3 +564,51 @@ Engines.prototype._getActivityApi = function getActivityApi(engine, body) {
   // @ts-ignore
   return activity.getApi();
 };
+
+/**
+ * Save state service function
+ * @this import('bpmn-elements').Activity
+ * @param {any[]} args
+ */
+function saveState(...args) {
+  const callback = args.pop();
+  const msg = args.pop();
+
+  if (!msg?.content?.isRecovered) {
+    this.broker.publish('event', SAVE_STATE_ROUTINGKEY, {});
+  }
+
+  callback(null, true);
+}
+
+/**
+ * Enable auto-save state service function
+ * @this import('bpmn-elements').Activity
+ * @param {any[]} args
+ */
+function enableSaveState(...args) {
+  const callback = args.pop();
+  const msg = args.pop();
+
+  if (!msg?.content?.isRecovered) {
+    this.broker.publish('event', ENABLE_SAVE_STATE_ROUTINGKEY, {});
+  }
+
+  callback(null, true);
+}
+
+/**
+ * Enable auto-save state service function
+ * @this import('bpmn-elements').Activity
+ * @param {any[]} args
+ */
+function disableSaveState(...args) {
+  const callback = args.pop();
+  const msg = args.pop();
+
+  if (!msg?.content?.isRecovered) {
+    this.broker.publish('event', DISABLE_SAVE_STATE_ROUTINGKEY, {});
+  }
+
+  callback(null, true);
+}

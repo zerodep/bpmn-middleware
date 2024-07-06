@@ -33,17 +33,17 @@ Feature('idle engine', () => {
         app2,
         'idle-engine',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10M</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10M</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`,
       );
     });
 

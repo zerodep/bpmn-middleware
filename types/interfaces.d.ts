@@ -10,7 +10,7 @@ export enum StorageType {
 }
 
 export interface BpmnMiddlewareOptions {
-  adapter: IStorageAdapter;
+  adapter?: IStorageAdapter;
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;
   /** Executing engines */
@@ -19,6 +19,8 @@ export interface BpmnMiddlewareOptions {
   broker?: Broker;
   /** Engine execution timeout before considered idle, defaults to 120000ms */
   idleTimeout?: number;
+  /** Autosave engine state during execution */
+  autosaveEngineState?: boolean;
 }
 
 export interface MiddlewareEngineOptions extends BpmnEngineOptions {
@@ -39,6 +41,7 @@ export interface StorageQuery {
 
 export interface IStorageAdapter {
   upsert<T>(type: string | StorageType, key: string, value: T, options?: any): Promise<any>;
+  update<T>(type: string | StorageType, key: string, value: T, options?: any): Promise<any>;
   fetch<T>(type: string | StorageType, key: string, options?: any): Promise<T>;
   delete(type: string | StorageType, key: string): Promise<any>;
   query<T>(type: string | StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[]; [x: string]: any }>;

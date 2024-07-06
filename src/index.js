@@ -9,7 +9,7 @@ import { STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE, DEFAULT
 import { MulterAdapterStorage } from './MulterAdapterStorage.js';
 import { Engines } from './Engines.js';
 import { MemoryAdapter } from './MemoryAdapter.js';
-import { HttpError } from './Errors.js';
+import { HttpError, StorageError } from './Errors.js';
 import { MiddlewareEngine } from './MiddlewareEngine.js';
 import { fromActivityApi } from './Caller.js';
 
@@ -18,7 +18,7 @@ const nodeRequire = createRequire(fileURLToPath(import.meta.url));
 const packageInfo = nodeRequire(join(process.cwd(), 'package.json'));
 const kInitilialized = Symbol.for('initialized');
 
-export { Engines, MemoryAdapter, HttpError, MiddlewareEngine };
+export { Engines, MemoryAdapter, HttpError, StorageError, MiddlewareEngine };
 export * from './constants.js';
 
 const snakeReplacePattern = /\W/g;
@@ -31,10 +31,12 @@ export function bpmnEngineMiddleware(options) {
   const adapter = options?.adapter || new MemoryAdapter();
   const engines = new Engines({
     adapter,
-    engineOptions: { ...options?.engineOptions },
-    engineCache: options?.engineCache,
-    broker: options?.broker,
-    idleTimeout: options?.idleTimeout ?? DEFAULT_IDLE_TIMER,
+    idleTimeout: DEFAULT_IDLE_TIMER,
+    autosaveEngineState: true,
+    ...options,
+    // engineOptions: { ...options?.engineOptions },
+    // engineCache: options?.engineCache,
+    // broker: options?.broker,
   });
 
   const storage = new MulterAdapterStorage(adapter);
@@ -120,14 +122,6 @@ BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
   app.on('bpmn/activity.call.cancel', (callActivityApi) => this._cancelProcessByCallActivity(callActivityApi));
   return next();
 };
-
-/**
- * BPMN middleware locals
- * @typedef {Object} BpmnMiddlewareLocals
- * @property {Engines} engines - Engine factory
- * @property {import('types').IStorageAdapter} adapter - Storage adapter
- * @property {BpmnPrefixListener} listener - Bpmn engine listener
- */
 
 /**
  * Add middleware response locals
@@ -540,7 +534,7 @@ BpmnPrefixListener.prototype.emit = function emitBpmnEvent(eventName, ...args) {
 };
 
 /**
- *
+ * Replace non-word characters with underscore
  * @param  {...string} args
  */
 function slugify(...args) {
@@ -550,6 +544,14 @@ function slugify(...args) {
   }
   return slugs.join('_');
 }
+
+/**
+ * BPMN middleware locals
+ * @typedef {Object} BpmnMiddlewareLocals
+ * @property {Engines} engines - Engine factory
+ * @property {import('types').IStorageAdapter} adapter - Storage adapter
+ * @property {BpmnPrefixListener} listener - Bpmn engine listener
+ */
 
 /**
  * Create deployment result
