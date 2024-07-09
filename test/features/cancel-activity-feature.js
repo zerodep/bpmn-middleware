@@ -24,7 +24,7 @@ Feature('cancel activity', () => {
           </multiInstanceLoopCharacteristics>
         </userTask>
       </process>
-    </definitions>`,
+    </definitions>`
       );
     });
 
@@ -40,7 +40,7 @@ Feature('cancel activity', () => {
           </timerEventDefinition>
         </startEvent>
       </process>
-    </definitions>`,
+    </definitions>`
       );
     });
 

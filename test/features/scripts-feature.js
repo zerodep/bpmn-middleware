@@ -60,7 +60,7 @@ Feature('scripts', () => {
             <sequenceFlow id="to-end" sourceRef="service-task" targetRef="end" />
             <endEvent id="end" />
           </process>
-        </definitions>`,
+        </definitions>`
       );
     });
 

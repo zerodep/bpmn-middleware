@@ -1,6 +1,7 @@
 declare module 'bpmn-middleware' {
 	import type { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus, Engine } from 'bpmn-engine';
 	import type { ActivityStatus, ElementMessageContent } from 'bpmn-elements';
+	import type { Timer as ContextTimer } from 'moddle-context-serializer';
 	import type { LRUCache } from 'lru-cache';
 	import type { Broker } from 'smqp';
 	/**
@@ -86,6 +87,16 @@ declare module 'bpmn-middleware' {
 		getScript(req: import("express").Request<{
 			deploymentName: string;
 		}>, res: import("express").Response<string, BpmnMiddlewareLocals>, next: import("express").NextFunction): Promise<import("express").Response<string, BpmnMiddlewareLocals>>;
+		/**
+		 * Start deployment
+		 * */
+		getDeploymentTimers(req: import("express").Request<{
+			deploymentName: string;
+		}>, res: import("express").Response<{
+			timers: ParsedTimerResult[];
+		}>, next: import("express").NextFunction): Promise<import("express").Response<{
+			timers: ParsedTimerResult[];
+		}, Record<string, any>>>;
 		/**
 		 * Get running engines
 		 * */
@@ -318,6 +329,14 @@ declare module 'bpmn-middleware' {
 	 */
 	executionId?: string;
 	[x: string]: any;
+  }
+
+  interface ParsedTimerResult extends ContextTimer {
+	success: boolean;
+	expireAt?: Date;
+	delay?: Number;
+	repeat?: Number;
+	message?: string;
   }
 	export const STORAGE_TYPE_DEPLOYMENT: "deployment";
 	export const STORAGE_TYPE_STATE: "state";

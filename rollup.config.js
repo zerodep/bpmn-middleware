@@ -9,21 +9,8 @@ const { module, main, dependencies, peerDependencies } = nodeRequire('./package.
 const external = new Set(
   ['node:module', 'node:url', 'node:vm', 'node:events', 'node:crypto', 'node:path', 'node:url']
     .concat(Object.keys(dependencies))
-    .concat(Object.keys(peerDependencies)),
+    .concat(Object.keys(peerDependencies))
 );
-
-// export default {
-//   input: './src/index.js',
-//   plugins: [commonjs({ sourceMap: false })],
-//   external: ['bpmn-engine', 'express', 'lru-cache', 'multer', 'node:crypto', 'node:fs', 'node:module', 'node:path'],
-//   output: [
-//     {
-//       file: 'dist/main.cjs',
-//       format: 'cjs',
-//       exports: 'named',
-//     },
-//   ],
-// };
 
 export default {
   input: module,

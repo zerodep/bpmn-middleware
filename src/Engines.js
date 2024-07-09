@@ -171,7 +171,6 @@ Engines.prototype.getPostponed = async function getPostponed(token, listener) {
     return {
       token,
       ...api.content,
-      // @ts-ignore
       executing: api.getExecuting()?.map((e) => ({ ...e.content })),
     };
   });
@@ -417,7 +416,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
           token: engineOptions.token,
           deployment: engine.name,
         },
-      },
+      }
     );
   }
 
@@ -430,7 +429,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
       else if (message.content.isRecovered) return;
       engineOptions.sequenceNumber++;
     },
-    { noAck: true, consumerTag: 'sequence-listener' },
+    { noAck: true, consumerTag: 'sequence-listener' }
   );
 
   engineBroker.assertExchange('state', 'topic', { durable: false, autoDelete: false });

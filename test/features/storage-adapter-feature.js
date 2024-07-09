@@ -19,7 +19,7 @@ class StorageAdapter {
     return new Promise((resolve) =>
       process.nextTick(() => {
         resolve(this[type].set(key, JSON.stringify(data)));
-      }),
+      })
     );
   }
   deleteByKey(/* type, key */) {
@@ -30,7 +30,7 @@ class StorageAdapter {
       process.nextTick(() => {
         const value = this[type].get(key);
         resolve(value && JSON.parse(value));
-      }),
+      })
     );
   }
   query(/* type, qs */) {
@@ -67,7 +67,7 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -182,7 +182,7 @@ Feature('storage adapter', () => {
         <process id="bp" isExecutable="true">
           <startEvent id="start" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -230,7 +230,7 @@ Feature('storage adapter', () => {
           <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -353,7 +353,7 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -478,7 +478,7 @@ Feature('storage adapter', () => {
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -534,7 +534,7 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -610,7 +610,7 @@ Feature('storage adapter', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -678,7 +678,7 @@ Feature('storage adapter', () => {
         <process id="bp" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -724,7 +724,7 @@ Feature('storage adapter', () => {
           <userTask id="task" />
         </process>
       </definitions>`,
-        `${deploymentName}.bpmn`,
+        `${deploymentName}.bpmn`
       );
 
       form.append(`${deploymentName}.json`, Buffer.from('{"foo":"bar"}'), `${deploymentName}.json`);
@@ -786,7 +786,7 @@ Feature('storage adapter', () => {
           <userTask id="task" />
         </process>
       </definitions>`,
-        `${deploymentName}.bpmn`,
+        `${deploymentName}.bpmn`
       );
 
       form.append(`${deploymentName}.json`, Buffer.from('{"foo":"bar"}'), `${deploymentName}.json`);

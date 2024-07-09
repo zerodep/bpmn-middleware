@@ -34,9 +34,6 @@ export function bpmnEngineMiddleware(options) {
     idleTimeout: DEFAULT_IDLE_TIMER,
     autosaveEngineState: true,
     ...options,
-    // engineOptions: { ...options?.engineOptions },
-    // engineCache: options?.engineCache,
-    // broker: options?.broker,
   });
 
   const storage = new MulterAdapterStorage(adapter);
@@ -56,6 +53,7 @@ export function bpmnEngineMiddleware(options) {
   router.post('(*)?/deployment/create', multer({ storage }).any(), middleware.create.bind(middleware));
   router.post('(*)?/process-definition/:deploymentName/start', json(), middleware._addEngineLocals, middleware.start.bind(middleware));
   router.get('(*)?/script/:deploymentName', middleware._addEngineLocals, middleware.getScript.bind(middleware));
+  router.get('(*)?/timers/:deploymentName', middleware.getDeploymentTimers.bind(middleware));
   router.get('(*)?/running', middleware.getRunning.bind(middleware));
   router.get('(*)?/status/:token', middleware.getStatusByToken.bind(middleware));
   router.get('(*)?/status/:token/:activityId', middleware._addEngineLocals, middleware.getActivityStatus.bind(middleware));
@@ -216,7 +214,7 @@ BpmnEngineMiddleware.prototype.getScript = async function getScript(req, res, ne
     const deployment = await this._getDeploymentByName(deploymentName);
     const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
 
-    const engine = new MiddlewareEngine(deploymentName, { ...this.engineOptions, source: deploymentSource.content });
+    const engine = this.engines.createEngine({ name: deploymentName, source: deploymentSource.content });
     const [definition] = await engine.getDefinitions();
 
     let payload = `// ${deploymentName} scripts `;
@@ -231,6 +229,57 @@ export function ${slugify(deploymentName, script.name)}(excutionContext, next) {
 
     res.set('content-type', 'text/javascript');
     return res.send(payload);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Start deployment
+ * @param {import('express').Request<{deploymentName:string}>} req
+ * @param {import('express').Response<{timers:import('types').ParsedTimerResult[]}>} res
+ * @param {import('express').NextFunction} next
+ */
+BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymentTimers(req, res, next) {
+  try {
+    const deploymentName = req.params.deploymentName;
+    const deployment = await this._getDeploymentByName(deploymentName);
+    const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
+
+    const engine = this.engines.createEngine({ name: deploymentName, source: deploymentSource.content });
+    const [definition] = await engine.getDefinitions();
+
+    const contextTimers = definition.context.definitionContext.getTimers();
+    /** @type {typeof import('bpmn-elements').TimerEventDefinition} */
+    const TimerEventDefinition = engine.options.elements.TimerEventDefinition;
+
+    /** @type {import('types').ParsedTimerResult[]} */
+    const result = [];
+
+    for (const timer of contextTimers) {
+      const parsedTimer = { ...timer, success: true };
+      result.push(parsedTimer);
+
+      const element =
+        timer.parent.type === 'bpmn:Process' ? definition.getProcessById(timer.parent.id) : definition.getActivityById(timer.parent.id);
+
+      const { timerType, value } = timer.timer;
+
+      try {
+        // @ts-ignore
+        const ted = new TimerEventDefinition(element, { [timerType]: value });
+
+        // @ts-ignore
+        const parsed = ted.parse(timerType, value);
+        Object.assign(parsedTimer, parsed);
+      } catch (/** @type {any} */ err) {
+        parsedTimer.success = false;
+        // @ts-ignore
+        parsedTimer.message = err.message;
+      }
+    }
+
+    return res.send({ timers: result });
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,6 @@
 import { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus } from 'bpmn-engine';
-import { ActivityStatus, ElementMessageContent } from 'bpmn-elements';
+import { ActivityStatus, ElementMessageContent, TimerEventDefinition } from 'bpmn-elements';
+import { Timer as ContextTimer } from 'moddle-context-serializer';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
 
@@ -101,4 +102,12 @@ export interface SignalBody {
    */
   executionId?: string;
   [x: string]: any;
+}
+
+export interface ParsedTimerResult extends ContextTimer {
+  success: boolean;
+  expireAt?: Date;
+  delay?: Number;
+  repeat?: Number;
+  message?: string;
 }

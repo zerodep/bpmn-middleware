@@ -42,7 +42,7 @@ const rules = {
   'no-undef-init': 2,
   'no-undef': 2,
   'no-underscore-dangle': 0,
-  'no-unused-vars': 0,
+  'no-unused-vars': 2,
   'no-unused-expressions': 2,
   'no-use-before-define': 0,
   'no-var': 2,

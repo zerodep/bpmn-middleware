@@ -68,7 +68,7 @@
     "texample": "^0.0.5"
   },
   "dependencies": {
-    "lru-cache": "^10.0.0",
+    "lru-cache": "^11.0.0",
     "multer": "^1.4.5-lts.1"
   },
   "peerDependencies": {

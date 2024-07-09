@@ -43,7 +43,7 @@ Feature('idle engine', () => {
               </timerEventDefinition>
             </boundaryEvent>
           </process>
-        </definitions>`,
+        </definitions>`
       );
     });
 
@@ -149,7 +149,7 @@ Feature('idle engine', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -213,7 +213,7 @@ Feature('idle engine', () => {
         <process id="bp" isExecutable="true">
           <serviceTask id="task" implementation="\${environment.services.get}" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -293,7 +293,7 @@ Feature('idle engine', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 

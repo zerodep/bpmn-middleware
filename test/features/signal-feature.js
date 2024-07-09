@@ -36,7 +36,7 @@ Feature('signal activity', () => {
           <endEvent id="end" />
         </process>
         <signal id="Signal_0" name="One and only signal" />
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -107,7 +107,7 @@ Feature('signal activity', () => {
         </process>
         <message id="Message_0" name="First message" />
         <message id="Message_1" name="Second message" />
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -172,7 +172,7 @@ Feature('signal activity', () => {
              <sequenceFlow id="from-usr" sourceRef="usr" targetRef="end" />
              <endEvent id="end" />
            </process>
-         </definitions>`,
+         </definitions>`
       );
     });
 
@@ -273,7 +273,7 @@ Feature('signal activity', () => {
            <process id="main-process" isExecutable="true">
              <userTask id="task" />
            </process>
-         </definitions>`,
+         </definitions>`
       );
     });
 

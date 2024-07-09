@@ -1,5 +1,4 @@
 import request from 'supertest';
-import { LRUCache } from 'lru-cache';
 
 import * as testHelpers from '../helpers/testHelpers.js';
 import { MemoryAdapter } from '../../src/index.js';
@@ -351,7 +350,7 @@ Feature('save state', () => {
               <script>next(new Error('Expected'));</script>
             </scriptTask>
           </process>
-        </definitions>`,
+        </definitions>`
       );
     });
 
@@ -414,7 +413,7 @@ Feature('save state', () => {
               <script>next(new Error('Expected'));</script>
             </scriptTask>
           </process>
-        </definitions>`,
+        </definitions>`
       );
     });
 

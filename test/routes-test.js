@@ -18,13 +18,12 @@ describe('routes', () => {
     return createDeployment(
       apps.balance(),
       'test-process',
-      `
-      <definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+      `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
         <process id="bp1" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
     );
   });
   after(() => apps.stop());
@@ -58,7 +57,7 @@ describe('routes', () => {
           <task id="task" />
         </process>
       </definitions>`,
-        `${name}.bpmn`,
+        `${name}.bpmn`
       );
 
       const response = await apps
@@ -87,7 +86,7 @@ describe('routes', () => {
           <task id="task" />
         </process>
       </definitions>`,
-        `${name}.bpmn`,
+        `${name}.bpmn`
       );
 
       return apps
@@ -147,7 +146,7 @@ describe('routes', () => {
         <process id="bp1" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
 
       return request(app).post('/rest/process-definition/test-process/start').expect(502).expect({ message: 'DB file error' });
@@ -325,6 +324,32 @@ describe('routes', () => {
   describe('DELETE (*)?/internal/stop/:token', () => {
     it('responds', () => {
       return request(apps.balance()).delete('/rest/internal/stop/token').expect(204);
+    });
+  });
+
+  describe('GET (*)?/timers/:deploymentName', () => {
+    it('returns not found if deployment is not found', () => {
+      return apps.request().get('/rest/timers/not-deployed').expect(404);
+    });
+
+    it('returns empty if no timers', async () => {
+      const name = 'no-timers';
+
+      await createDeployment(
+        apps.balance(),
+        name,
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="called-deployment" isExecutable="true">
+            <task id="task" />
+          </process>
+        </definitions>`
+      );
+
+      return apps
+        .request()
+        .get('/rest/timers/' + name)
+        .expect(200)
+        .expect({ timers: [] });
     });
   });
 });

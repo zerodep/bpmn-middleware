@@ -25,6 +25,7 @@ Returns Expressjs Router with extra properties:
 - [`POST (*)?/deployment/create`](#post-deploymentcreate)
 - [`POST (*)?/process-definition/:deploymentName/start`](#post-process-definitiondeploymentnamestart)
 - [`GET (*)?/script/:deploymentName`](#get-scriptdeploymentname)
+- [`GET (*)?/timers/:deploymentName`](#get-timersdeploymentname)
 - [`GET (*)?/running`](#get-running)
 - [`GET (*)?/status/:token`](#get-statustoken)
 - [`GET (*)?/status/:token/:activityId`](#get-statustokenactivityid)
@@ -97,6 +98,26 @@ Response:
 
 - `content-type: text/javascript`
 - `body`: module script, exported javascript functions where function name non-word characters are replaced with `_`
+
+### `GET (*)?/timers/:deploymentName`
+
+Get all declared timers for deployment
+
+Response:
+
+- `timers`: list of timers
+  - `name`: timer name
+  - `parent`: timer parent element
+    - `id`: element id
+    - `type`: element type
+  - `timer`: timer element
+    - `timerType`: timer type
+    - `value`: timer string value
+  - `success`: boolean, true if successfully parsed
+  - `expireAt`: closest expire at datetime
+  - `delay`: number of milliseconds delay
+  - `repeat`: optional repeat number
+  - `message`: error message if not successfully parsed
 
 ### `GET (*)?/running`
 

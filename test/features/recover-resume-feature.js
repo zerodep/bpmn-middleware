@@ -29,7 +29,7 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -129,7 +129,7 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -211,7 +211,7 @@ Feature('recover resume', () => {
         <process id="bp1" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -229,7 +229,7 @@ Feature('recover resume', () => {
             </timerEventDefinition>
           </boundaryEvent>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -318,7 +318,7 @@ Feature('recover resume', () => {
               </timerEventDefinition>
             </intermediateThrowEvent>
           </process>
-        </definitions>`,
+        </definitions>`
       );
     });
 
@@ -430,7 +430,7 @@ Feature('recover resume', () => {
           <process id="bp1" isExecutable="true">
             <userTask id="task1" />
           </process>
-        </definitions>`,
+        </definitions>`
       );
     });
 

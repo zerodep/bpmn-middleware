@@ -47,7 +47,7 @@ export function horizontallyScaled(instances = 2, options) {
       return Promise.all(
         apps.map((app) => {
           return request(app).delete('/rest/internal/stop').expect(204);
-        }),
+        })
       );
     },
     getRunning() {
@@ -193,7 +193,7 @@ export function waitForProcess(app, nameOrToken) {
             resolve(msg);
           }
         },
-        { noAck: true, consumerTag: waitConsumerTag },
+        { noAck: true, consumerTag: waitConsumerTag }
       );
 
       broker.subscribeTmp(
@@ -206,7 +206,7 @@ export function waitForProcess(app, nameOrToken) {
             reject(msg.content);
           }
         },
-        { noAck: true, consumerTag: errConsumerTag },
+        { noAck: true, consumerTag: errConsumerTag }
       );
     });
   }
@@ -226,7 +226,7 @@ export function waitForProcess(app, nameOrToken) {
             reject(new Error('Expected error but ended'));
           }
         },
-        { noAck: true, consumerTag: waitConsumerTag },
+        { noAck: true, consumerTag: waitConsumerTag }
       );
 
       broker.subscribeTmp(
@@ -239,7 +239,7 @@ export function waitForProcess(app, nameOrToken) {
             resolve(msg.content);
           }
         },
-        { noAck: true, consumerTag: errConsumerTag },
+        { noAck: true, consumerTag: errConsumerTag }
       );
     });
   }

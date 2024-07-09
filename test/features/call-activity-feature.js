@@ -31,7 +31,7 @@ Feature('call activity', () => {
         <process id="called-process" isExecutable="false">
           <task id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -62,7 +62,7 @@ Feature('call activity', () => {
         <process id="called-process" isExecutable="false">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -166,7 +166,7 @@ Feature('call activity', () => {
           <endEvent id="end" />
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
 
       await createDeployment(
@@ -176,7 +176,7 @@ Feature('call activity', () => {
         <process id="called-deployment" isExecutable="true">
           <task id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -214,7 +214,7 @@ Feature('call activity', () => {
             </extensionElements>
           </userTask>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -293,7 +293,7 @@ Feature('call activity', () => {
             </script>
           </scriptTask>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -342,7 +342,7 @@ Feature('call activity', () => {
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
 
       await createDeployment(
@@ -352,7 +352,7 @@ Feature('call activity', () => {
         <process id="called-deployment" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -444,7 +444,7 @@ Feature('call activity', () => {
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
 
       await createDeployment(
@@ -454,7 +454,7 @@ Feature('call activity', () => {
         <process id="called-deployment" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -598,7 +598,7 @@ Feature('call activity', () => {
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
           <endEvent id="end" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
 
       await createDeployment(
@@ -608,7 +608,7 @@ Feature('call activity', () => {
         <process id="called-deployment" isExecutable="true">
           <userTask id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -689,7 +689,7 @@ Feature('call activity', () => {
           <endEvent id="end" />
           <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
 
       await createDeployment(
@@ -699,7 +699,7 @@ Feature('call activity', () => {
         <process id="called-deployment" isExecutable="true">
           <task id="task" />
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
@@ -736,7 +736,7 @@ Feature('call activity', () => {
             </extensionElements>
           </userTask>
         </process>
-      </definitions>`,
+      </definitions>`
       );
     });
 
