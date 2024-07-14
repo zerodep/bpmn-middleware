@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
+import path from 'node:path';
 
 import FormData from 'form-data';
 import { extensions, extendFn, OnifySequenceFlow, OnifyTimerEventDefinition } from '@onify/flow-extensions';
@@ -103,17 +104,31 @@ export function getAppWithExtensions(options = {}) {
   return app;
 }
 
+export async function getExampleApp() {
+  const { app } = await import('../../example/app.js');
+  return app;
+}
+
 /**
  * Create deployment multi-part-form
  * @param {import('express').Express} app
  * @param {string} name
  * @param {string | Buffer} source
+ * @param {string[]} [additionalFiles]
  */
-export async function createDeployment(app, name, source) {
+export async function createDeployment(app, name, source, additionalFiles) {
   const form = new FormData();
   form.append('deployment-name', name);
   form.append('deployment-source', 'Test modeler');
-  form.append(`${name}.bpmn`, source, `${name}.bpmn`);
+  form.append(`${name}.bpmn`, source, { filename: `${name}.bpmn`, contentType: 'application/octet-stream' });
+
+  if (additionalFiles?.length) {
+    for (const filePath of additionalFiles) {
+      const filename = path.basename(filePath);
+      const content = await fs.promises.readFile(filePath);
+      form.append(filename, content, { filename, contentType: 'application/octet-stream' });
+    }
+  }
 
   const response = await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
 

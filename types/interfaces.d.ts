@@ -1,5 +1,5 @@
 import { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus } from 'bpmn-engine';
-import { ActivityStatus, ElementMessageContent, TimerEventDefinition } from 'bpmn-elements';
+import { ActivityStatus, ElementMessageContent, IScripts } from 'bpmn-elements';
 import { Timer as ContextTimer } from 'moddle-context-serializer';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
@@ -22,6 +22,8 @@ export interface BpmnMiddlewareOptions {
   idleTimeout?: number;
   /** Autosave engine state during execution */
   autosaveEngineState?: boolean;
+  /** Scripts factory */
+  Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
 }
 
 export interface MiddlewareEngineOptions extends BpmnEngineOptions {

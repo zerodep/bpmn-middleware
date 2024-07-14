@@ -21,6 +21,7 @@ export function Engines(options) {
   this.adapter = options.adapter;
   this.engineCache = options.engineCache || new LRUCache({ max: 1000 });
   this.autosaveEngineState = options.autosaveEngineState;
+  this.Scripts = options.Scripts;
 
   // @ts-ignore
   this.__onStateMessage = this._onStateMessage.bind(this);
@@ -289,6 +290,7 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
     token,
     sequenceNumber: 0,
     caller,
+    ...(this.Scripts && { scripts: this.Scripts(this.adapter, name) }),
   });
 };
 

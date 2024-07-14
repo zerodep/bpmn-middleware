@@ -1,6 +1,6 @@
 declare module 'bpmn-middleware' {
 	import type { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus, Engine } from 'bpmn-engine';
-	import type { ActivityStatus, ElementMessageContent } from 'bpmn-elements';
+	import type { ActivityStatus, ElementMessageContent, IScripts } from 'bpmn-elements';
 	import type { Timer as ContextTimer } from 'moddle-context-serializer';
 	import type { LRUCache } from 'lru-cache';
 	import type { Broker } from 'smqp';
@@ -254,6 +254,8 @@ declare module 'bpmn-middleware' {
 	idleTimeout?: number;
 	/** Autosave engine state during execution */
 	autosaveEngineState?: boolean;
+	/** Scripts factory */
+	Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
   }
 
   interface MiddlewareEngineOptions extends BpmnEngineOptions {
@@ -361,6 +363,7 @@ declare module 'bpmn-middleware' {
 		adapter: IStorageAdapter;
 		engineCache: LRUCache<string, any, unknown>;
 		autosaveEngineState: boolean;
+		Scripts: (adapter: IStorageAdapter, deploymentName: string) => import("bpmn-elements").IScripts;
 		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<boolean | void>;
 		/**
 		 * Execute engine

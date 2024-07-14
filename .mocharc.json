@@ -3,5 +3,6 @@
   "reporter": "spec",
   "recursive": true,
   "timeout": 1000,
+  "extension": ["js"],
   "ui": "mocha-cakes-2"
 }

@@ -21,17 +21,17 @@ Feature('call activity', () => {
         apps.balance(),
         'call-internal-process',
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="main-process" isExecutable="true">
-          <startEvent id="start" />
-          <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
-          <callActivity id="call-activity" calledElement="called-process" />
-          <endEvent id="end" />
-          <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
-        </process>
-        <process id="called-process" isExecutable="false">
-          <task id="task" />
-        </process>
-      </definitions>`
+          <process id="main-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="called-process" />
+            <endEvent id="end" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+          </process>
+          <process id="called-process" isExecutable="false">
+            <task id="task" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -52,17 +52,17 @@ Feature('call activity', () => {
         apps.balance(),
         'call-internal-user-process',
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="main-process" isExecutable="true">
-          <startEvent id="start" />
-          <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
-          <callActivity id="call-activity" calledElement="called-process" />
-          <endEvent id="end" />
-          <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
-        </process>
-        <process id="called-process" isExecutable="false">
-          <userTask id="task" />
-        </process>
-      </definitions>`
+          <process id="main-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="called-process" />
+            <endEvent id="end" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+          </process>
+          <process id="called-process" isExecutable="false">
+            <userTask id="task" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -153,30 +153,30 @@ Feature('call activity', () => {
         apps.balance(),
         'call-deployment',
         `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="main-process" isExecutable="true">
-          <startEvent id="start" />
-          <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
-          <callActivity id="call-activity" calledElement="deployment:called-deployment">
-            <extensionElements>
-              <camunda:inputOutput>
-                <camunda:outputParameter name="from">\${content.output.message}</camunda:outputParameter>
-              </camunda:inputOutput>
-            </extensionElements>
-          </callActivity>
-          <endEvent id="end" />
-          <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
-        </process>
-      </definitions>`
+          <process id="main-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="deployment:called-deployment">
+              <extensionElements>
+                <camunda:inputOutput>
+                  <camunda:outputParameter name="from">\${content.output.message}</camunda:outputParameter>
+                </camunda:inputOutput>
+              </extensionElements>
+            </callActivity>
+            <endEvent id="end" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+          </process>
+        </definitions>`
       );
 
       await createDeployment(
         apps.balance(),
         'called-deployment',
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="called-deployment" isExecutable="true">
-          <task id="task" />
-        </process>
-      </definitions>`
+          <process id="called-deployment" isExecutable="true">
+            <task id="task" />
+          </process>
+        </definitions>`
       );
     });
 

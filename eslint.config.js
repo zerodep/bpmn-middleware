@@ -101,6 +101,17 @@ export default [
     },
   },
   {
+    files: ['test/resources/*.cjs'],
+    languageOptions: {
+      globals: {
+        next: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 0,
+    },
+  },
+  {
     ignores: ['coverage/**/*', 'node_modules/**/*', 'tmp/*', 'dist/*'],
   },
 ];

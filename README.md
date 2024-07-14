@@ -11,14 +11,19 @@ Under construction so breaking changes will occur until v1.
 ## Usage
 
 ```javascript
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
 import express from 'express';
 import { Broker } from 'smqp';
 import { LRUCache } from 'lru-cache';
-import { createRequire } from 'node:module';
-import { extensions, OnifySequenceFlow, OnifyTimerEventDefinition, extendFn } from '@onify/flow-extensions';
+import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
-import { bpmnEngineMiddleware, HttpError } from 'bpmn-middleware';
+import { bpmnEngineMiddleware, HttpError, MemoryAdapter } from 'bpmn-middleware';
+import { factory as ScriptsFactory } from './example/middleware-scripts.js';
+
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 
 const nodeRequire = createRequire(import.meta.url);
 
@@ -27,18 +32,20 @@ const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
 const elements = {
   ...bpmnElements,
   SequenceFlow: OnifySequenceFlow,
-  TimerEventDefinition: OnifyTimerEventDefinition,
 };
 
 const app = express();
+const adapter = new MemoryAdapter();
 const broker = (app.locals.broker = new Broker(app));
 const engineCache = (app.locals.engineCache = new LRUCache({ max: 1000 }));
 
 broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
 
 const middleware = bpmnEngineMiddleware({
+  adapter,
   broker,
   engineCache,
+  Scripts: ScriptsFactory,
   engineOptions: {
     moddleOptions: { camunda },
     elements,
@@ -51,9 +58,15 @@ app.use('/rest', middleware);
 
 app.use(errorHandler);
 
+if (isMainModule) {
+  app.listen(3000);
+}
+
+export { app };
+
 function errorHandler(err, req, res, next) {
   if (!(err instanceof Error)) return next();
-  console.log({ err });
+  if (isMainModule) console.log({ err });
   if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
   res.status(502).send({ message: err.message });
 }

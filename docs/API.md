@@ -1,6 +1,6 @@
-## API
+# API
 
-### `bpmnEngineMiddleware([options])`
+## `bpmnEngineMiddleware([options])`
 
 Create BPMN engine middleware.
 
@@ -12,11 +12,39 @@ Options:
 - `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines
 - `idleTimeout`: Optional positive integer, engine execution timeout in milliseconds before engine execution is considered idle and is stopped, defaults to 120000ms
 - `autosaveEngineState`: Optional boolean, auto-save engine state during execution, defaults to true
+- [`Scripts`](#scripts-factory): Optional function to create engine `environment.scripts` scripts
 
 Returns Expressjs Router with extra properties:
 
 - `middleware`: middleware route functions
 - `engines`: BPMN engines handler
+
+### Scripts factory
+
+Pass function that creates script handler passed to engine.
+
+**Arguments:**
+
+- `adapter`: [StorageAdapter](#storage-adapter)
+- `deploymentName`: name of deployed process
+
+**Returns:**
+
+- [Scripts](https://github.com/paed01/bpmn-elements/blob/master/docs/Scripts.md)
+
+```javascript
+import { bpmnEngineMiddleware, MemoryAdapter } from 'bpmn-middleware';
+import { MiddlewareScripts } from '../example/middleware-scripts.js';
+
+const inmemadapter = new MemoryAdapter();
+
+const middleware = bpmnEngineMiddleware({
+  adapter: inmemadapter,
+  Scripts(adapter, deploymentName) {
+    return new MiddlewareScripts(adapter, deploymentName, '.', { console }, { timeout: 120000 });
+  },
+});
+```
 
 ## Routes
 

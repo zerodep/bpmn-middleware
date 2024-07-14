@@ -2,6 +2,10 @@
 
 # Unreleased
 
+## [0.4.0] - 2024-07-14
+
+- introduce `Scripts` option that allows overriding engine scripts
+
 ## [0.3.0] - 2024-07-09
 
 - add `GET (*)?/timers/:deploymentName` endpoint to serve timers

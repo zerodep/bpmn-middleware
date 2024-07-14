@@ -570,13 +570,13 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <scriptTask id="task" scriptFormat="javascript">
-            <script>next(new Error('Unexpected'));</script>
-          </scriptTask>
-        </process>
-      </definitions>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <scriptTask id="task" scriptFormat="javascript">
+              <script>next(new Error('Unexpected'));</script>
+            </scriptTask>
+          </process>
+        </definitions>
       `,
         `${deploymentName}.bpmn`
       );
@@ -599,15 +599,15 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="start" />
-          <sequenceFlow id="to-task" sourceRef="start" targetRef="task" />
-          <scriptTask id="task" scriptFormat="javascript">
-            <script>next(new Error('Unexpected'));</script>
-          </scriptTask>
-        </process>
-      </definitions>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="start" />
+            <sequenceFlow id="to-task" sourceRef="start" targetRef="task" />
+            <scriptTask id="task" scriptFormat="javascript">
+              <script>next(new Error('Unexpected'));</script>
+            </scriptTask>
+          </process>
+        </definitions>
       `,
         `${deploymentName}.bpmn`
       );

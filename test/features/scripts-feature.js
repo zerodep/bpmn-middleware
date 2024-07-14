@@ -1,7 +1,10 @@
 import request from 'supertest';
 
-import { createDeployment, horizontallyScaled } from '../helpers/testHelpers.js';
 import { MemoryAdapter } from '../../src/index.js';
+import { createDeployment, horizontallyScaled, getResource, waitForProcess } from '../helpers/testHelpers.js';
+import { factory as ScriptsFactory } from '../../example/middleware-scripts.js';
+
+const externalScriptSource = getResource('script-resource.bpmn');
 
 Feature('scripts', () => {
   Scenario('process with scripts', () => {
@@ -84,6 +87,39 @@ Feature('scripts', () => {
 
     Then('404 not found is returned', () => {
       expect(response.statusCode, response.text).to.equal(404);
+    });
+  });
+
+  Scenario('pass Scripts handler option', () => {
+    let apps, adapter;
+    before(() => {
+      adapter = new MemoryAdapter();
+    });
+    after(() => apps?.stop());
+
+    Given('apps are started with Scripts factory option', () => {
+      apps = horizontallyScaled(2, {
+        adapter,
+        Scripts: ScriptsFactory,
+      });
+    });
+
+    let deploymentName;
+    And('a process with external script is deployed', () => {
+      deploymentName = 'external-scripts-process';
+      return createDeployment(apps.balance(), deploymentName, externalScriptSource, ['./test/resources/diagramscript.cjs']);
+    });
+
+    let end;
+    When('when process is started', async () => {
+      const app = apps.balance();
+      end = waitForProcess(app, 'external-scripts-process').end();
+
+      await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+    });
+
+    Then('run completes', () => {
+      return end;
     });
   });
 });
