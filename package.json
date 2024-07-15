@@ -61,7 +61,7 @@
     "mocha": "^10.4.0",
     "mocha-cakes-2": "^3.3.0",
     "nock": "^13.3.1",
-    "prettier": "^3.2.5",
+    "prettier": "^3.3.3",
     "rollup": "^4.17.2",
     "rollup-plugin-commonjs": "^10.1.0",
     "supertest": "^7.0.0",
