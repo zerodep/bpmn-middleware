@@ -17,11 +17,18 @@ Feature('example app', () => {
       return createDeployment(app, deploymentName, externalScriptSource, ['./test/resources/diagramscript.cjs']);
     });
 
-    let end;
+    let wait, end, token;
     When('when process is started', async () => {
+      wait = waitForProcess(app, deploymentName).wait();
       end = waitForProcess(app, deploymentName).end();
 
-      await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      const { body } = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      token = body.id;
+    });
+
+    And('manual task is signalled', async () => {
+      const waitingTask = await wait;
+      return request(app).post(`/rest/signal/${token}`).send({ id: waitingTask.content.id }).expect(200);
     });
 
     Then('run completes', () => {
@@ -51,7 +58,7 @@ Feature('example app', () => {
           </process>
           <signal id="Signal_0" name="One and only signal" />
         </definitions>`,
-        ['./test/resources/save-state.bpmn']
+        ['./example/processes/save-state.bpmn']
       );
     });
 

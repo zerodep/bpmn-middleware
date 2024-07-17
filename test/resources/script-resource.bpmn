@@ -4,34 +4,46 @@
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>Flow_1u6ja4w</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_1u6ja4w" sourceRef="StartEvent_1" targetRef="Activity_0jbcpzt" />
+    <bpmn:sequenceFlow id="Flow_1u6ja4w" sourceRef="StartEvent_1" targetRef="wait" />
     <bpmn:scriptTask id="Activity_0jbcpzt" scriptFormat="js" camunda:resultVariable="res" camunda:resource="./diagramscript.cjs">
-      <bpmn:incoming>Flow_1u6ja4w</bpmn:incoming>
+      <bpmn:incoming>Flow_1g2lk8g</bpmn:incoming>
       <bpmn:outgoing>Flow_1mu3zt8</bpmn:outgoing>
     </bpmn:scriptTask>
     <bpmn:endEvent id="Event_15e8i4b">
       <bpmn:incoming>Flow_1mu3zt8</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1mu3zt8" sourceRef="Activity_0jbcpzt" targetRef="Event_15e8i4b" />
+    <bpmn:sequenceFlow id="Flow_1g2lk8g" sourceRef="wait" targetRef="Activity_0jbcpzt" />
+    <bpmn:manualTask id="wait">
+      <bpmn:incoming>Flow_1u6ja4w</bpmn:incoming>
+      <bpmn:outgoing>Flow_1g2lk8g</bpmn:outgoing>
+    </bpmn:manualTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_10rdg8q">
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
-        <dc:Bounds x="179" y="99" width="36" height="36" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0e5r7ww_di" bpmnElement="Activity_0jbcpzt">
+        <dc:Bounds x="410" y="77" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0vg4p7a_di" bpmnElement="wait">
         <dc:Bounds x="270" y="77" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_15e8i4b_di" bpmnElement="Event_15e8i4b">
-        <dc:Bounds x="432" y="99" width="36" height="36" />
+        <dc:Bounds x="552" y="99" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="192" y="99" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1u6ja4w_di" bpmnElement="Flow_1u6ja4w">
-        <di:waypoint x="215" y="117" />
+        <di:waypoint x="228" y="117" />
         <di:waypoint x="270" y="117" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1mu3zt8_di" bpmnElement="Flow_1mu3zt8">
+        <di:waypoint x="510" y="117" />
+        <di:waypoint x="552" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1g2lk8g_di" bpmnElement="Flow_1g2lk8g">
         <di:waypoint x="370" y="117" />
-        <di:waypoint x="432" y="117" />
+        <di:waypoint x="410" y="117" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

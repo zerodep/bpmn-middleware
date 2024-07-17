@@ -110,16 +110,57 @@ Feature('scripts', () => {
       return createDeployment(apps.balance(), deploymentName, externalScriptSource, ['./test/resources/diagramscript.cjs']);
     });
 
-    let end;
+    let response;
+    let token;
+    let app;
+    let wait, end;
     When('when process is started', async () => {
-      const app = apps.balance();
-      end = waitForProcess(app, 'external-scripts-process').end();
+      app = apps.balance();
+      wait = waitForProcess(app, deploymentName).wait();
 
-      await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      token = response.body.id;
+    });
+
+    And('manual task is signalled from same app', async () => {
+      const waitingTask = await wait;
+      end = waitForProcess(app, deploymentName).end();
+
+      await request(app).post(`/rest/signal/${token}`).send({ id: waitingTask.content.id }).expect(200);
+    });
+
+    Then('run completes in the same app', () => {
+      return end;
+    });
+
+    And('output is as expected', async () => {
+      response = await apps.request().get(`/rest/state/${token}`).expect(200);
+      expect(response.body.engine.environment.output.res).to.deep.equal({ external: true });
+    });
+
+    When('when process is started again', async () => {
+      app = apps.balance();
+      wait = waitForProcess(app, deploymentName).wait();
+
+      response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      token = response.body.id;
+    });
+
+    And('manual task is signalled from another app instance', async () => {
+      const waitingTask = await wait;
+      app = apps.balance();
+      end = waitForProcess(app, deploymentName).end();
+
+      await request(app).post(`/rest/signal/${token}`).send({ id: waitingTask.content.id }).expect(200);
     });
 
     Then('run completes', () => {
       return end;
+    });
+
+    And('output is as expected', async () => {
+      response = await apps.request().get(`/rest/state/${token}`).expect(200);
+      expect(response.body.engine.environment.output.res).to.deep.equal({ external: true });
     });
   });
 });

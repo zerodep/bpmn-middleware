@@ -1,1 +1,1 @@
-next();
+next(null, { external: true });

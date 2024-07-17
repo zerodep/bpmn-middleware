@@ -309,5 +309,12 @@ export function errorHandler(err, _req, res, next) {
  * @param {string} name
  */
 export function getResource(name) {
-  return fs.readFileSync('./test/resources/' + name);
+  return fs.readFileSync(path.join('./test/resources/', name));
+}
+
+/**
+ * @param {string} name
+ */
+export function getExampleResource(name) {
+  return fs.readFileSync(path.join('./example/processes/', name));
 }

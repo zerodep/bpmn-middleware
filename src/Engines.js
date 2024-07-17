@@ -66,6 +66,7 @@ Engines.prototype.resume = async function resume(token, listener) {
 
     /** @type {MiddlewareEngine} */
     let engine = engineCache.get(token);
+    /** @type {import('types').MiddlewareEngineState} */
     const state = await this.adapter.fetch(STORAGE_TYPE_STATE, token);
 
     if (!state && !engine) {
@@ -91,6 +92,7 @@ Engines.prototype.resume = async function resume(token, listener) {
       listener,
       ...this.engineOptions,
       token,
+      ...(this.Scripts && { scripts: this.Scripts(this.adapter, state.name) }),
     }).recover(state.engine);
 
     engine.options.token = token;

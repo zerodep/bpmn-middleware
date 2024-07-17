@@ -2,6 +2,10 @@
 
 # Unreleased
 
+## [0.4.1] - 2024-07-17
+
+- make sure `Script` options is used when engine is resumed
+
 ## [0.4.0] - 2024-07-14
 
 - introduce `Scripts` option that allows overriding engine scripts

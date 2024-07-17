@@ -4,7 +4,7 @@ import * as testHelpers from '../helpers/testHelpers.js';
 import { MemoryAdapter } from '../../src/index.js';
 import { StorageError } from '../../src/Errors.js';
 
-const saveStateResource = testHelpers.getResource('save-state.bpmn');
+const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');
 const disableSaveStateResource = testHelpers.getResource('disable-save-state.bpmn');
 
 Feature('save state', () => {

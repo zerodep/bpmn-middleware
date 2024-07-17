@@ -7,6 +7,7 @@ Express middleware for [BPMN engine](https://npmjs.com/package/bpmn-engine).
 Under construction so breaking changes will occur until v1.
 
 - [Api documentation](./docs/API.md)
+- [Example app](./example/README.md)
 
 ## Usage
 
