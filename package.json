@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -15,11 +15,12 @@
   },
   "scripts": {
     "test": "mocha",
-    "posttest": "npm run lint && npm run dist && texample ./README.md,./docs/API.md",
+    "posttest": "npm run lint && npm run dist && npm run test:md",
     "lint": "eslint . --cache && prettier . --check --cache",
     "prepack": "npm run dist",
     "cov:html": "c8 -r html -r text mocha",
     "test:lcov": "c8 -r lcov mocha && npm run lint",
+    "test:md": "texample ./README.md,./docs/API.md,./example/README.md",
     "dist": "dts-buddy && rollup -c"
   },
   "repository": {

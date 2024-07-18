@@ -84,12 +84,9 @@ export function getAppWithExtensions(options = {}) {
   const broker = (app.locals.broker = options.broker ?? new Broker(app));
   broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
 
-  const engineCache = (app.locals.engineCache = options.engineCache ?? new LRUCache({ max: 1000 }));
-
   const { engineOptions, ...middlewareOptions } = options;
   const middleware = bpmnEngineMiddleware({
     broker,
-    engineCache,
     engineOptions: {
       moddleOptions: { camunda },
       elements,
@@ -99,6 +96,9 @@ export function getAppWithExtensions(options = {}) {
     },
     ...middlewareOptions,
   });
+
+  app.locals.engineCache = middleware.engines.engineCache;
+
   app.use('/rest', middleware);
   app.use(errorHandler);
   return app;

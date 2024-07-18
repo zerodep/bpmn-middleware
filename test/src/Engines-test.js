@@ -24,12 +24,12 @@ describe('Engines', () => {
         token: 'token',
         listener,
         source: `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <task id="task" />
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <task id="task" />
+          </process>
+        </definitions>`,
       });
 
       await end;

@@ -44,7 +44,7 @@ const rules = {
   'no-underscore-dangle': 0,
   'no-unused-vars': 2,
   'no-unused-expressions': 2,
-  'no-use-before-define': 0,
+  'no-use-before-define': ['error', 'nofunc'],
   'no-var': 2,
   'no-with': 2,
   'prefer-const': ['error', { destructuring: 'all' }],

@@ -24,6 +24,8 @@ export interface BpmnMiddlewareOptions {
   autosaveEngineState?: boolean;
   /** Scripts factory */
   Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
+  /** Max running engines per instance */
+  maxRunning?: number;
 }
 
 export interface MiddlewareEngineOptions extends BpmnEngineOptions {

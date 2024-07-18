@@ -1,6 +1,10 @@
 # Changelog
 
-# Unreleased
+## Unreleased
+
+## [0.5.0] - 2024-07-18
+
+- introduce `maxRunning` option to control max number of running engines per instance
 
 ## [0.4.1] - 2024-07-17
 

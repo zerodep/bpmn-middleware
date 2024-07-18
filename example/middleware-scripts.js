@@ -4,15 +4,6 @@ import { HttpError, STORAGE_TYPE_FILE } from '../src/index.js';
 
 const allowedMimesPattern = /^(application|text)\/(node|javascript|octet-stream)/;
 
-/**
- * Middleware script factory
- * @param {import('../types/interfaces.js').IStorageAdapter} adapter
- * @param {string} deploymentName
- */
-export function factory(adapter, deploymentName) {
-  return new MiddlewareScripts(adapter, deploymentName, '.');
-}
-
 export class JavaScriptAdapterResource extends JavaScriptResource {
   /**
    * @param {JavaScriptAdapterResource} fromScript
@@ -58,4 +49,13 @@ export class MiddlewareScripts extends FlowScripts {
       this.scripts.set(element.id, new JavaScriptAdapterResource(script, this.adapter));
     }
   }
+}
+
+/**
+ * Middleware script factory
+ * @param {import('../types/interfaces.js').IStorageAdapter} adapter
+ * @param {string} deploymentName
+ */
+export function factory(adapter, deploymentName) {
+  return new MiddlewareScripts(adapter, deploymentName, '.');
 }

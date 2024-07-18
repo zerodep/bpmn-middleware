@@ -256,6 +256,8 @@ declare module 'bpmn-middleware' {
 	autosaveEngineState?: boolean;
 	/** Scripts factory */
 	Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
+	/** Max running engines per instance */
+	maxRunning?: number;
   }
 
   interface MiddlewareEngineOptions extends BpmnEngineOptions {

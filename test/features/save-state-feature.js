@@ -7,6 +7,13 @@ import { StorageError } from '../../src/Errors.js';
 const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');
 const disableSaveStateResource = testHelpers.getResource('disable-save-state.bpmn');
 
+class MisbehavingAdapter extends MemoryAdapter {
+  update(type, key, value, options) {
+    if (!this._data.has(`${type}:${key}`)) return Promise.reject(new StorageError(`${type}:key not found`, 'MY_OWN_CODE'));
+    return this.upsert(type, key, value, options);
+  }
+}
+
 Feature('save state', () => {
   Scenario('source with service task that saves state and then a timer and a message event, when messaged auto-save is enabled', () => {
     /** @type {MemoryAdapter} */
@@ -452,10 +459,3 @@ Feature('save state', () => {
     });
   });
 });
-
-class MisbehavingAdapter extends MemoryAdapter {
-  update(type, key, value, options) {
-    if (!this._data.has(`${type}:${key}`)) return Promise.reject(new StorageError(`${type}:key not found`, 'MY_OWN_CODE'));
-    return this.upsert(type, key, value, options);
-  }
-}

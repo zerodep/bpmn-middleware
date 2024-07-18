@@ -19,7 +19,17 @@ export function Engines(options) {
   this.engineOptions = options.engineOptions || {};
   this.idleTimeout = options.idleTimeout;
   this.adapter = options.adapter;
-  this.engineCache = options.engineCache || new LRUCache({ max: 1000 });
+
+  this.engineCache =
+    options.engineCache ||
+    new LRUCache({
+      max: options.maxRunning || 1000,
+      disposeAfter(engine, _key, reason) {
+        if (reason === 'evict') {
+          engine.stop();
+        }
+      },
+    });
   this.autosaveEngineState = options.autosaveEngineState;
   this.Scripts = options.Scripts;
 

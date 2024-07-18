@@ -6,9 +6,10 @@ Create BPMN engine middleware.
 
 Options:
 
-- `adapter`: Optional [storage adapter](#storage-adapter). Defaults to in-memory adapter based on LRU cache
+- `adapter`: Optional [storage adapter](#storage-adapter). Defaults to in-memory adapter based on [LRU cache](https://www.npmjs.com/package/lru-cache)
 - `engineOptions`: Optional BPMN Engine [options](https://github.com/paed01/bpmn-engine/blob/master/docs/API.md)
-- `engineCache`: Optional engine LRU in-memory cache, defaults to `new LRUCache({ max: 1000 })`
+- `maxRunning`: Optional number declaring number of max running engines per instance, passed to engines LRU Cache as max, defaults to 1000
+- `engineCache`: Optional engine [LRU](https://www.npmjs.com/package/lru-cache) in-memory cache, defaults to `new LRUCache({ max: 1000, disposeAfter(engine) })`
 - `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines
 - `idleTimeout`: Optional positive integer, engine execution timeout in milliseconds before engine execution is considered idle and is stopped, defaults to 120000ms
 - `autosaveEngineState`: Optional boolean, auto-save engine state during execution, defaults to true
