@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.5.1] - 2024-09-11
+
+- fix package commonjs exports
+
 ## [0.5.0] - 2024-07-18
 
 - introduce `maxRunning` option to control max number of running engines per instance

@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -9,7 +9,7 @@
   "exports": {
     ".": {
       "import": "./src/index.js",
-      "require": "./dist/main.js",
+      "require": "./dist/main.cjs",
       "types": "./types/index.d.ts"
     }
   },
@@ -42,21 +42,20 @@
   },
   "homepage": "https://github.com/zerodep/bpmn-middleware#readme",
   "devDependencies": {
-    "@bonniernews/httptest": "^2.0.0",
     "@onify/flow-extensions": "^8.3.0",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@types/bpmn-moddle": "^5.1.11",
     "@types/express": "^4.17.17",
     "@types/multer": "^1.4.11",
     "@types/supertest": "^6.0.2",
-    "bpmn-engine": "^22.0.2",
+    "bpmn-engine": "^23.0.1",
     "c8": "^10.1.2",
     "camunda-bpmn-moddle": "^7.0.1",
     "chai": "^5.1.1",
     "chronokinesis": "^6.0.0",
-    "dts-buddy": "^0.5.1",
+    "dts-buddy": "^0.5.3",
     "eslint": "^9.7.0",
-    "express": "^4.18.2",
+    "express": "^4.20.0",
     "form-data": "^4.0.0",
     "globals": "^15.3.0",
     "mocha": "^10.4.0",
@@ -66,7 +65,7 @@
     "rollup": "^4.17.2",
     "rollup-plugin-commonjs": "^10.1.0",
     "supertest": "^7.0.0",
-    "texample": "^0.0.5"
+    "texample": "^0.0.6"
   },
   "dependencies": {
     "lru-cache": "^11.0.0",

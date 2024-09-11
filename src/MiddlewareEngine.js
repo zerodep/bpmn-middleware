@@ -68,6 +68,7 @@ export class MiddlewareEngine extends Engine {
       return this.broker.publish('event', 'engine.idle.timer', status);
     }, delay);
   }
+  /** @interal */
   _getCurrentStatus() {
     const expireAt = this.expireAt;
     return {

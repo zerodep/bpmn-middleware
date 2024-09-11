@@ -33,7 +33,7 @@ export function Engines(options) {
   this.autosaveEngineState = options.autosaveEngineState;
   this.Scripts = options.Scripts;
 
-  // @ts-ignore
+  /** @internal */
   this.__onStateMessage = this._onStateMessage.bind(this);
 }
 
@@ -404,6 +404,7 @@ Engines.prototype.saveEngineState = async function saveEngineState(engine, ifExi
 };
 
 /**
+ * @internal
  * Internal setup engine listeners
  * @param {MiddlewareEngine} engine
  */

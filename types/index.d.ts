@@ -366,6 +366,7 @@ declare module 'bpmn-middleware' {
 		engineCache: LRUCache<string, any, unknown>;
 		autosaveEngineState: boolean;
 		Scripts: (adapter: IStorageAdapter, deploymentName: string) => import("bpmn-elements").IScripts;
+		
 		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<boolean | void>;
 		/**
 		 * Execute engine
@@ -446,6 +447,7 @@ declare module 'bpmn-middleware' {
 		 */
 		saveEngineState(engine: MiddlewareEngine, ifExists?: boolean): Promise<void>;
 		/**
+		 * @internal
 		 * Internal setup engine listeners
 		 * */
 		_setupEngine(engine: MiddlewareEngine): void;
@@ -485,6 +487,7 @@ declare module 'bpmn-middleware' {
 		 * Start/Restart execution idle timer
 		 */
 		startIdleTimer(): void;
+		
 		_getCurrentStatus(): {
 			expireAt: Date;
 			name: string;
@@ -537,6 +540,7 @@ declare module 'bpmn-middleware' {
 			records: any[];
 		}>;
 		/**
+		 * @internal
 		 * Internal query state
 		 * */
 		_queryState(qs: any): any[];
