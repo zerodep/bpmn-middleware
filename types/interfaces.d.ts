@@ -24,6 +24,8 @@ export interface BpmnMiddlewareOptions {
   autosaveEngineState?: boolean;
   /** Scripts factory */
   Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
+  /** Services factory */
+  Services?: (adapter: IStorageAdapter, deploymentName: string) => Record<string, CallableFunction>;
   /** Max running engines per instance */
   maxRunning?: number;
 }

@@ -32,6 +32,7 @@ export function Engines(options) {
     });
   this.autosaveEngineState = options.autosaveEngineState;
   this.Scripts = options.Scripts;
+  this.Services = options.Services;
 
   /** @internal */
   this.__onStateMessage = this._onStateMessage.bind(this);
@@ -103,6 +104,7 @@ Engines.prototype.resume = async function resume(token, listener) {
       ...this.engineOptions,
       token,
       ...(this.Scripts && { scripts: this.Scripts(this.adapter, state.name) }),
+      ...(this.Services && { services: this.Services(this.adapter, state.name) }),
     }).recover(state.engine);
 
     engine.options.token = token;
@@ -303,6 +305,7 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
     sequenceNumber: 0,
     caller,
     ...(this.Scripts && { scripts: this.Scripts(this.adapter, name) }),
+    ...(this.Services && { services: this.Services(this.adapter, name) }),
   });
 };
 

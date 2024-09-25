@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.6.0] - 2024-09-25
+
+- introduce `Services` option that allows setting engine services
+
 ## [0.5.1] - 2024-09-11
 
 - fix package commonjs exports
