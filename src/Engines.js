@@ -428,7 +428,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
 
   let addServices;
   if (this.Services && (addServices = this.Services.call(engine, this.adapter, engine.name, engine.options.businessKey))) {
-    for (const [k, fn] of Object.entries(addServices || {})) {
+    for (const [k, fn] of Object.entries(addServices)) {
       engine.environment.addService(k, fn);
     }
   }
