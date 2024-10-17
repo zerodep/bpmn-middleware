@@ -18,7 +18,7 @@ Feature('example app', () => {
     });
 
     let wait, end, token;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       wait = waitForProcess(app, deploymentName).wait();
       end = waitForProcess(app, deploymentName).end();
 
@@ -63,7 +63,7 @@ Feature('example app', () => {
     });
 
     let fail;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       fail = waitForProcess(app, deploymentName).error();
 
       await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);

@@ -44,7 +44,7 @@ Feature('cancel activity', () => {
       );
     });
 
-    When('when processes are started', async () => {
+    When('processes are started', async () => {
       await apps.request().post('/rest/process-definition/task-to-cancel/start').expect(201);
 
       await apps.request().post('/rest/process-definition/task-to-cancel/start').expect(201);

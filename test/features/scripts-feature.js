@@ -68,7 +68,7 @@ Feature('scripts', () => {
     });
 
     let response;
-    When('when scripts endpoint is called', async () => {
+    When('scripts endpoint is called', async () => {
       const app = apps.balance();
       response = await request(app)
         .get('/rest/script/scripts-process')
@@ -80,7 +80,7 @@ Feature('scripts', () => {
       expect(response.text).to.contain(`export function scripts_process_script1(`);
     });
 
-    When('when scripts endpoint is called with unknown deployment', async () => {
+    When('scripts endpoint is called with unknown deployment', async () => {
       const app = apps.balance();
       response = await request(app).get('/rest/script/unknown-process');
     });
@@ -97,10 +97,14 @@ Feature('scripts', () => {
     });
     after(() => apps?.stop());
 
+    let scriptsArgs;
     Given('apps are started with Scripts factory option', () => {
       apps = horizontallyScaled(2, {
         adapter,
-        Scripts: ScriptsFactory,
+        Scripts(...args) {
+          scriptsArgs = args;
+          return ScriptsFactory(...args);
+        },
       });
     });
 
@@ -114,12 +118,16 @@ Feature('scripts', () => {
     let token;
     let app;
     let wait, end;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       app = apps.balance();
       wait = waitForProcess(app, deploymentName).wait();
 
-      response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).send({ businessKey: 'foo' }).expect(201);
       token = response.body.id;
+    });
+
+    And('scripts factory received expected arguments', () => {
+      expect(scriptsArgs.splice(0)).to.deep.equal([adapter, deploymentName, 'foo']);
     });
 
     And('manual task is signalled from same app', async () => {
@@ -138,11 +146,11 @@ Feature('scripts', () => {
       expect(response.body.engine.environment.output.res).to.deep.equal({ external: true });
     });
 
-    When('when process is started again', async () => {
+    When('process is started again', async () => {
       app = apps.balance();
       wait = waitForProcess(app, deploymentName).wait();
 
-      response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      response = await request(app).post(`/rest/process-definition/${deploymentName}/start`).send({ businessKey: 'bar' }).expect(201);
       token = response.body.id;
     });
 
@@ -161,6 +169,10 @@ Feature('scripts', () => {
     And('output is as expected', async () => {
       response = await apps.request().get(`/rest/state/${token}`).expect(200);
       expect(response.body.engine.environment.output.res).to.deep.equal({ external: true });
+    });
+
+    And('scripts factory received expected arguments', () => {
+      expect(scriptsArgs).to.deep.equal([adapter, deploymentName, 'bar']);
     });
   });
 });

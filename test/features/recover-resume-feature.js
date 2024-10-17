@@ -20,16 +20,16 @@ Feature('recover resume', () => {
         apps.balance(),
         'shared',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="bound-timer" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 
@@ -115,21 +115,21 @@ Feature('recover resume', () => {
         apps.balance(),
         'mulitple-timers',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer-1" attachedToRef="task" cancelActivity="false">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-          <boundaryEvent id="bound-timer-2" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="bound-timer-1" attachedToRef="task" cancelActivity="false">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+            <boundaryEvent id="bound-timer-2" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 
@@ -207,11 +207,11 @@ Feature('recover resume', () => {
         apps.balance(),
         'user-task',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp1" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp1" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -220,16 +220,16 @@ Feature('recover resume', () => {
         apps.balance(),
         'manual-task',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp2" isExecutable="true">
-          <manualTask id="task" />
-          <boundaryEvent id="bound-timer-2" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp2" isExecutable="true">
+            <manualTask id="task" />
+            <boundaryEvent id="bound-timer-2" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 

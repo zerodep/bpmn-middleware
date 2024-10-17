@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.7.0] - 2024-09-25
+
+- save business key to state
+- pass business key to service- and script factory
+
 ## [0.6.0] - 2024-09-25
 
 - introduce `Services` option that allows setting engine services

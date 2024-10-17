@@ -255,9 +255,9 @@ declare module 'bpmn-middleware' {
 	/** Autosave engine state during execution */
 	autosaveEngineState?: boolean;
 	/** Scripts factory */
-	Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
+	Scripts?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => IScripts;
 	/** Services factory */
-	Services?: (adapter: IStorageAdapter, deploymentName: string) => Record<string, CallableFunction>;
+	Services?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
 	/** Max running engines per instance */
 	maxRunning?: number;
   }
@@ -268,6 +268,7 @@ declare module 'bpmn-middleware' {
 	idleTimeout?: number;
 	sequenceNumber?: number;
 	expireAt?: Date;
+	businessKey?: string;
   }
 
   interface StorageQuery {
@@ -367,8 +368,8 @@ declare module 'bpmn-middleware' {
 		adapter: IStorageAdapter;
 		engineCache: LRUCache<string, any, unknown>;
 		autosaveEngineState: boolean;
-		Scripts: (adapter: IStorageAdapter, deploymentName: string) => import("bpmn-elements").IScripts;
-		Services: (adapter: IStorageAdapter, deploymentName: string) => Record<string, CallableFunction>;
+		Scripts: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
+		Services: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
 		
 		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<boolean | void>;
 		/**

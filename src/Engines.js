@@ -30,6 +30,7 @@ export function Engines(options) {
         }
       },
     });
+
   this.autosaveEngineState = options.autosaveEngineState;
   this.Scripts = options.Scripts;
   this.Services = options.Services;
@@ -103,8 +104,8 @@ Engines.prototype.resume = async function resume(token, listener) {
       listener,
       ...this.engineOptions,
       token,
-      ...(this.Scripts && { scripts: this.Scripts(this.adapter, state.name) }),
-      ...(this.Services && { services: this.Services(this.adapter, state.name) }),
+      ...(this.Scripts && { scripts: this.Scripts(this.adapter, state.name, state.businessKey) }),
+      ...(this.Services && { services: this.Services(this.adapter, state.name, state.businessKey) }),
     }).recover(state.engine);
 
     engine.options.token = token;
@@ -281,7 +282,7 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
  * @param {import('types').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.createEngine = function createEngine(executeOptions) {
-  const { name, token, source, listener, variables, caller, settings, idleTimeout } = executeOptions;
+  const { name, token, source, listener, variables, caller, settings, idleTimeout, businessKey } = executeOptions;
   return new MiddlewareEngine(token, {
     ...this.engineOptions,
     name,
@@ -304,8 +305,9 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
     token,
     sequenceNumber: 0,
     caller,
-    ...(this.Scripts && { scripts: this.Scripts(this.adapter, name) }),
-    ...(this.Services && { services: this.Services(this.adapter, name) }),
+    businessKey,
+    ...(this.Scripts && { scripts: this.Scripts(this.adapter, name, businessKey) }),
+    ...(this.Services && { services: this.Services(this.adapter, name, businessKey) }),
   });
 };
 
@@ -353,13 +355,15 @@ Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
  * @param {MiddlewareEngine} engine
  */
 Engines.prototype.createEngineState = function createEngineState(engine) {
-  const { token, expireAt, sequenceNumber, caller } = engine.options;
+  const { token, expireAt, sequenceNumber, caller, businessKey } = engine.options;
+
   /** @type {import('types').MiddlewareEngineState} */
   const state = {
     token,
     name: engine.name,
     expireAt,
     sequenceNumber,
+    ...(businessKey && { businessKey }),
     ...(caller && { caller }),
   };
 

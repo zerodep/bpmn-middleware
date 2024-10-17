@@ -63,15 +63,17 @@ const rules = {
 export default [
   js.configs.recommended,
   {
-    rules,
-  },
-  {
-    files: ['**/*.js'],
     languageOptions: {
       parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
       },
+    },
+    rules,
+  },
+  {
+    files: ['**/*.js'],
+    languageOptions: {
       globals: {
         ...globals.node,
       },

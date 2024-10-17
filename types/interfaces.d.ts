@@ -23,9 +23,9 @@ export interface BpmnMiddlewareOptions {
   /** Autosave engine state during execution */
   autosaveEngineState?: boolean;
   /** Scripts factory */
-  Scripts?: (adapter: IStorageAdapter, deploymentName: string) => IScripts;
+  Scripts?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => IScripts;
   /** Services factory */
-  Services?: (adapter: IStorageAdapter, deploymentName: string) => Record<string, CallableFunction>;
+  Services?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
   /** Max running engines per instance */
   maxRunning?: number;
 }
@@ -36,6 +36,7 @@ export interface MiddlewareEngineOptions extends BpmnEngineOptions {
   idleTimeout?: number;
   sequenceNumber?: number;
   expireAt?: Date;
+  businessKey?: string;
 }
 
 export interface StorageQuery {

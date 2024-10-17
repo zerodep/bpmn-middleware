@@ -482,6 +482,7 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
     },
     idleTimeout,
     caller,
+    businessKey,
   });
 
   return { id: token };

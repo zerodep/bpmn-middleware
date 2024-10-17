@@ -36,7 +36,7 @@ Feature('call activity', () => {
     });
 
     let end;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       end = waitForProcess(app, 'call-internal-process').end();
 
@@ -67,7 +67,7 @@ Feature('call activity', () => {
     });
 
     let token, wait;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'call-internal-user-process').wait('task');
 
@@ -91,7 +91,7 @@ Feature('call activity', () => {
       return end;
     });
 
-    When('when process is started again', async () => {
+    When('process is started again', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'call-internal-user-process').wait('task');
 
@@ -115,7 +115,7 @@ Feature('call activity', () => {
       return end;
     });
 
-    When('when process is started again again', async () => {
+    When('process is started again again', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'call-internal-user-process').wait('task');
 
@@ -181,7 +181,7 @@ Feature('call activity', () => {
     });
 
     let end1, end2;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       end1 = waitForProcess(app, 'call-deployment').end();
       end2 = waitForProcess(app, 'called-deployment').end();
@@ -219,7 +219,7 @@ Feature('call activity', () => {
     });
 
     let wait, callingToken;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
@@ -298,7 +298,7 @@ Feature('call activity', () => {
     });
 
     let err1, err2;
-    When('when process is started again', async () => {
+    When('process is started again', async () => {
       const app = apps.balance();
       err1 = waitForProcess(app, 'call-deployment').error();
       err2 = waitForProcess(app, 'called-deployment').error();
@@ -357,7 +357,7 @@ Feature('call activity', () => {
     });
 
     let wait, bp;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
@@ -459,7 +459,7 @@ Feature('call activity', () => {
     });
 
     let wait, bp;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
@@ -516,7 +516,7 @@ Feature('call activity', () => {
       expect(apps.getRunning()).to.have.length(0);
     });
 
-    When('when process is started again', async () => {
+    When('process is started again', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
@@ -613,7 +613,7 @@ Feature('call activity', () => {
     });
 
     let wait, bp;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'called-deployment').wait();
 
@@ -704,7 +704,7 @@ Feature('call activity', () => {
     });
 
     let end1, end2;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       end1 = waitForProcess(app, 'call-deployment').end();
       end2 = waitForProcess(app, 'called-deployment').end();
 
@@ -741,7 +741,7 @@ Feature('call activity', () => {
     });
 
     let wait, callingToken;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       wait = waitForProcess(app, 'called-deployment').wait();
 
       const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);

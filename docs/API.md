@@ -13,13 +13,51 @@ Options:
 - `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines
 - `idleTimeout`: Optional positive integer, engine execution timeout in milliseconds before engine execution is considered idle and is stopped, defaults to 120000ms
 - `autosaveEngineState`: Optional boolean, auto-save engine state during execution, defaults to true
-- [`Scripts`](#scripts-factory): Optional function to create engine `environment.scripts` scripts
 - [`Services`](#services-factory): Optional function to create engine `environment.services`
+- [`Scripts`](#scripts-factory): Optional function to create engine `environment.scripts` scripts
 
 Returns Expressjs Router with extra properties:
 
 - `middleware`: middleware route functions
 - `engines`: BPMN engines handler
+
+### Services factory
+
+Pass function that adds service functions to engine.
+
+**Arguments:**
+
+- `adapter`: [StorageAdapter](#storage-adapter)
+- `deploymentName`: name of deployed process
+- `businessKey`: started with business key
+
+**Returns:**
+
+- [services](https://github.com/paed01/bpmn-elements/blob/master/docs/Environment.md)
+
+```javascript
+import crypto from 'node:crypto';
+import { bpmnEngineMiddleware } from 'bpmn-middleware';
+
+const middleware = bpmnEngineMiddleware({
+  Services(_adapter, deploymentName, businessKey) {
+    const services = {
+      createHash(data, callback) {
+        return crypto.createHash('md5').update(data).digest('hex');
+      },
+    };
+
+    if (deploymentName === 'my-process' || businessKey === '*') {
+      services['myService'] = function myService(...args) {
+        const callback = args.pop();
+        callback();
+      };
+    }
+
+    return services;
+  },
+});
+```
 
 ### Scripts factory
 
@@ -42,45 +80,8 @@ const inmemadapter = new MemoryAdapter();
 
 const middleware = bpmnEngineMiddleware({
   adapter: inmemadapter,
-  Scripts(adapter, deploymentName) {
+  Scripts(adapter, deploymentName, businessKey) {
     return new MiddlewareScripts(adapter, deploymentName, '.', { console }, { timeout: 120000 });
-  },
-});
-```
-
-### Services factory
-
-Pass function that creates script handler passed to engine.
-
-**Arguments:**
-
-- `adapter`: [StorageAdapter](#storage-adapter)
-- `deploymentName`: name of deployed process
-
-**Returns:**
-
-- [services](https://github.com/paed01/bpmn-elements/blob/master/docs/Environment.md)
-
-```javascript
-import crypto from 'node:crypto';
-import { bpmnEngineMiddleware } from 'bpmn-middleware';
-
-const middleware = bpmnEngineMiddleware({
-  Services(_adapter, deploymentName) {
-    const services = {
-      createHash(data, callback) {
-        return crypto.createHash('md5').update(data).digest('hex');
-      },
-    };
-
-    if (deploymentName === 'my-process') {
-      services['myService'] = function myService(...args) {
-        const callback = args.pop();
-        callback();
-      };
-    }
-
-    return services;
   },
 });
 ```

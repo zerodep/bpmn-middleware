@@ -41,7 +41,7 @@ Feature('signal activity', () => {
     });
 
     let token, wait;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'signal-process').wait();
 
@@ -112,7 +112,7 @@ Feature('signal activity', () => {
     });
 
     let token, wait;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'message-process').wait();
 
@@ -177,7 +177,7 @@ Feature('signal activity', () => {
     });
 
     let token, wait;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, 'user-and-receive-process').wait();
 
@@ -278,7 +278,7 @@ Feature('signal activity', () => {
     });
 
     let token, wait;
-    When('when process is started', async () => {
+    When('process is started', async () => {
       const app = apps.balance();
       wait = waitForProcess(app, deploymentName).wait();
 
