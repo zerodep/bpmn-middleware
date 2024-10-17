@@ -219,7 +219,7 @@ describe('Engines', () => {
         broker: new Broker(),
         source,
         Services: function serviceFactory() {
-          this.environment.addService('foo', () => {});
+          this.addService('foo', () => {});
         },
       });
 
@@ -232,7 +232,45 @@ describe('Engines', () => {
       engines.stopAll();
 
       engines.Services = function resumeServiceFactory() {
-        this.environment.addService('foo', (...args) => args.pop()());
+        this.addService('foo', (...args) => args.pop()());
+      };
+
+      const listener = new EventEmitter();
+
+      const end = new Promise((resolve) => listener.once('end', resolve));
+
+      engines.resume(execution.token, listener);
+
+      const ended = await end;
+      expect(ended).to.have.property('token', 'foo-token');
+    });
+
+    it('on resume services factory function is called after recover', async () => {
+      const engines = new Engines({
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker: new Broker(),
+        source,
+        Services: function serviceFactory() {
+          this.addService('foo', () => {});
+        },
+      });
+
+      const execution = await engines.execute({
+        name: 'foo',
+        token: 'foo-token',
+        source,
+        settings: {
+          bar: 'baz',
+        },
+      });
+
+      engines.stopAll();
+
+      engines.Services = function resumeServiceFactory() {
+        if (this.settings.bar === 'baz') {
+          this.addService('foo', (...args) => args.pop()());
+        }
       };
 
       const listener = new EventEmitter();

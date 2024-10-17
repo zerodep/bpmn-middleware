@@ -23,11 +23,9 @@ Feature('services', () => {
 
           if (businessKey !== 'foo') return;
 
-          return {
-            myService: function myService(...args) {
-              args.pop()();
-            },
-          };
+          this.addService('myService', function myService(...args) {
+            args.pop()();
+          });
         },
       });
     });

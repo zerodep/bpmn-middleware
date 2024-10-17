@@ -427,7 +427,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   engine.environment.addService('disableSaveState', disableSaveState);
 
   let addServices;
-  if (this.Services && (addServices = this.Services.call(engine, this.adapter, engine.name, engine.options.businessKey))) {
+  if (this.Services && (addServices = this.Services.call(engine.environment, this.adapter, engine.name, engine.options.businessKey))) {
     for (const [k, fn] of Object.entries(addServices)) {
       engine.environment.addService(k, fn);
     }

@@ -31,7 +31,7 @@ Pass function that adds service functions to engine.
 - `deploymentName`: name of deployed process
 - `businessKey`: started with business key
 
-Called with engine scope.
+Called with engine.environment scope.
 
 **Returns:**
 
@@ -46,7 +46,7 @@ const middleware = bpmnEngineMiddleware({
 });
 
 function ServiceFactory(_adapter, deploymentName, businessKey) {
-  this.environment.addService('createHash', (data, callback) => {
+  this.addService('createHash', (data, callback) => {
     return crypto.createHash('md5').update(data).digest('hex');
   });
 
