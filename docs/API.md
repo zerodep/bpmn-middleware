@@ -31,6 +31,8 @@ Pass function that adds service functions to engine.
 - `deploymentName`: name of deployed process
 - `businessKey`: started with business key
 
+Called with engine scope.
+
 **Returns:**
 
 - [services](https://github.com/paed01/bpmn-elements/blob/master/docs/Environment.md)
@@ -40,23 +42,23 @@ import crypto from 'node:crypto';
 import { bpmnEngineMiddleware } from 'bpmn-middleware';
 
 const middleware = bpmnEngineMiddleware({
-  Services(_adapter, deploymentName, businessKey) {
-    const services = {
-      createHash(data, callback) {
-        return crypto.createHash('md5').update(data).digest('hex');
-      },
-    };
-
-    if (deploymentName === 'my-process' || businessKey === '*') {
-      services['myService'] = function myService(...args) {
-        const callback = args.pop();
-        callback();
-      };
-    }
-
-    return services;
-  },
+  Services: ServiceFactory,
 });
+
+function ServiceFactory(_adapter, deploymentName, businessKey) {
+  this.environment.addService('createHash', (data, callback) => {
+    return crypto.createHash('md5').update(data).digest('hex');
+  });
+
+  if (deploymentName === 'my-process' || businessKey === '*') {
+    services['myService'] = function myService(...args) {
+      const callback = args.pop();
+      callback();
+    };
+  }
+
+  return services;
+}
 ```
 
 ### Scripts factory

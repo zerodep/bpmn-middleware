@@ -6,6 +6,7 @@
 
 - save business key to state
 - pass business key to service- and script factory
+- execute service factory function with engine scope
 
 ## [0.6.0] - 2024-09-25
 

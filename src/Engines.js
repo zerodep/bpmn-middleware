@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { LRUCache } from 'lru-cache';
 
 import { MiddlewareEngine } from './MiddlewareEngine.js';
@@ -44,10 +45,10 @@ export function Engines(options) {
  * @param {import('types').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.execute = async function execute(executeOptions) {
-  const { token } = executeOptions;
+  const token = executeOptions.token ?? randomUUID();
 
   try {
-    const engine = this.createEngine(executeOptions);
+    const engine = this.createEngine({ ...executeOptions, token });
     this.engineCache.set(token, engine);
 
     this._setupEngine(engine);
@@ -105,13 +106,13 @@ Engines.prototype.resume = async function resume(token, listener) {
       ...this.engineOptions,
       token,
       ...(this.Scripts && { scripts: this.Scripts(this.adapter, state.name, state.businessKey) }),
-      ...(this.Services && { services: this.Services(this.adapter, state.name, state.businessKey) }),
     }).recover(state.engine);
 
     engine.options.token = token;
     engine.options.caller = state.caller;
     engine.options.sequenceNumber = state.sequenceNumber;
     engine.options.expireAt = state.expireAt;
+    engine.options.businessKey = state.businessKey;
 
     this.engineCache.set(token, engine);
 
@@ -307,7 +308,6 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
     caller,
     businessKey,
     ...(this.Scripts && { scripts: this.Scripts(this.adapter, name, businessKey) }),
-    ...(this.Services && { services: this.Services(this.adapter, name, businessKey) }),
   });
 };
 
@@ -425,6 +425,13 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   engine.environment.addService('saveState', saveState);
   engine.environment.addService('enableSaveState', enableSaveState);
   engine.environment.addService('disableSaveState', disableSaveState);
+
+  let addServices;
+  if (this.Services && (addServices = this.Services.call(engine, this.adapter, engine.name, engine.options.businessKey))) {
+    for (const [k, fn] of Object.entries(addServices || {})) {
+      engine.environment.addService(k, fn);
+    }
+  }
 
   if (parentBroker) {
     parentBroker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
