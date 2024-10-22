@@ -51,9 +51,9 @@ export function bpmnEngineMiddleware(options) {
   router.get('(*)?/version', middleware.getVersion.bind(middleware));
   router.get('(*)?/deployment', middleware.getDeployment.bind(middleware));
   router.post('(*)?/deployment/create', multer({ storage }).any(), middleware.create.bind(middleware));
-  router.post('(*)?/process-definition/:deploymentName/start', json(), middleware._addEngineLocals, middleware.start.bind(middleware));
-  router.get('(*)?/script/:deploymentName', middleware._addEngineLocals, middleware.getScript.bind(middleware));
-  router.get('(*)?/timers/:deploymentName', middleware.getDeploymentTimers.bind(middleware));
+  router.post('(*)?/process-definition/:deploymentName/start', middleware.preStart(), middleware.start.bind(middleware));
+  router.get('(*)?/script/:deploymentName', middleware.preStart(), middleware.getScript.bind(middleware));
+  router.get('(*)?/timers/:deploymentName', middleware.preStart(), middleware.getDeploymentTimers.bind(middleware));
   router.get('(*)?/running', middleware.getRunning.bind(middleware));
   router.get('(*)?/status/:token', middleware.getStatusByToken.bind(middleware));
   router.get('(*)?/status/:token/:activityId', middleware._addEngineLocals, middleware.getActivityStatus.bind(middleware));
@@ -95,6 +95,11 @@ export function BpmnEngineMiddleware(options, engines) {
    * Bound addEngineLocals
    */
   this._addEngineLocals = this.addEngineLocals.bind(this);
+
+  /**
+   * Bound createEngine
+   */
+  this._createEngine = this.createEngine.bind(this);
 }
 
 /**
@@ -128,9 +133,9 @@ BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(req, res, next) {
-  res.locals.engines = this.engines;
-  res.locals.adapter = this.adapter;
-  res.locals.listener = req.app.locals.bpmnEngineListener ?? new BpmnPrefixListener(req.app);
+  res.locals.engines = res.locals.engines ?? this.engines;
+  res.locals.adapter = res.locals.adapter ?? this.adapter;
+  res.locals.listener = res.locals.listener ?? req.app.locals.bpmnEngineListener ?? new BpmnPrefixListener(req.app);
   next();
 };
 
@@ -178,25 +183,25 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
 };
 
 /**
+ * Pre start middleware
+ * @returns {import('express').RequestHandler[]}
+ */
+BpmnEngineMiddleware.prototype.preStart = function preStart() {
+  // @ts-ignore
+  return [json(), this._addEngineLocals, this._createEngine];
+};
+
+/**
  * Start deployment
- * @param {import('express').Request<{deploymentName:string}>} req
+ * @param {import('express').Request<StartDeployment, {id:string}, >} _req
  * @param {import('express').Response<{id:string}, BpmnMiddlewareLocals>} res
  * @param {import('express').NextFunction} next
  */
-BpmnEngineMiddleware.prototype.start = async function start(req, res, next) {
+BpmnEngineMiddleware.prototype.start = async function start(_req, res, next) {
   try {
-    const deploymentName = req.params.deploymentName;
-
-    const result = await this._startDeployment(deploymentName, {
-      listener: res.locals.listener,
-      variables: req.body?.variables,
-      businessKey: req.body?.businessKey,
-      idleTimeout: req.body?.idleTimeout,
-    });
-
-    if (!result) throw new HttpError(`Deployment ${deploymentName} not found`, 404);
-
-    return res.status(201).send(result);
+    const engine = res.locals.engine;
+    await res.locals.engines.run(engine, res.locals.listener);
+    return res.status(201).send({ id: engine.token });
   } catch (err) {
     next(err);
   }
@@ -204,24 +209,20 @@ BpmnEngineMiddleware.prototype.start = async function start(req, res, next) {
 
 /**
  * Start deployment
- * @param {import('express').Request<{deploymentName:string}>} req
+ * @param {import('express').Request<StartDeployment>} _req
  * @param {import('express').Response<string, BpmnMiddlewareLocals>} res
  * @param {import('express').NextFunction} next
  */
-BpmnEngineMiddleware.prototype.getScript = async function getScript(req, res, next) {
+BpmnEngineMiddleware.prototype.getScript = async function getScript(_req, res, next) {
   try {
-    const deploymentName = req.params.deploymentName;
-    const deployment = await this._getDeploymentByName(deploymentName);
-    const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
-
-    const engine = this.engines.createEngine({ name: deploymentName, source: deploymentSource.content });
+    const engine = res.locals.engine;
     const [definition] = await engine.getDefinitions();
 
-    let payload = `// ${deploymentName} scripts `;
+    let payload = `// ${engine.name} scripts `;
     for (const script of definition.context.definitionContext.getScripts()) {
       payload += `
-// ${deploymentName}/${script.name}
-export function ${slugify(deploymentName, script.name)}(excutionContext, next) {
+// ${engine.name}/${script.name}
+export function ${slugify(engine.name, script.name)}(excutionContext, next) {
   ${script.script.body.trim()}
 }
       `;
@@ -236,17 +237,13 @@ export function ${slugify(deploymentName, script.name)}(excutionContext, next) {
 
 /**
  * Start deployment
- * @param {import('express').Request<{deploymentName:string}>} req
+ * @param {import('express').Request<StartDeployment>} _req
  * @param {import('express').Response<{timers:import('types').ParsedTimerResult[]}>} res
  * @param {import('express').NextFunction} next
  */
-BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymentTimers(req, res, next) {
+BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymentTimers(_req, res, next) {
   try {
-    const deploymentName = req.params.deploymentName;
-    const deployment = await this._getDeploymentByName(deploymentName);
-    const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
-
-    const engine = this.engines.createEngine({ name: deploymentName, source: deploymentSource.content });
+    const engine = res.locals.engine;
     const [definition] = await engine.getDefinitions();
 
     const contextTimers = definition.context.definitionContext.getTimers();
@@ -302,7 +299,7 @@ BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, 
 
 /**
  * Get engine status by token
- * @param {import('express').Request} req
+ * @param {import('express').Request<{token:string}>} req
  * @param {import('express').Response<Awaited<ReturnType<Engines['getStatusByToken']>>, BpmnMiddlewareLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -319,7 +316,7 @@ BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToke
 
 /**
  * Get engine activity status
- * @param {import('express').Request<{token:string; activityId:string}>} req
+ * @param {import('express').Request<{token:string;activityId:string}>} req
  * @param {import('express').Response<import('types').PostponedElement, BpmnMiddlewareLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -456,18 +453,95 @@ BpmnEngineMiddleware.prototype.internalStopByToken = function internalStopByToke
 };
 
 /**
+ * Internal create engine middleware
+ * @internal
+ * @param {import('express').Request<StartDeployment>} req
+ * @param {import('express').Response<void, BpmnMiddlewareLocals>} res
+ * @param {import('express').NextFunction} next
+ */
+BpmnEngineMiddleware.prototype.createEngine = async function createEngine(req, res, next) {
+  if (res.locals.engine) return next();
+
+  try {
+    const deploymentName = req.params.deploymentName;
+
+    const deployment = await this.adapter.fetch(STORAGE_TYPE_DEPLOYMENT, deploymentName);
+    if (!deployment) {
+      throw new HttpError(`Deployment ${deploymentName} not found`, 404);
+    }
+
+    const { variables, businessKey, caller, idleTimeout } = req.body;
+    const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
+
+    const token = randomUUID();
+    const engine = res.locals.engines.createEngine({
+      ...this.engineOptions,
+      name: deploymentName,
+      token,
+      source: deploymentSource.content,
+      listener: res.locals.listener,
+      variables: {
+        ...this.engineOptions.variables,
+        ...variables,
+        ...(businessKey && { businessKey }),
+      },
+      idleTimeout,
+      caller,
+      businessKey,
+    });
+
+    res.locals.engine = engine;
+
+    return next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Start process by call activity
+ * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} callActivityApi
+ */
+BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function startProcessByCallActivity(callActivityApi) {
+  const { owner: activity, content } = callActivityApi;
+  const [category, ...rest] = content.calledElement.split(':');
+
+  if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
+  const deploymentName = rest.join(':');
+
+  if (content.isRecovered) return;
+
+  const caller = fromActivityApi(callActivityApi);
+
+  try {
+    return await this._startDeployment(deploymentName, {
+      listener: activity.environment.options.listener,
+      settings: { caller: { ...caller } },
+      variables: { ...content.input },
+      caller,
+    });
+  } catch (err) {
+    // @ts-ignore
+    callActivityApi.fail(err);
+  }
+};
+
+/**
  * Internal start deployment
+ * @internal
  * @param {string} deploymentName
  * @param {import('bpmn-engine').BpmnEngineOptions} options
  * @returns {Promise<{id:string}>} Started with id token
  */
 BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment(deploymentName, options) {
   const deployment = await this.adapter.fetch(STORAGE_TYPE_DEPLOYMENT, deploymentName);
-  if (!deployment) return;
+  if (!deployment) {
+    throw new HttpError(`deployment with name ${deploymentName} does not exist`, 404, 'BPMN_DEPLOYMENT_NOT_FOUND');
+  }
 
-  const { listener, variables, businessKey, caller, idleTimeout } = options;
   const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
 
+  const { listener, variables, businessKey, caller, idleTimeout } = options;
   const token = randomUUID();
   await this.engines.execute({
     ...this.engineOptions,
@@ -486,29 +560,6 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
   });
 
   return { id: token };
-};
-
-/**
- * Start process by call activity
- * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} callActivityApi
- */
-BpmnEngineMiddleware.prototype._startProcessByCallActivity = function startProcessByCallActivity(callActivityApi) {
-  const { owner: activity, content } = callActivityApi;
-  const [category, ...rest] = content.calledElement.split(':');
-
-  if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
-  const deploymentName = rest.join(':');
-
-  if (content.isRecovered) return;
-
-  const caller = fromActivityApi(callActivityApi);
-
-  return this._startDeployment(deploymentName, {
-    listener: activity.environment.options.listener,
-    settings: { caller: { ...caller } },
-    variables: { ...content.input },
-    caller,
-  });
 };
 
 /**
@@ -557,16 +608,6 @@ BpmnEngineMiddleware.prototype._postProcessRun = async function postProcessRun(e
 };
 
 /**
- * Get deployment by name
- * @param {string} deploymentName
- */
-BpmnEngineMiddleware.prototype._getDeploymentByName = async function getDeploymentByName(deploymentName) {
-  const deployment = await this.adapter.fetch(STORAGE_TYPE_DEPLOYMENT, deploymentName);
-  if (!deployment) throw new HttpError(`No deployment by name ${deploymentName} was found`, 404);
-  return deployment;
-};
-
-/**
  * Bpmn prefix listener
  * @param {import('express').Application} app Express app
  */
@@ -601,6 +642,13 @@ function slugify(...args) {
  * @property {Engines} engines - Engine factory
  * @property {import('types').IStorageAdapter} adapter - Storage adapter
  * @property {BpmnPrefixListener} listener - Bpmn engine listener
+ * @property {MiddlewareEngine} [engine] - Bpmn engine instance
+ */
+
+/**
+ * Start deployment params
+ * @typedef {Object} StartDeployment
+ * @property {string} deploymentName - Deployment name
  */
 
 /**

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## [0.7.0] - 2024-09-25
+## [0.7.0] - 2024-10-22
 
 - save business key to state
 - pass business key to service- and script factory

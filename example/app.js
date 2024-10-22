@@ -3,12 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import express from 'express';
 import { Broker } from 'smqp';
-import { LRUCache } from 'lru-cache';
 import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
 import { bpmnEngineMiddleware, HttpError, MemoryAdapter } from '../src/index.js';
 import { factory as ScriptsFactory } from './middleware-scripts.js';
+import { basicAuth, authorize } from './auth.js';
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 
@@ -24,14 +24,12 @@ const elements = {
 const app = express();
 const adapter = new MemoryAdapter();
 const broker = (app.locals.broker = new Broker(app));
-const engineCache = (app.locals.engineCache = new LRUCache({ max: 1000 }));
 
 broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
 
 const middleware = bpmnEngineMiddleware({
   adapter,
   broker,
-  engineCache,
   Scripts: ScriptsFactory,
   engineOptions: {
     moddleOptions: { camunda },
@@ -41,17 +39,28 @@ const middleware = bpmnEngineMiddleware({
   },
 });
 
-app.use('/rest', middleware);
+app.post('/rest/auth/process-definition/:deploymentName/start', basicAuth(adapter), middleware.middleware.preStart(), authorize);
+app.use('/rest/auth', basicAuth(adapter), middleware);
+app.use('/rest', basicAuth(adapter, true), middleware);
 
 app.use(errorHandler);
 
+/* c8 ignore next 3 */
 if (isMainModule) {
   app.listen(3000);
 }
 
-export { app };
+export { app, middleware };
 
-function errorHandler(err, req, res, next) {
+/**
+ * Basic auth
+ * @param {Error} err
+ * @param {import('express').Request} _req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+function errorHandler(err, _req, res, next) {
+  /* c8 ignore next 3 */
   if (!(err instanceof Error)) return next();
   // eslint-disable-next-line no-console
   if (isMainModule) console.log({ err });

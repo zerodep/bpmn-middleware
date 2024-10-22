@@ -25,11 +25,7 @@ export function Engines(options) {
     options.engineCache ||
     new LRUCache({
       max: options.maxRunning || 1000,
-      disposeAfter(engine, _key, reason) {
-        if (reason === 'evict') {
-          engine.stop();
-        }
-      },
+      disposeAfter: onEvictEngine,
     });
 
   this.autosaveEngineState = options.autosaveEngineState;
@@ -41,19 +37,28 @@ export function Engines(options) {
 }
 
 /**
- * Execute engine
+ * Create and execute engine from options
  * @param {import('types').MiddlewareEngineOptions} executeOptions
  */
-Engines.prototype.execute = async function execute(executeOptions) {
+Engines.prototype.execute = function execute(executeOptions) {
   const token = executeOptions.token ?? randomUUID();
 
+  const engine = this.createEngine({ ...executeOptions, token });
+  return this.run(engine, executeOptions.listener);
+};
+
+/**
+ * Run prepared engine
+ * @param {MiddlewareEngine} engine
+ * @param {import('bpmn-engine').IListenerEmitter} [listener]
+ */
+Engines.prototype.run = async function execute(engine, listener) {
+  const token = engine.token;
+  this.engineCache.set(token, engine);
+  this._setupEngine(engine);
+
   try {
-    const engine = this.createEngine({ ...executeOptions, token });
-    this.engineCache.set(token, engine);
-
-    this._setupEngine(engine);
-
-    await engine.execute();
+    await engine.execute({ listener });
 
     if (engine.state === 'running') {
       engine.startIdleTimer();
@@ -592,6 +597,18 @@ Engines.prototype._getActivityApi = function getActivityApi(engine, body) {
   // @ts-ignore
   return activity.getApi();
 };
+
+/**
+ * LRU cache disposeAfter function
+ * @param {import('bpmn-engine').Engine} engine
+ * @param {string} _key
+ * @param {LRUCache.DisposeReason} reason
+ */
+export function onEvictEngine(engine, _key, reason) {
+  if (reason === 'evict') {
+    engine.stop();
+  }
+}
 
 /**
  * Save state service function

@@ -105,8 +105,22 @@ export function getAppWithExtensions(options = {}) {
 }
 
 export async function getExampleApp() {
-  const { app } = await import('../../example/app.js');
+  const { app, middleware } = await import('../../example/app.js');
+  app.locals.middleware = middleware;
   return app;
+}
+
+/**
+ * Create deployment
+ * @param {import('express').Express} app
+ * @param {string} name
+ * @param {string | Buffer} source
+ * @param {string[]} [additionalFiles]
+ */
+export async function createDeployment(app, name, source, additionalFiles) {
+  const form = await createDeploymentForm(app, name, source, additionalFiles);
+  const response = await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
+  return response;
 }
 
 /**
@@ -116,7 +130,7 @@ export async function getExampleApp() {
  * @param {string | Buffer} source
  * @param {string[]} [additionalFiles]
  */
-export async function createDeployment(app, name, source, additionalFiles) {
+export async function createDeploymentForm(app, name, source, additionalFiles) {
   const form = new FormData();
   form.append('deployment-name', name);
   form.append('deployment-source', 'Test modeler');
@@ -130,9 +144,7 @@ export async function createDeployment(app, name, source, additionalFiles) {
     }
   }
 
-  const response = await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
-
-  return response;
+  return form;
 }
 
 /**
@@ -147,6 +159,7 @@ export function waitForProcess(app, nameOrToken) {
     stop,
     error,
     wait,
+    call,
     event,
     idle,
     timer,
@@ -166,6 +179,16 @@ export function waitForProcess(app, nameOrToken) {
   function wait(activityId) {
     if (!activityId) return event('activity.wait');
     return event('activity.wait', (msg) => {
+      return msg.content.id === activityId;
+    });
+  }
+
+  /**
+   * @param {string} activityId
+   */
+  function call(activityId) {
+    if (!activityId) return event('activity.call');
+    return event('activity.call', (msg) => {
       return msg.content.id === activityId;
     });
   }

@@ -24,7 +24,7 @@
     "noUnusedParameters": true,
     "typeRoots": ["./node_modules/@types"],
     "paths": {
-      "types": ["./types/interfaces.js"],
-    },
-  },
+      "types": ["./types/interfaces.js"]
+    }
+  }
 }

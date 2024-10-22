@@ -7,14 +7,14 @@ import { factory as ScriptsFactory } from '../../example/middleware-scripts.js';
 const externalScriptSource = getResource('script-resource.bpmn');
 
 Feature('scripts', () => {
-  Scenario('process with scripts', () => {
-    let apps, adapter;
-    before(() => {
-      adapter = new MemoryAdapter();
-      apps = horizontallyScaled(2, { adapter });
-    });
-    after(() => apps.stop());
+  let apps, adapter;
+  before(() => {
+    adapter = new MemoryAdapter();
+    apps = horizontallyScaled(2, { adapter });
+  });
+  after(() => apps.stop());
 
+  Scenario('process with scripts', () => {
     Given('a process with two script tasks', () => {
       return createDeployment(
         apps.balance(),
@@ -173,6 +173,24 @@ Feature('scripts', () => {
 
     And('scripts factory received expected arguments', () => {
       expect(scriptsArgs).to.deep.equal([adapter, deploymentName, 'bar']);
+    });
+  });
+
+  Scenario('invalid source', () => {
+    let deploymentName;
+    Given('a source matching scenario is deployed', async () => {
+      deploymentName = 'bad-source';
+      await createDeployment(apps.balance(), deploymentName, '<bpmn/>');
+    });
+
+    let response;
+    When('scripts endpoint is called with unknown deployment', async () => {
+      const app = apps.balance();
+      response = await request(app).get('/rest/script/bad-source');
+    });
+
+    Then('bad gateway is returned', () => {
+      expect(response.statusCode, response.text).to.equal(502);
     });
   });
 });

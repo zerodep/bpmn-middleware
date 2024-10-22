@@ -82,7 +82,8 @@
   ],
   "c8": {
     "include": [
-      "src/"
+      "src/",
+      "example/"
     ]
   }
 }

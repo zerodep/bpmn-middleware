@@ -60,6 +60,9 @@ export interface IStorageAdapter {
   query<T>(type: string | StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[]; [x: string]: any }>;
 }
 
+/**
+ * Calling process
+ */
 export interface Caller {
   /** Calling process token */
   token: string;

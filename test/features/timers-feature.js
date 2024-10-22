@@ -47,4 +47,21 @@ Feature('timers', () => {
       expect(success, 'successful parse').to.be.above(0);
     });
   });
+
+  Scenario('invalid source', () => {
+    let deploymentName;
+    Given('a source matching scenario is deployed', async () => {
+      deploymentName = 'bad-source';
+      await testHelpers.createDeployment(apps.balance(), deploymentName, '<bpmn/>');
+    });
+
+    let response;
+    When('timers are fetched', async () => {
+      response = await apps.request().get(`/rest/timers/${deploymentName}`);
+    });
+
+    Then('bad gateway is returned', () => {
+      expect(response.statusCode, response.text).to.equal(502);
+    });
+  });
 });

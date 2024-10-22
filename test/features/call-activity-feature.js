@@ -7,6 +7,7 @@ import { DEFAULT_IDLE_TIMER } from '../../src/constants.js';
 
 Feature('call activity', () => {
   after(ck.reset);
+  beforeEachScenario(ck.reset);
 
   Scenario('call process in the same diagram', () => {
     let apps, adapter;
@@ -317,7 +318,7 @@ Feature('call activity', () => {
     });
   });
 
-  Feature('call activity is cancelled', () => {
+  Scenario('call activity is cancelled', () => {
     let apps, adapter;
     before('two parallel app instances with a shared adapter source', () => {
       adapter = new MemoryAdapter();
@@ -424,7 +425,7 @@ Feature('call activity', () => {
     });
   });
 
-  Feature('calling process has disappeared', () => {
+  Scenario('calling process has disappeared', () => {
     let apps, adapter;
     before('two parallel app instances with a shared adapter source', () => {
       adapter = new MemoryAdapter();
@@ -573,7 +574,7 @@ Feature('call activity', () => {
     });
   });
 
-  Feature('called process has disappeared', () => {
+  Scenario('called process has disappeared', () => {
     let apps, adapter;
     before('two parallel app instances with a shared adapter source', () => {
       adapter = new MemoryAdapter();
@@ -662,7 +663,53 @@ Feature('call activity', () => {
     });
   });
 
-  Feature('single app instance', () => {
+  Scenario('called deployment does not exist', () => {
+    let apps, adapter;
+    before('two parallel app instances with a shared adapter source', () => {
+      adapter = new MemoryAdapter();
+      apps = horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    Given('a process with call activity that starts non-existing deployment and a timer', async () => {
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="main-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="deployment:called-deployment" />
+            <boundaryEvent id="bound-timer" attachedToRef="call-activity">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">P1D</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+            <endEvent id="end" />
+          </process>
+        </definitions>`
+      );
+    });
+
+    let fail;
+    When('process is started', async () => {
+      const app = apps.balance();
+      fail = waitForProcess(app, 'call-deployment').error();
+
+      await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
+    });
+
+    Then('run fails', async () => {
+      await fail;
+    });
+
+    And('run is stopped', () => {
+      expect(apps.getRunning()).to.have.length(0);
+    });
+  });
+
+  Scenario('single app instance', () => {
     let app;
     before(() => {
       app = getAppWithExtensions();

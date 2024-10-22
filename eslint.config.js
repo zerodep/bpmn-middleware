@@ -75,7 +75,7 @@ export default [
     files: ['**/*.js'],
     languageOptions: {
       globals: {
-        ...globals.node,
+        ...globals.nodeBuiltin,
       },
     },
   },
@@ -83,7 +83,7 @@ export default [
     files: ['test/**/*.js'],
     languageOptions: {
       globals: {
-        ...globals.node,
+        ...globals.nodeBuiltin,
         ...globals.mocha,
         expect: 'readonly',
         beforeEachScenario: 'readonly',
