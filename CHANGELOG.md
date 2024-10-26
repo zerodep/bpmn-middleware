@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [0.8.0] - 2024-10-26
+
+- allow overriding bpmn engine token by setting res.locals.token to string
+- allow overriding bpmn engine by setting res.locals.engine to instance of MiddlewareEngine
+- debug using `DEBUG=bpmn-middleware`
+- fix example app routing order
+
 ## [0.7.0] - 2024-10-22
 
 - save business key to state

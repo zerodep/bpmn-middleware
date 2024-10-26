@@ -79,7 +79,6 @@ Feature('example app', () => {
     Given('a process with an external resource with invalid mime type', async () => {
       deploymentName = 'svg-external-scripts-process';
       const form = await createDeploymentForm(
-        app,
         deploymentName,
         `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
           id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
@@ -131,7 +130,7 @@ Feature('example app', () => {
     });
   });
 
-  Scenario('flow that require role to run', () => {
+  Scenario('flow that require user role to run', () => {
     let deploymentName;
     Given('a process with user roles', () => {
       deploymentName = 'role-process';
@@ -163,13 +162,34 @@ Feature('example app', () => {
         .set('authorization', Buffer.from('jane:someuniqueprofanesentence').toString('base64url'));
     });
 
+    let token;
     Then('process is started', () => {
       expect(response.statusCode, response.text).to.equal(201);
+      token = response.body.id;
+    });
+
+    When('process status is fetched', async () => {
+      response = await request(app)
+        .get(`/rest/auth/state/${token}`)
+        .set('authorization', Buffer.from('jane:someuniqueprofanesentence').toString('base64url'));
+    });
+
+    Then('status is returned', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('state', 'idle');
     });
 
     describe('unauthenticated', () => {
       When('process is started without authentication', async () => {
         response = await request(app).post(`/rest/auth/process-definition/${deploymentName}/start`);
+      });
+
+      Then('unauthenticated is returned', () => {
+        expect(response.statusCode, response.text).to.equal(401);
+      });
+
+      When('attempting to get process state without authorization', async () => {
+        response = await request(app).get('/rest/auth/state/my-fake-token');
       });
 
       Then('unauthenticated is returned', () => {

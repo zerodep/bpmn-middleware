@@ -14,6 +14,7 @@ import { LRUCache } from 'lru-cache';
 import { bpmnEngineMiddleware } from '../../src/index.js';
 import { HttpError } from '../../src/Errors.js';
 import { MemoryAdapter } from '../../src/MemoryAdapter.js';
+import debug from '../../src/debug.js';
 
 const nodeRequire = createRequire(import.meta.url);
 
@@ -97,6 +98,7 @@ export function getAppWithExtensions(options = {}) {
     ...middlewareOptions,
   });
 
+  app.locals.middleware = middleware;
   app.locals.engineCache = middleware.engines.engineCache;
 
   app.use('/rest', middleware);
@@ -118,19 +120,18 @@ export async function getExampleApp() {
  * @param {string[]} [additionalFiles]
  */
 export async function createDeployment(app, name, source, additionalFiles) {
-  const form = await createDeploymentForm(app, name, source, additionalFiles);
+  const form = await createDeploymentForm(name, source, additionalFiles);
   const response = await request(app).post('/rest/deployment/create').set(form.getHeaders()).send(form.getBuffer().toString());
   return response;
 }
 
 /**
  * Create deployment multi-part-form
- * @param {import('express').Express} app
  * @param {string} name
  * @param {string | Buffer} source
  * @param {string[]} [additionalFiles]
  */
-export async function createDeploymentForm(app, name, source, additionalFiles) {
+export async function createDeploymentForm(name, source, additionalFiles) {
   const form = new FormData();
   form.append('deployment-name', name);
   form.append('deployment-source', 'Test modeler');
@@ -322,8 +323,7 @@ export function fakeTimers() {
  */
 export function errorHandler(err, _req, res, next) {
   if (!(err instanceof Error)) return next();
-  // eslint-disable-next-line no-console
-  if (process.env.TEST_ERR) console.log({ err });
+  debug(err.message, err);
   if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
   res.status(502).send({ message: err.message });
 }

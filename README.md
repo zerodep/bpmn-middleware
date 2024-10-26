@@ -8,6 +8,7 @@ Under construction so breaking changes will occur until v1.
 
 - [Api documentation](./docs/API.md)
 - [Example app](./example/README.md)
+- [Debug](#debug)
 
 ## Usage
 
@@ -72,3 +73,7 @@ function errorHandler(err, req, res, next) {
   res.status(502).send({ message: err.message });
 }
 ```
+
+## Debug
+
+Debug by `DEBUG=bpmn-middleware`, or on windows `$env:DEBUG='bpmn-middleware'`

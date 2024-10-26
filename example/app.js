@@ -39,8 +39,8 @@ const middleware = bpmnEngineMiddleware({
   },
 });
 
-app.post('/rest/auth/process-definition/:deploymentName/start', basicAuth(adapter), middleware.middleware.preStart(), authorize);
-app.use('/rest/auth', basicAuth(adapter), middleware);
+app.use('/rest/auth', basicAuth(adapter));
+app.post('/rest/auth/process-definition/:deploymentName/start', middleware.middleware.preStart(), authorize);
 app.use('/rest', basicAuth(adapter, true), middleware);
 
 app.use(errorHandler);

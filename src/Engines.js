@@ -360,7 +360,8 @@ Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
  * @param {MiddlewareEngine} engine
  */
 Engines.prototype.createEngineState = function createEngineState(engine) {
-  const { token, expireAt, sequenceNumber, caller, businessKey } = engine.options;
+  const token = engine.token;
+  const { expireAt, sequenceNumber, caller, businessKey } = engine.options;
 
   /** @type {import('types').MiddlewareEngineState} */
   const state = {
@@ -402,6 +403,7 @@ Engines.prototype.createEngineState = function createEngineState(engine) {
  */
 Engines.prototype.saveEngineState = async function saveEngineState(engine, ifExists) {
   const state = this.createEngineState(engine);
+
   if (ifExists) {
     try {
       await this.adapter.update(STORAGE_TYPE_STATE, state.token, state);
@@ -523,16 +525,16 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
       case 'engine.end':
         this._teardownEngine(engine);
         engineOptions.expireAt = undefined;
-        engineOptions.listener.emit(message.properties.type, engine);
+        engineOptions.listener?.emit(message.properties.type, engine);
         break;
       case 'engine.stop':
         this._teardownEngine(engine);
-        engineOptions.listener.emit(message.properties.type, engine);
+        engineOptions.listener?.emit(message.properties.type, engine);
         break;
       case 'engine.error': {
         this._teardownEngine(engine);
         engineOptions.expireAt = undefined;
-        engineOptions.listener.emit('error', message.content, engine);
+        engineOptions.listener?.emit('error', message.content, engine);
         saveState = true;
         saveStateIfExists = true;
         break;
