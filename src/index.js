@@ -56,17 +56,17 @@ export function bpmnEngineMiddleware(options) {
   router.post('(*)?/process-definition/:deploymentName/start', middleware.preStart(), middleware.start.bind(middleware));
   router.get('(*)?/script/:deploymentName', middleware.preStart(), middleware.getScript.bind(middleware));
   router.get('(*)?/timers/:deploymentName', middleware.preStart(), middleware.getDeploymentTimers.bind(middleware));
-  router.get('(*)?/running', middleware.getRunning.bind(middleware));
-  router.get('(*)?/status/:token', middleware.getStatusByToken.bind(middleware));
+  router.get('(*)?/running', middleware._addEngineLocals, middleware.getRunning.bind(middleware));
+  router.get('(*)?/status/:token', middleware._addEngineLocals, middleware.getStatusByToken.bind(middleware));
   router.get('(*)?/status/:token/:activityId', middleware._addEngineLocals, middleware.getActivityStatus.bind(middleware));
-  router.post('(*)?/resume/:token', json(), middleware._addEngineLocals, middleware.resumeByToken.bind(middleware));
-  router.post('(*)?/signal/:token', json(), middleware._addEngineLocals, middleware.signalActivity.bind(middleware));
-  router.post('(*)?/cancel/:token', json(), middleware._addEngineLocals, middleware.cancelActivity.bind(middleware));
-  router.post('(*)?/fail/:token', json(), middleware._addEngineLocals, middleware.failActivity.bind(middleware));
-  router.get('(*)?/state/:token', middleware.getStateByToken.bind(middleware));
-  router.delete('(*)?/state/:token', middleware.deleteStateByToken.bind(middleware));
-  router.delete('(*)?/internal/stop', middleware.internalStopAll.bind(middleware));
-  router.delete('(*)?/internal/stop/:token', middleware.internalStopByToken.bind(middleware));
+  router.post('(*)?/resume/:token', middleware.preResume(), middleware.resumeByToken.bind(middleware));
+  router.post('(*)?/signal/:token', middleware.preResume(), middleware.signalActivity.bind(middleware));
+  router.post('(*)?/cancel/:token', middleware.preResume(), middleware.cancelActivity.bind(middleware));
+  router.post('(*)?/fail/:token', middleware.preResume(), middleware.failActivity.bind(middleware));
+  router.get('(*)?/state/:token', middleware._addEngineLocals, middleware.getStateByToken.bind(middleware));
+  router.delete('(*)?/state/:token', middleware._addEngineLocals, middleware.deleteStateByToken.bind(middleware));
+  router.delete('(*)?/internal/stop', middleware._addEngineLocals, middleware.internalStopAll.bind(middleware));
+  router.delete('(*)?/internal/stop/:token', middleware._addEngineLocals, middleware.internalStopByToken.bind(middleware));
 
   Object.defineProperties(router, {
     engines: {
@@ -107,6 +107,11 @@ export function BpmnEngineMiddleware(options, engines) {
    * Bound validate locals
    */
   this.__validateLocals = this._validateLocals.bind(this);
+
+  /**
+   * Bound resume options
+   */
+  this.__resumeOptions = this._resumeOptions.bind(this);
 }
 
 /**
@@ -190,7 +195,7 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
 };
 
 /**
- * Pre start middleware
+ * Pre start BPMN engine execution middleware
  * @returns {import('express').RequestHandler[]}
  */
 BpmnEngineMiddleware.prototype.preStart = function preStart() {
@@ -297,7 +302,7 @@ BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymen
  */
 BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, next) {
   try {
-    const result = await this.engines.getRunning(req.query);
+    const result = await res.locals.engines.getRunning(req.query);
     return res.send(result);
   } catch (err) {
     next(err);
@@ -306,14 +311,14 @@ BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, 
 
 /**
  * Get engine status by token
- * @param {import('express').Request<{token:string}>} req
+ * @param {import('express').Request<TokenParameter>} req
  * @param {import('express').Response<Awaited<ReturnType<Engines['getStatusByToken']>>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToken(req, res, next) {
   try {
     const token = req.params.token;
-    const status = await this.engines.getStatusByToken(token);
+    const status = await res.locals.engines.getStatusByToken(token);
     if (!status) throw new HttpError(`Token ${token} not found`, 404);
     return res.send(status);
   } catch (err) {
@@ -330,7 +335,7 @@ BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToke
 BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivityStatus(req, res, next) {
   try {
     const { token, activityId } = req.params;
-    const postponed = await this.engines.getPostponed(token, res.locals.listener);
+    const postponed = await res.locals.engines.getPostponed(token, res.locals.listener);
     const activity = postponed.find((p) => p.id === activityId);
 
     if (!activity) throw new HttpError(`Token ${token} has no running activity with id ${activityId}`, 400);
@@ -343,15 +348,16 @@ BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivitySta
 
 /**
  * Signal activity
- * @param {import('express').Request<{token:string}, import('types').SignalBody>} req
+ * @param {import('express').Request<TokenParameter, import('types').SignalBody>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.signalActivity(token, res.locals.listener, req.body);
-    return res.send(this.engines.getEngineStatusByToken(token));
+    const engines = res.locals.engines;
+    await engines.signalActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
+    return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
   }
@@ -359,15 +365,16 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
 
 /**
  * Cancel activity
- * @param {import('express').Request<{token:string}, import('types').SignalBody>} req
+ * @param {import('express').Request<TokenParameter, import('types').SignalBody>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.cancelActivity(token, res.locals.listener, req.body);
-    return res.send(this.engines.getEngineStatusByToken(token));
+    const engines = res.locals.engines;
+    await engines.cancelActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
+    return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
   }
@@ -375,31 +382,42 @@ BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(re
 
 /**
  * Fail activity
- * @param {import('express').Request<{token:string}, import('types').SignalBody>} req
+ * @param {import('express').Request<TokenParameter, import('types').SignalBody>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.failActivity(token, res.locals.listener, req.body);
-    return res.send(this.engines.getEngineStatusByToken(token));
+    const engines = res.locals.engines;
+    await engines.failActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
+    return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
   }
 };
 
 /**
+ * Pre resume middleware
+ * @returns {import('express').RequestHandler[]}
+ */
+BpmnEngineMiddleware.prototype.preResume = function preStart() {
+  // @ts-ignore
+  return [json(), this._addEngineLocals, this.__resumeOptions];
+};
+
+/**
  * Resume engine by token
- * @param {import('express').Request<{token:string}>} req
+ * @param {import('express').Request<TokenParameter>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.resumeByToken = async function resumeByToken(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.resume(token, res.locals.listener);
-    return res.send(this.engines.getEngineStatusByToken(token));
+    const engines = res.locals.engines;
+    await engines.resume(token, res.locals.listener, res.locals.resumeOptions);
+    return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
   }
@@ -407,14 +425,14 @@ BpmnEngineMiddleware.prototype.resumeByToken = async function resumeByToken(req,
 
 /**
  * Get engine state by token
- * @param {import('express').Request<{token:string}>} req
+ * @param {import('express').Request<TokenParameter>} req
  * @param {import('express').Response<Awaited<ReturnType<Engines['getStateByToken']>>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(req, res, next) {
   try {
     const token = req.params.token;
-    const state = await this.engines.getStateByToken(token);
+    const state = await res.locals.engines.getStateByToken(token);
     if (!state) throw new HttpError(`State with token ${token} not found`, 404);
     return res.send(state);
   } catch (err) {
@@ -424,14 +442,14 @@ BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(
 
 /**
  * Delete engine by token
- * @param {import('express').Request<{token:string}>} req
+ * @param {import('express').Request<TokenParameter>} req
  * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateByToken(req, res, next) {
   try {
     const token = req.params.token;
-    await this.engines.deleteByToken(token);
+    await res.locals.engines.deleteByToken(token);
     return res.status(204).send();
   } catch (err) {
     next(err);
@@ -440,6 +458,7 @@ BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateBy
 
 /**
  * Stop all running engines
+ * @internal
  * @param {import('express').Request} _
  * @param {import('express').Response} res
  */
@@ -450,6 +469,7 @@ BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res
 
 /**
  * Stop engine by token
+ * @internal
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
@@ -529,7 +549,29 @@ BpmnEngineMiddleware.prototype._validateLocals = function validateLocals(_req, r
 };
 
 /**
+ * Internal get resume options
+ * @internal
+ * @param {import('express').Request<any, any, ResumeQuery>} req
+ * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').NextFunction} next
+ */
+BpmnEngineMiddleware.prototype._resumeOptions = function resumeOptions(req, res, next) {
+  /** @type {import('types').ResumeOptions} */
+  const options = (res.locals.resumeOptions = {});
+  for (const [k] of Object.entries(req.query)) {
+    switch (k.toLowerCase()) {
+      case 'autosaveenginestate': {
+        options.autosaveEngineState = true;
+      }
+    }
+  }
+
+  next();
+};
+
+/**
  * Start process by call activity
+ * @internal
  * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} callActivityApi
  */
 BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function startProcessByCallActivity(callActivityApi) {
@@ -594,6 +636,7 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
 
 /**
  * Cancel process by call activity
+ * @internal
  * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} callActivityApi
  */
 BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function cancelProcessByCallActivity(callActivityApi) {
@@ -611,6 +654,7 @@ BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function can
 
 /**
  * Post process engine run
+ * @internal
  * @param {MiddlewareEngine} engine
  * @param {Error} [error]
  */
@@ -674,6 +718,7 @@ function slugify(...args) {
  * @property {BpmnPrefixListener} listener - BPMN engine listener
  * @property {string} [token] - BPMN engine execution token
  * @property {MiddlewareEngine} [engine] - BPMN engine instance
+ * @property {import('types').ResumeOptions} [resumeOptions] - BPMN engine resume options
  */
 
 /**
@@ -683,9 +728,21 @@ function slugify(...args) {
  */
 
 /**
+ * Token params
+ * @typedef {Object} TokenParameter
+ * @property {string} token - BPMN engine execution token
+ */
+
+/**
  * Create deployment result
  * @typedef {Object} CreateDeploymentResponseBody
  * @property {string} id - Deployment name
  * @property {Date} deploymentTime - Storage adapter
  * @property {any} deployedProcessDefinitions - Deployed process definitions
+ */
+
+/**
+ * Resume query
+ * @typedef {Object} ResumeQuery
+ * @property {string} [autosaveEngineState] - Autosave engine state
  */

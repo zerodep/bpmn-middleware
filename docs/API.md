@@ -151,7 +151,7 @@ Params:
 
 - `deploymentName`: deployment name
 
-Request body:
+**Request body:**
 
 - `businessKey`: string, business key
 - `variables`: optional object with variables to pass to engine
@@ -213,11 +213,19 @@ Get process activity status
 
 Resume process run
 
+**Query:**
+
+- `autosaveEngineState`: force autosave engine state, any value will do
+
 ### `POST (*)?/signal/:token`
 
 Signal process activity.
 
-Request body:
+**Query:**
+
+- `autosaveEngineState`: force autosave engine state, any value will do
+
+**Request body:**
 
 - `id`: activity id
 - `executionId`: optional activity execution id
@@ -227,7 +235,11 @@ Request body:
 
 Cancel process activity.
 
-Request body:
+**Query:**
+
+- `autosaveEngineState`: force autosave engine state, any value will do
+
+**Request body:**
 
 - `id`: activity id
 - `executionId`: optional activity execution id
@@ -236,7 +248,11 @@ Request body:
 
 Fail process activity.
 
-Request body:
+**Query:**
+
+- `autosaveEngineState`: force autosave engine state, any value will do
+
+**Request body:**
 
 - `id`: activity id
 - `executionId`: optional activity execution id

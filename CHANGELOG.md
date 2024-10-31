@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.9.0] - 2024-10-30
+
+- take `autosaveEngineState` query parameter on resume execution to enable auto saving engine state
+
 ## [0.8.0] - 2024-10-26
 
 - allow overriding bpmn engine token by setting res.locals.token to string

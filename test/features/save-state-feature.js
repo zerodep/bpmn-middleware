@@ -1,7 +1,7 @@
 import request from 'supertest';
 
 import * as testHelpers from '../helpers/testHelpers.js';
-import { MemoryAdapter } from '../../src/index.js';
+import { MemoryAdapter, STORAGE_TYPE_STATE } from '../../src/index.js';
 import { StorageError } from '../../src/Errors.js';
 
 const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');
@@ -117,7 +117,7 @@ Feature('save state', () => {
 
     Then('bad request is returned since process is already completed', () => {
       expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body.message).to.match(/already completed/);
+      expect(response.body.message, response.text).to.match(/already completed/);
     });
 
     describe('auto-save is disabled', () => {
@@ -125,7 +125,7 @@ Feature('save state', () => {
         appsWithoutAutosave = testHelpers.horizontallyScaled(2, { adapter, autosaveEngineState: false });
       });
 
-      When('process is started on manual save instance', async () => {
+      When('process with with ttl is started on manual save instance', async () => {
         startingApp = appsWithoutAutosave.balance();
         timer = testHelpers.waitForProcess(startingApp, deploymentName).timer();
 
@@ -151,6 +151,10 @@ Feature('save state', () => {
 
       And('no running engines', () => {
         expect(appsWithoutAutosave.getRunningByToken(token).length).to.not.be.ok;
+      });
+
+      And('adapter contains state with ttl', () => {
+        expect(adapter.storage.getRemainingTTL(`${STORAGE_TYPE_STATE}:${token}`)).to.be.within(1, 30001);
       });
 
       When('getting manually saved process state', async () => {
@@ -326,6 +330,163 @@ Feature('save state', () => {
         expect(response.statusCode, response.text).to.equal(400);
         expect(response.body.message).to.match(/failed/);
       });
+    });
+  });
+
+  Scenario('using saveState service', () => {
+    /** @type {import('../../types/interfaces.js').IStorageAdapter} */
+    let adapter;
+    /** @type {ReturnType<testHelpers.horizontallyScaled>} */
+    let apps;
+    before(() => {
+      adapter = new MisbehavingAdapter();
+      apps = testHelpers.horizontallyScaled(2, { adapter, autosaveEngineState: false });
+    });
+    after(() => {
+      apps?.stop();
+    });
+
+    let deploymentName;
+    Given('a source with a service task that has implementation saveState', async () => {
+      deploymentName = 'service-save-state';
+
+      await testHelpers.createDeployment(
+        apps.balance(),
+        deploymentName,
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <serviceTask id="task" implementation="\${environment.services.saveState}" />
+          </process>
+        </definitions>`
+      );
+    });
+
+    let end;
+    let calledApp;
+    let token;
+    let response;
+    When('process is started', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
+
+    And('engine is not running', () => {
+      expect(apps.getRunningByToken(token)).to.have.length(0);
+    });
+
+    When('resuming process', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp).post('/rest/resume/' + token);
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes again', () => {
+      return end;
+    });
+
+    When('resuming process with autosaveEngineState query parameter', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp).post(`/rest/resume/${token}?autosaveEngineState=true`);
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes again', () => {
+      return end;
+    });
+
+    When('attempting to resume process again', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp).post('/rest/resume/' + token);
+    });
+
+    Then('bad request is returned since process has completed', () => {
+      expect(response.statusCode, response.text).to.equal(400);
+    });
+
+    Given('a source with a service task that has implementation saveState followed by a task that requires signal', async () => {
+      deploymentName = 'service-save-state-and-wait';
+
+      await testHelpers.createDeployment(
+        apps.balance(),
+        deploymentName,
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <serviceTask id="save" implementation="\${environment.services.saveState}" />
+            <sequenceFlow id="to-wait" sourceRef="save" targetRef="wait" />
+            <manualTask id="wait" />
+          </process>
+        </definitions>`
+      );
+    });
+
+    When('process is started', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+
+      token = response.body.id;
+    });
+
+    When('waiting task is signalled', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp)
+        .post('/rest/signal/' + token)
+        .send({ id: 'wait' });
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes again', () => {
+      return end;
+    });
+
+    When('waiting task is signalled again but now with autosave query', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp).post(`/rest/signal/${token}?autosaveenginestate=1`).send({ id: 'wait' });
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes again', () => {
+      return end;
+    });
+
+    When('attempting to signal process again', async () => {
+      calledApp = apps.balance();
+      end = testHelpers.waitForProcess(calledApp, deploymentName).end();
+
+      response = await request(calledApp)
+        .post('/rest/signal/' + token)
+        .send({ id: 'wait' });
+    });
+
+    Then('bad request is returned since process has completed', () => {
+      expect(response.statusCode, response.text).to.equal(400);
     });
   });
 

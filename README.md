@@ -76,4 +76,4 @@ function errorHandler(err, req, res, next) {
 
 ## Debug
 
-Debug by `DEBUG=bpmn-middleware`, or on windows `$env:DEBUG='bpmn-middleware'`
+Debug by `DEBUG=bpmn-middleware`, or on windows `$env:DEBUG='bpmn-middleware'`. To be more verbose use `DEBUG=bpmn*`, that will display the whole shebang.

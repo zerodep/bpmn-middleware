@@ -126,3 +126,8 @@ export interface ParsedTimerResult extends ContextTimer {
   repeat?: Number;
   message?: string;
 }
+
+export interface ResumeOptions {
+  autosaveEngineState?: boolean;
+  [x: string]: any;
+}

@@ -76,9 +76,10 @@ Engines.prototype.run = async function execute(engine, listener) {
  * Resume engine execution
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} [listener]
+ * @param {import('types').ResumeOptions} [options]
  * @returns {Promise<MiddlewareEngine>}
  */
-Engines.prototype.resume = async function resume(token, listener) {
+Engines.prototype.resume = async function resume(token, listener, options) {
   try {
     const engineCache = this.engineCache;
 
@@ -103,7 +104,12 @@ Engines.prototype.resume = async function resume(token, listener) {
       return this.resume(token, listener);
     }
 
-    if (engine) return engine;
+    if (engine) {
+      if (options?.autosaveEngineState) {
+        engine.environment.settings.autosaveEngineState = true;
+      }
+      return engine;
+    }
 
     // @ts-ignore
     engine = new MiddlewareEngine(token, {
@@ -118,6 +124,10 @@ Engines.prototype.resume = async function resume(token, listener) {
     engine.options.sequenceNumber = state.sequenceNumber;
     engine.options.expireAt = state.expireAt;
     engine.options.businessKey = state.businessKey;
+
+    if (options?.autosaveEngineState) {
+      engine.environment.settings.autosaveEngineState = true;
+    }
 
     this.engineCache.set(token, engine);
 
@@ -138,9 +148,10 @@ Engines.prototype.resume = async function resume(token, listener) {
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
+ * @param {import('types').ResumeOptions} [options]
  */
-Engines.prototype.signalActivity = async function signalActivity(token, listener, body) {
-  const engine = await this.resume(token, listener);
+Engines.prototype.signalActivity = async function signalActivity(token, listener, body, options) {
+  const engine = await this.resume(token, listener, options);
 
   await new Promise((resolve) => {
     process.nextTick(() => {
@@ -157,9 +168,10 @@ Engines.prototype.signalActivity = async function signalActivity(token, listener
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
+ * @param {import('types').ResumeOptions} [options]
  */
-Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body) {
-  const engine = await this.resume(token, listener);
+Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body, options) {
+  const engine = await this.resume(token, listener, options);
   const api = this._getActivityApi(engine, body);
   api.cancel();
   return engine;
@@ -170,9 +182,10 @@ Engines.prototype.cancelActivity = async function cancelActivity(token, listener
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
+ * @param {import('types').ResumeOptions} [options]
  */
-Engines.prototype.failActivity = async function failActivity(token, listener, body) {
-  const engine = await this.resume(token, listener);
+Engines.prototype.failActivity = async function failActivity(token, listener, body, options) {
+  const engine = await this.resume(token, listener, options);
   const api = this._getActivityApi(engine, body);
   api.sendApiMessage('error', body, { type: 'error' });
   return engine;
@@ -400,20 +413,21 @@ Engines.prototype.createEngineState = function createEngineState(engine) {
  * Save engine state
  * @param {MiddlewareEngine} engine
  * @param {boolean} [ifExists] save engine state if existing state
+ * @param {any} [options] adapter store options
  */
-Engines.prototype.saveEngineState = async function saveEngineState(engine, ifExists) {
+Engines.prototype.saveEngineState = async function saveEngineState(engine, ifExists, options) {
   const state = this.createEngineState(engine);
 
   if (ifExists) {
     try {
-      await this.adapter.update(STORAGE_TYPE_STATE, state.token, state);
+      await this.adapter.update(STORAGE_TYPE_STATE, state.token, state, options);
     } catch (err) {
       // @ts-ignore
       if (err.code === ERR_STORAGE_KEY_NOT_FOUND) return;
       throw err;
     }
   } else {
-    await this.adapter.upsert(STORAGE_TYPE_STATE, state.token, state);
+    await this.adapter.upsert(STORAGE_TYPE_STATE, state.token, state, options);
   }
 };
 
@@ -505,11 +519,13 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
 
   let saveState = autosaveEngineState;
   let saveStateIfExists = false;
+  let saveStateOptions;
 
   try {
     switch (routingKey) {
       case SAVE_STATE_ROUTINGKEY: {
         saveState = true;
+        saveStateOptions = message.content;
         break;
       }
       case ENABLE_SAVE_STATE_ROUTINGKEY: {
@@ -553,7 +569,7 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
     }
 
     if (saveState) {
-      await this.saveEngineState(engine, saveStateIfExists);
+      await this.saveEngineState(engine, saveStateIfExists, saveStateOptions);
     }
   } catch (err) {
     this._teardownEngine(engine);
@@ -619,10 +635,10 @@ export function onEvictEngine(engine, _key, reason) {
  */
 function saveState(...args) {
   const callback = args.pop();
-  const msg = args.pop();
+  const message = args.pop();
 
-  if (!msg?.content?.isRecovered) {
-    this.broker.publish('event', SAVE_STATE_ROUTINGKEY, {});
+  if (!message?.content?.isRecovered) {
+    this.broker.publish('event', SAVE_STATE_ROUTINGKEY, { ...args.shift() });
   }
 
   callback(null, true);
@@ -635,10 +651,10 @@ function saveState(...args) {
  */
 function enableSaveState(...args) {
   const callback = args.pop();
-  const msg = args.pop();
+  const message = args.pop();
 
-  if (!msg?.content?.isRecovered) {
-    this.broker.publish('event', ENABLE_SAVE_STATE_ROUTINGKEY, {});
+  if (!message?.content?.isRecovered) {
+    this.broker.publish('event', ENABLE_SAVE_STATE_ROUTINGKEY, { ...args.shift() });
   }
 
   callback(null, true);
@@ -651,10 +667,10 @@ function enableSaveState(...args) {
  */
 function disableSaveState(...args) {
   const callback = args.pop();
-  const msg = args.pop();
+  const message = args.pop();
 
-  if (!msg?.content?.isRecovered) {
-    this.broker.publish('event', DISABLE_SAVE_STATE_ROUTINGKEY, {});
+  if (!message?.content?.isRecovered) {
+    this.broker.publish('event', DISABLE_SAVE_STATE_ROUTINGKEY, { ...args.shift() });
   }
 
   callback(null, true);
