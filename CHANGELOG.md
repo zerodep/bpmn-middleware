@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.10.0] - 2024-11-14
+
+- take `autosaveEngineState=false` query parameter on resume execution to disable auto saving engine state, not sure why you would do that? but it's a boolean so it seems fair...
+
 ## [0.9.0] - 2024-10-30
 
 - take `autosaveEngineState` query parameter on resume execution to enable auto saving engine state

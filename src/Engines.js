@@ -82,6 +82,7 @@ Engines.prototype.run = async function execute(engine, listener) {
 Engines.prototype.resume = async function resume(token, listener, options) {
   try {
     const engineCache = this.engineCache;
+    const resumeOptions = { ...options };
 
     /** @type {MiddlewareEngine} */
     let engine = engineCache.get(token);
@@ -105,8 +106,8 @@ Engines.prototype.resume = async function resume(token, listener, options) {
     }
 
     if (engine) {
-      if (options?.autosaveEngineState) {
-        engine.environment.settings.autosaveEngineState = true;
+      if ('autosaveEngineState' in resumeOptions) {
+        engine.environment.settings.autosaveEngineState = options.autosaveEngineState;
       }
       return engine;
     }
@@ -125,8 +126,8 @@ Engines.prototype.resume = async function resume(token, listener, options) {
     engine.options.expireAt = state.expireAt;
     engine.options.businessKey = state.businessKey;
 
-    if (options?.autosaveEngineState) {
-      engine.environment.settings.autosaveEngineState = true;
+    if ('autosaveEngineState' in resumeOptions) {
+      engine.environment.settings.autosaveEngineState = resumeOptions.autosaveEngineState;
     }
 
     this.engineCache.set(token, engine);

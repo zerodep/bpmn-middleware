@@ -5,7 +5,6 @@ const rules = {
   'dot-notation': [2, { allowKeywords: true }],
   'eol-last': 2,
   eqeqeq: 2,
-  'linebreak-style': ['error', 'unix'],
   'no-alert': 2,
   'no-array-constructor': 2,
   'no-caller': 2,

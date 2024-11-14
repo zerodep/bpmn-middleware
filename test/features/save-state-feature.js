@@ -6,6 +6,7 @@ import { StorageError } from '../../src/Errors.js';
 
 const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');
 const disableSaveStateResource = testHelpers.getResource('disable-save-state.bpmn');
+const waitResource = testHelpers.getResource('wait.bpmn');
 
 class MisbehavingAdapter extends MemoryAdapter {
   update(type, key, value, options) {
@@ -118,6 +119,74 @@ Feature('save state', () => {
     Then('bad request is returned since process is already completed', () => {
       expect(response.statusCode, response.text).to.equal(400);
       expect(response.body.message, response.text).to.match(/already completed/);
+    });
+
+    describe('using autoSaveEngineState query parameter', () => {
+      let deploymentNameWithWait;
+      Given('a source matching scenario is deployed', async () => {
+        deploymentNameWithWait = 'waiting-for-input';
+        await testHelpers.createDeployment(apps.balance(), deploymentNameWithWait, waitResource);
+      });
+
+      let wait;
+      When('a process is started that stops waiting for input', async () => {
+        startingApp = apps.balance();
+        wait = testHelpers.waitForProcess(startingApp, deploymentNameWithWait).wait();
+
+        response = await request(startingApp).post(`/rest/process-definition/${deploymentNameWithWait}/start`).expect(201);
+
+        token = response.body.id;
+      });
+
+      Then('processing is waiting', () => {
+        return wait;
+      });
+
+      let stop;
+      Given('run is stopped due to idle timer', () => {
+        const [engine] = apps.getRunningByToken(token);
+        stop = testHelpers.waitForProcess(startingApp, deploymentNameWithWait).stop();
+        engine.idleTimer.callback();
+
+        return stop;
+      });
+
+      let end;
+      When('signalling run with disabled auto save engine state', async () => {
+        const app = apps.balance();
+
+        end = testHelpers.waitForProcess(app, deploymentNameWithWait).end();
+
+        response = await request(app)
+          .post('/rest/signal/' + token)
+          .query({ autosaveenginestate: 'false' })
+          .send({
+            id: 'wait',
+          })
+          .expect(200);
+      });
+
+      Then('run completes', () => {
+        return end;
+      });
+
+      When('signalling run again without auto save engine state query', async () => {
+        const app = apps.balance();
+
+        end = testHelpers.waitForProcess(app, deploymentNameWithWait).end();
+
+        response = await request(app)
+          .post('/rest/signal/' + token)
+          .send({
+            id: 'wait',
+          });
+
+        expect(response.status, response.text).to.equal(200);
+      });
+
+      Then('same token run completes again', () => {
+        return end;
+      });
     });
 
     describe('auto-save is disabled', () => {
@@ -401,7 +470,7 @@ Feature('save state', () => {
       calledApp = apps.balance();
       end = testHelpers.waitForProcess(calledApp, deploymentName).end();
 
-      response = await request(calledApp).post(`/rest/resume/${token}?autosaveEngineState=true`);
+      response = await request(calledApp).post(`/rest/resume/${token}`).query({ autosaveEngineState: 'true' });
 
       expect(response.statusCode, response.text).to.equal(200);
     });
@@ -467,7 +536,7 @@ Feature('save state', () => {
       calledApp = apps.balance();
       end = testHelpers.waitForProcess(calledApp, deploymentName).end();
 
-      response = await request(calledApp).post(`/rest/signal/${token}?autosaveenginestate=1`).send({ id: 'wait' });
+      response = await request(calledApp).post(`/rest/signal/${token}`).query({ autosaveenginestate: '1' }).send({ id: 'wait' });
 
       expect(response.statusCode, response.text).to.equal(200);
     });

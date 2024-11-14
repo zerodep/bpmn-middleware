@@ -215,7 +215,7 @@ Resume process run
 
 **Query:**
 
-- `autosaveEngineState`: force autosave engine state, any value will do
+- `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 
 ### `POST (*)?/signal/:token`
 
@@ -223,7 +223,7 @@ Signal process activity.
 
 **Query:**
 
-- `autosaveEngineState`: force autosave engine state, any value will do
+- `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 
 **Request body:**
 
@@ -237,7 +237,7 @@ Cancel process activity.
 
 **Query:**
 
-- `autosaveEngineState`: force autosave engine state, any value will do
+- `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 
 **Request body:**
 
@@ -250,7 +250,7 @@ Fail process activity.
 
 **Query:**
 
-- `autosaveEngineState`: force autosave engine state, any value will do
+- `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 
 **Request body:**
 

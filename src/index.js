@@ -401,7 +401,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
  * Pre resume middleware
  * @returns {import('express').RequestHandler[]}
  */
-BpmnEngineMiddleware.prototype.preResume = function preStart() {
+BpmnEngineMiddleware.prototype.preResume = function preResume() {
   // @ts-ignore
   return [json(), this._addEngineLocals, this.__resumeOptions];
 };
@@ -558,10 +558,11 @@ BpmnEngineMiddleware.prototype._validateLocals = function validateLocals(_req, r
 BpmnEngineMiddleware.prototype._resumeOptions = function resumeOptions(req, res, next) {
   /** @type {import('types').ResumeOptions} */
   const options = (res.locals.resumeOptions = {});
-  for (const [k] of Object.entries(req.query)) {
+
+  for (const [k, v] of Object.entries(req.query)) {
     switch (k.toLowerCase()) {
       case 'autosaveenginestate': {
-        options.autosaveEngineState = true;
+        options.autosaveEngineState = v === 'false' ? false : true;
       }
     }
   }
