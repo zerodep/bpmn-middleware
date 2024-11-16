@@ -53,7 +53,7 @@ if (isMainModule) {
 export { app, middleware };
 
 /**
- * Basic auth
+ * Error handler
  * @param {Error} err
  * @param {import('express').Request} _req
  * @param {import('express').Response} res

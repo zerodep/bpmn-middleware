@@ -159,7 +159,7 @@ Feature('example app', () => {
     When('process is started with authorized user', async () => {
       response = await request(app)
         .post(`/rest/auth/process-definition/${deploymentName}/start`)
-        .set('authorization', Buffer.from('jane:someuniqueprofanesentence').toString('base64url'));
+        .set('authorization', 'Basic ' + Buffer.from('jane:someuniqueprofanesentence').toString('base64url'));
     });
 
     let token;
@@ -171,7 +171,7 @@ Feature('example app', () => {
     When('process status is fetched', async () => {
       response = await request(app)
         .get(`/rest/auth/state/${token}`)
-        .set('authorization', Buffer.from('jane:someuniqueprofanesentence').toString('base64url'));
+        .set('authorization', 'Basic ' + Buffer.from('jane:someuniqueprofanesentence').toString('base64url'));
     });
 
     Then('status is returned', () => {
@@ -199,7 +199,7 @@ Feature('example app', () => {
       When('process is started with unknown user', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from('foo:bar').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('foo:bar').toString('base64url'));
       });
 
       Then('unauthenticated is returned', () => {
@@ -209,7 +209,7 @@ Feature('example app', () => {
       When('process is started with known user but without password', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from('jan').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('jan').toString('base64url'));
       });
 
       Then('unauthenticated is returned', () => {
@@ -219,7 +219,7 @@ Feature('example app', () => {
       When('process is started with too short password', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from('jan:someuniqueprofanesentenc').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('jan:someuniqueprofanesentenc').toString('base64url'));
       });
 
       Then('unauthenticated is returned', () => {
@@ -229,7 +229,10 @@ Feature('example app', () => {
       When('process is started with too long password', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from(`jan:someuniqueprofanesentence${new Array(1000).fill('a').join('')}`).toString('base64url'));
+          .set(
+            'authorization',
+            'Basic ' + Buffer.from(`jan:someuniqueprofanesentence${new Array(1000).fill('a').join('')}`).toString('base64url')
+          );
       });
 
       Then('unauthenticated is returned', () => {
@@ -239,7 +242,7 @@ Feature('example app', () => {
       When('process is started with bad user data', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from('bad:pass').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('bad:pass').toString('base64url'));
       });
 
       Then('bad gateway is returned', () => {
@@ -251,7 +254,7 @@ Feature('example app', () => {
       When('process is started with user that lacks proper roles', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from('jan:someuniqueprofanesentence').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('jan:someuniqueprofanesentence').toString('base64url'));
       });
 
       Then('forbidden is returned', () => {
@@ -261,7 +264,7 @@ Feature('example app', () => {
       When('process is started with user that has no roles', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/${deploymentName}/start`)
-          .set('authorization', Buffer.from('ben:someuniqueprofanesentence').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('ben:someuniqueprofanesentence').toString('base64url'));
       });
 
       Then('forbidden is returned', () => {
@@ -277,7 +280,7 @@ Feature('example app', () => {
       When('a process with bad source is deployed', async () => {
         response = await request(app)
           .post(`/rest/auth/process-definition/bad-soruce/start`)
-          .set('authorization', Buffer.from('jan:someuniqueprofanesentence').toString('base64url'));
+          .set('authorization', 'Basic ' + Buffer.from('jan:someuniqueprofanesentence').toString('base64url'));
       });
 
       Then('502 is returned', () => {

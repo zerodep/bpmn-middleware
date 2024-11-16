@@ -20,7 +20,7 @@ export function basicAuth(adapter, allowAnonymous) {
       return sendUnauthorized(res);
     }
 
-    const auth = Buffer.from(req.get('Authorization'), 'base64').toString();
+    const auth = Buffer.from(req.get('Authorization').substring(6), 'base64').toString();
     const [username, password] = auth.split(':');
 
     try {
