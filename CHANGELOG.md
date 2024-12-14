@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## [0.12.0] - 2024-12-14
+
+- fix state being null when resuming running engine
+- move stuff around, BpmnEngineMiddleware deserves a separate file
+- remove bpmnPrefixListener from app.locals
+
+## [0.11.0] - 2024-12-11
+
+- add middleware class functions that returns request pipelines to facilitate adding own routes
+
 ## [0.10.0] - 2024-11-14
 
 - take `autosaveEngineState=false` query parameter on resume execution to disable auto saving engine state, not sure why you would do that? but it's a boolean so it seems fair...

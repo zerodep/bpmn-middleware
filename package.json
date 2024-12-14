@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.10.0",
+  "version": "0.12.0",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -59,7 +59,7 @@
     "express": "^4.20.0",
     "form-data": "^4.0.0",
     "globals": "^15.3.0",
-    "mocha": "^10.4.0",
+    "mocha": "^11.0.1",
     "mocha-cakes-2": "^3.3.0",
     "nock": "^13.3.1",
     "prettier": "^3.3.3",

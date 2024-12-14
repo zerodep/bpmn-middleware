@@ -25,7 +25,6 @@ MemoryAdapter.prototype.upsert = function upsert(type, key, value, options) {
     case STORAGE_TYPE_STATE: {
       const current = this.storage.get(storageKey);
       // @ts-ignore
-      // eslint-disable-next-line no-unused-vars
       const { engine, ...saved } = current ? JSON.parse(current) : {};
       this.storage.set(storageKey, JSON.stringify({ ...saved, ...value }), options);
       break;

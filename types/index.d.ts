@@ -8,285 +8,6 @@ declare module 'bpmn-middleware' {
 	 * BPMN 2 Engine middleware
 	 * */
 	export function bpmnEngineMiddleware(options: BpmnMiddlewareOptions): import("express-serve-static-core").Router;
-	/**
-	 * Bpmn Engine Middleware
-	 * */
-	export function BpmnEngineMiddleware(options: BpmnMiddlewareOptions, engines: Engines): void;
-	export class BpmnEngineMiddleware {
-		/**
-		 * Bpmn Engine Middleware
-		 * */
-		constructor(options: BpmnMiddlewareOptions, engines: Engines);
-		adapter: IStorageAdapter;
-		engines: Engines;
-		engineOptions: {
-			[x: string]: any;
-			name?: string;
-			source?: string;
-			sourceContext?: import("moddle-context-serializer").SerializableContext;
-			elements?: Record<string, any>;
-			typeResolver?: typeof import("moddle-context-serializer").TypeResolver;
-			extendFn?: import("moddle-context-serializer").extendFn;
-			moddleOptions?: any;
-			moddleContext?: import("bpmn-moddle").Definitions;
-			listener?: import("events") | import("bpmn-engine").IListenerEmitter;
-			settings?: import("bpmn-elements").EnvironmentSettings;
-			variables?: Record<string, any>;
-			services?: Record<string, CallableFunction>;
-			Logger?: import("bpmn-elements").LoggerFactory;
-			timers?: import("bpmn-elements").ITimers;
-			scripts?: import("bpmn-elements").IScripts;
-			extensions?: Record<string, import("bpmn-elements").Extension>;
-			expressions?: import("bpmn-elements").IExpressions;
-		};
-		/**
-		 * Bound addEngineLocals
-		 */
-		_addEngineLocals: (req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
-		/**
-		 * Bound createEngine
-		 */
-		_createEngine: (req: import("express").Request<StartDeployment>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
-		/**
-		 * Bound validate locals
-		 */
-		__validateLocals: (_req: import("express").Request, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
-		/**
-		 * Bound resume options
-		 */
-		__resumeOptions: (req: import("express").Request<any, any, ResumeQuery>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
-		/**
-		 * Initialize engine
-		 * */
-		init(req: import("express").Request, _: import("express").Response, next: import("express").NextFunction): void;
-		/**
-		 * Add middleware response locals
-		 * */
-		addEngineLocals(req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
-		/**
-		 * Get package version
-		 * */
-		getVersion(_: import("express").Request, res: import("express").Response<any, {
-			version: string;
-		}>): import("express").Response<any, {
-			version: string;
-		}>;
-		/**
-		 * Get deployment/package name
-		 * */
-		getDeployment(_: import("express").Request, res: import("express").Response<{
-			name: string;
-		}>): import("express").Response<{
-			name: string;
-		}, Record<string, any>>;
-		/**
-		 * Create deployment
-		 * */
-		create(req: import("express").Request, res: import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Pre start BPMN engine execution middleware
-		 * */
-		preStart(): import("express").RequestHandler[];
-		/**
-		 * Start deployment
-		 * */
-		start(_req: import("express").Request<StartDeployment, {
-			id: string;
-		}>, res: import("express").Response<{
-			id: string;
-		}, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<{
-			id: string;
-		}, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Start deployment
-		 * */
-		getScript(_req: import("express").Request<StartDeployment>, res: import("express").Response<string, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<string, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Start deployment
-		 * */
-		getDeploymentTimers(_req: import("express").Request<StartDeployment>, res: import("express").Response<{
-			timers: ParsedTimerResult[];
-		}>, next: import("express").NextFunction): Promise<import("express").Response<{
-			timers: ParsedTimerResult[];
-		}, Record<string, any>>>;
-		/**
-		 * Get running engines
-		 * */
-		getRunning(req: import("express").Request<StorageQuery>, res: import("express").Response<Awaited<ReturnType<Engines["getRunning"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineState, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Get engine status by token
-		 * */
-		getStatusByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStatusByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Get engine activity status
-		 * */
-		getActivityStatus(req: import("express").Request<{
-			token: string;
-			activityId: string;
-		}>, res: import("express").Response<PostponedElement, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
-		/**
-		 * Signal activity
-		 * */
-		signalActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Cancel activity
-		 * */
-		cancelActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Fail activity
-		 * */
-		failActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Pre resume middleware
-		 * */
-		preResume(): import("express").RequestHandler[];
-		/**
-		 * Resume engine by token
-		 * */
-		resumeByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Get engine state by token
-		 * */
-		getStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStateByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineState, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Delete engine by token
-		 * */
-		deleteStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<void, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Stop all running engines
-		 * */
-		internalStopAll(_: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
-		/**
-		 * Stop engine by token
-		 * */
-		internalStopByToken(req: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
-		/**
-		 * Internal create engine middleware
-		 * */
-		createEngine(req: import("express").Request<StartDeployment>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
-		/**
-		 * Internal validate response locals
-		 * */
-		_validateLocals(_req: import("express").Request, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
-		/**
-		 * Internal get resume options
-		 * */
-		_resumeOptions(req: import("express").Request<any, any, ResumeQuery>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
-		/**
-		 * Start process by call activity
-		 * */
-		_startProcessByCallActivity(callActivityApi: import("bpmn-elements").Api<import("bpmn-elements").Activity>): Promise<{
-			id: string;
-		}>;
-		/**
-		 * Internal start deployment
-		 * @returns Started with id token
-		 */
-		_startDeployment(deploymentName: string, options: import("bpmn-engine").BpmnEngineOptions): Promise<{
-			id: string;
-		}>;
-		/**
-		 * Cancel process by call activity
-		 * */
-		_cancelProcessByCallActivity(callActivityApi: import("bpmn-elements").Api<import("bpmn-elements").Activity>): Promise<void>;
-		/**
-		 * Post process engine run
-		 * 
-		 */
-		_postProcessRun(engine: MiddlewareEngine, error?: Error): Promise<void>;
-		[kInitilialized]: boolean;
-	}
-	/**
-	 * Bpmn prefix listener
-	 * @param app Express app
-	 */
-	export function BpmnPrefixListener(app: import("express").Application): void;
-	export class BpmnPrefixListener {
-		/**
-		 * Bpmn prefix listener
-		 * @param app Express app
-		 */
-		constructor(app: import("express").Application);
-		app: import("express").Application;
-		/**
-		 * Emit event on Express app
-		 * */
-		emit(eventName: string, ...args: any[]): boolean;
-	}
-	/**
-	 * Middleware response locals
-	 */
-	export type BpmnMiddlewareResponseLocals = {
-		/**
-		 * - Engine factory
-		 */
-		engines: Engines;
-		/**
-		 * - Storage adapter
-		 */
-		adapter: IStorageAdapter;
-		/**
-		 * - BPMN engine listener
-		 */
-		listener: BpmnPrefixListener;
-		/**
-		 * - BPMN engine execution token
-		 */
-		token?: string;
-		/**
-		 * - BPMN engine instance
-		 */
-		engine?: MiddlewareEngine;
-		/**
-		 * - BPMN engine resume options
-		 */
-		resumeOptions?: ResumeOptions;
-	};
-	/**
-	 * Start deployment params
-	 */
-	export type StartDeployment = {
-		/**
-		 * - Deployment name
-		 */
-		deploymentName: string;
-	};
-	/**
-	 * Token params
-	 */
-	export type TokenParameter = {
-		/**
-		 * - BPMN engine execution token
-		 */
-		token: string;
-	};
-	/**
-	 * Create deployment result
-	 */
-	export type CreateDeploymentResponseBody = {
-		/**
-		 * - Deployment name
-		 */
-		id: string;
-		/**
-		 * - Storage adapter
-		 */
-		deploymentTime: Date;
-		/**
-		 * - Deployed process definitions
-		 */
-		deployedProcessDefinitions: any;
-	};
-	/**
-	 * Resume query
-	 */
-	export type ResumeQuery = {
-		/**
-		 * - Autosave engine state
-		 */
-		autosaveEngineState?: string;
-	};
-	const kInitilialized: unique symbol;
   enum StorageType {
 	State = 'state',
 	Deployment = 'deployment',
@@ -294,6 +15,8 @@ declare module 'bpmn-middleware' {
   }
 
   interface BpmnMiddlewareOptions {
+	/** middleware name */
+	name?: string;
 	adapter?: IStorageAdapter;
 	/** Options passed to each created engine */
 	engineOptions?: BpmnEngineOptions;
@@ -325,6 +48,13 @@ declare module 'bpmn-middleware' {
 	sequenceNumber?: number;
 	expireAt?: Date;
 	businessKey?: string;
+  }
+
+  interface StartDeploymentOptions {
+	variables?: Record<string, any>;
+	businessKey?: string;
+	caller?: Caller;
+	idleTimeout?: number;
   }
 
   interface StorageQuery {
@@ -409,6 +139,310 @@ declare module 'bpmn-middleware' {
 	autosaveEngineState?: boolean;
 	[x: string]: any;
   }
+	/**
+	 * Bpmn Engine Middleware
+	 * 
+	 */
+	export function BpmnEngineMiddleware(options: BpmnMiddlewareOptions, engines?: Engines): void;
+	export class BpmnEngineMiddleware {
+		/**
+		 * Bpmn Engine Middleware
+		 * 
+		 */
+		constructor(options: BpmnMiddlewareOptions, engines?: Engines);
+		adapter: IStorageAdapter;
+		engines: Engines;
+		engineOptions: {
+			[x: string]: any;
+			name?: string;
+			source?: string;
+			sourceContext?: import("moddle-context-serializer").SerializableContext;
+			elements?: Record<string, any>;
+			typeResolver?: typeof import("moddle-context-serializer").TypeResolver;
+			extendFn?: import("moddle-context-serializer").extendFn;
+			moddleOptions?: any;
+			moddleContext?: import("bpmn-moddle").Definitions;
+			listener?: import("events") | import("bpmn-engine").IListenerEmitter;
+			settings?: import("bpmn-elements").EnvironmentSettings;
+			variables?: Record<string, any>;
+			services?: Record<string, CallableFunction>;
+			Logger?: import("bpmn-elements").LoggerFactory;
+			timers?: import("bpmn-elements").ITimers;
+			scripts?: import("bpmn-elements").IScripts;
+			extensions?: Record<string, import("bpmn-elements").Extension>;
+			expressions?: import("bpmn-elements").IExpressions;
+		};
+		/**
+		 * Bound init
+		 */
+		_init: (req: import("express").Request, _: import("express").Response, next: import("express").NextFunction) => void;
+		/**
+		 * Bound addEngineLocals
+		 */
+		_addEngineLocals: (req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
+		/**
+		 * Bound createEngine
+		 */
+		_createEngine: (req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
+		/**
+		 * Bound validate locals
+		 */
+		__validateLocals: (_req: import("express").Request, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
+		/**
+		 * Bound resume options
+		 */
+		__resumeOptions: (req: import("express").Request<any, any, ResumeQuery>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
+		/**
+		 * Initialize middleware
+		 * */
+		init(req: import("express").Request, _: import("express").Response, next: import("express").NextFunction): void;
+		_bpmnEngineListener: BpmnPrefixListener;
+		/**
+		 * Start deployment request pipeline
+		 * */
+		start(): import("express").RequestHandler<StartDeployment, {
+			id: string;
+		}, StartDeploymentOptions>[];
+		/**
+		 * Resume engine request pipeline
+		 * */
+		resume(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, any, ResumeQuery>[];
+		/**
+		 * Signal activity request pipeline
+		 * */
+		signal(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, SignalBody, ResumeQuery>[];
+		/**
+		 * Cancel activity request pipeline
+		 * */
+		cancel(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, SignalBody, ResumeQuery>[];
+		/**
+		 * Add middleware response locals
+		 * */
+		addEngineLocals(req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
+		/**
+		 * Get package version
+		 * */
+		getVersion(_: import("express").Request, res: import("express").Response<any, {
+			version: string;
+		}>): import("express").Response<any, {
+			version: string;
+		}>;
+		/**
+		 * Get deployment/package name
+		 * */
+		getDeployment(_: import("express").Request, res: import("express").Response<{
+			name: string;
+		}>): import("express").Response<{
+			name: string;
+		}, Record<string, any>>;
+		/**
+		 * Create deployment
+		 * */
+		create(req: import("express").Request, res: import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Pre start BPMN engine execution middleware
+		 * */
+		preStart(): import("express").RequestHandler[];
+		/**
+		 * Run deployment
+		 * */
+		runDeployment(_req: import("express").Request<StartDeployment, {
+			id: string;
+		}>, res: import("express").Response<{
+			id: string;
+		}, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<{
+			id: string;
+		}, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Start deployment
+		 * */
+		getScript(_req: import("express").Request<StartDeployment>, res: import("express").Response<string, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<string, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Start deployment
+		 * */
+		getDeploymentTimers(_req: import("express").Request<StartDeployment>, res: import("express").Response<{
+			timers: ParsedTimerResult[];
+		}>, next: import("express").NextFunction): Promise<import("express").Response<{
+			timers: ParsedTimerResult[];
+		}, Record<string, any>>>;
+		/**
+		 * Get running engines
+		 * */
+		getRunning(req: import("express").Request<StorageQuery>, res: import("express").Response<Awaited<ReturnType<Engines["getRunning"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineState[], BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Get engine status by token
+		 * */
+		getStatusByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStatusByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Get engine activity status
+		 * */
+		getActivityStatus(req: import("express").Request<{
+			token: string;
+			activityId: string;
+		}>, res: import("express").Response<PostponedElement, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
+		/**
+		 * Signal activity
+		 * */
+		signalActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Cancel activity
+		 * */
+		cancelActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Fail activity
+		 * */
+		failActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Pre resume middleware
+		 * */
+		preResume(): import("express").RequestHandler[];
+		/**
+		 * Resume engine by token
+		 * */
+		resumeByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Get engine state by token
+		 * */
+		getStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStateByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineState, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Delete engine by token
+		 * */
+		deleteStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<void, BpmnMiddlewareResponseLocals>>;
+		/**
+		 * Stop all running engines
+		 * */
+		internalStopAll(_: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
+		/**
+		 * Stop engine by token
+		 * */
+		internalStopByToken(req: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
+		/**
+		 * Internal create engine middleware
+		 * */
+		createEngine(req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
+		/**
+		 * Internal validate response locals
+		 * */
+		_validateLocals(_req: import("express").Request, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
+		/**
+		 * Internal get resume options
+		 * */
+		_resumeOptions(req: import("express").Request<any, any, ResumeQuery>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
+		/**
+		 * Start process by call activity
+		 * */
+		_startProcessByCallActivity(callActivityApi: import("bpmn-elements").Api<import("bpmn-elements").Activity>): Promise<{
+			id: string;
+		}>;
+		/**
+		 * Internal start deployment
+		 * @returns Started with id token
+		 */
+		_startDeployment(deploymentName: string, options: import("bpmn-engine").BpmnEngineOptions): Promise<{
+			id: string;
+		}>;
+		/**
+		 * Cancel process by call activity
+		 * */
+		_cancelProcessByCallActivity(callActivityApi: import("bpmn-elements").Api<import("bpmn-elements").Activity>): Promise<void>;
+		/**
+		 * Post process engine run
+		 * 
+		 */
+		_postProcessRun(engine: MiddlewareEngine, error?: Error): Promise<void>;
+		[kInitilialized]: boolean;
+	}
+	/**
+	 * Bpmn prefix listener
+	 * @param app Express app
+	 */
+	function BpmnPrefixListener(app: import("express").Application): void;
+	class BpmnPrefixListener {
+		/**
+		 * Bpmn prefix listener
+		 * @param app Express app
+		 */
+		constructor(app: import("express").Application);
+		app: import("express").Application;
+		/**
+		 * Emit event on Express app
+		 * */
+		emit(eventName: string, ...args: any[]): boolean;
+	}
+	/**
+	 * Middleware response locals
+	 */
+	type BpmnMiddlewareResponseLocals = {
+		/**
+		 * - Engine factory
+		 */
+		engines: Engines;
+		/**
+		 * - Storage adapter
+		 */
+		adapter: IStorageAdapter;
+		/**
+		 * - BPMN engine listener
+		 */
+		listener: BpmnPrefixListener;
+		/**
+		 * - BPMN engine execution token
+		 */
+		token?: string;
+		/**
+		 * - BPMN engine instance
+		 */
+		engine?: MiddlewareEngine;
+		/**
+		 * - BPMN engine resume options
+		 */
+		resumeOptions?: ResumeOptions;
+	};
+	/**
+	 * Start deployment params
+	 */
+	type StartDeployment = {
+		/**
+		 * - Deployment name
+		 */
+		deploymentName: string;
+	};
+	/**
+	 * Token params
+	 */
+	type TokenParameter = {
+		/**
+		 * - BPMN engine execution token
+		 */
+		token: string;
+	};
+	/**
+	 * Create deployment result
+	 */
+	type CreateDeploymentResponseBody = {
+		/**
+		 * - Deployment name
+		 */
+		id: string;
+		/**
+		 * - Storage adapter
+		 */
+		deploymentTime: Date;
+		/**
+		 * - Deployed process definitions
+		 */
+		deployedProcessDefinitions: any;
+	};
+	/**
+	 * Resume query
+	 */
+	type ResumeQuery = {
+		/**
+		 * - Autosave engine state
+		 */
+		autosaveEngineState?: string;
+	};
+	const kInitilialized: unique symbol;
 	export const STORAGE_TYPE_DEPLOYMENT: "deployment";
 	export const STORAGE_TYPE_STATE: "state";
 	export const STORAGE_TYPE_FILE: "file";
@@ -426,11 +460,13 @@ declare module 'bpmn-middleware' {
 		 * Engines class
 		 * */
 		constructor(options: BpmnMiddlewareOptions);
+		
 		broker: import("smqp").Broker;
 		engineOptions: import("bpmn-engine").BpmnEngineOptions;
 		idleTimeout: number;
 		adapter: IStorageAdapter;
-		engineCache: LRUCache<string, any, unknown> | LRUCache<string, import("bpmn-engine").Engine, unknown>;
+		
+		engineCache: LRUCache<string, any, unknown>;
 		autosaveEngineState: boolean;
 		Scripts: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
 		Services: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
@@ -477,9 +513,9 @@ declare module 'bpmn-middleware' {
 		 * */
 		getStatusByToken(token: string): Promise<MiddlewareEngineStatus>;
 		/**
-		 * Get running engines by query
+		 * Get running engines by querying storage
 		 * */
-		getRunning(query?: any): Promise<MiddlewareEngineState>;
+		getRunning(query?: any): Promise<MiddlewareEngineState[]>;
 		/**
 		 * Discards engine by token
 		 * 
@@ -540,37 +576,6 @@ declare module 'bpmn-middleware' {
 		 * Internal get activity
 		 * */
 		_getActivityApi(engine: MiddlewareEngine, body: SignalBody): any;
-	}
-	export class MiddlewareEngine extends Engine {
-		
-		constructor(token: string, options?: MiddlewareEngineOptions);
-		
-		options: MiddlewareEngineOptions;
-		/**
-		 * Engine execution token
-		 * */
-		token: string;
-		/**
-		 * Execution idle timer
-		 * */
-		idleTimer: import("bpmn-elements").Timer | null | void;
-		engineTimers: import("bpmn-elements").RegisteredTimer;
-		/**
-		 * Closest due time when a registered timer expires
-		 * Ignores idle timer
-		 */
-		get expireAt(): Date;
-		/**
-		 * Start/Restart execution idle timer
-		 */
-		startIdleTimer(): void;
-		
-		_getCurrentStatus(): {
-			expireAt: Date;
-			name: string;
-			token: string;
-			activityStatus: import("bpmn-elements").ActivityStatus;
-		};
 	}
 	/**
 	 * Memory adapter
@@ -641,6 +646,37 @@ declare module 'bpmn-middleware' {
 		 */
 		constructor(message: string, code: string);
 		code: string;
+	}
+	export class MiddlewareEngine extends Engine {
+		
+		constructor(token: string, options?: MiddlewareEngineOptions);
+		
+		options: MiddlewareEngineOptions;
+		/**
+		 * Engine execution token
+		 * */
+		token: string;
+		/**
+		 * Execution idle timer
+		 * */
+		idleTimer: import("bpmn-elements").Timer | null | void;
+		engineTimers: import("bpmn-elements").RegisteredTimer;
+		/**
+		 * Closest due time when a registered timer expires
+		 * Ignores idle timer
+		 */
+		get expireAt(): Date;
+		/**
+		 * Start/Restart execution idle timer
+		 */
+		startIdleTimer(): void;
+		
+		_getCurrentStatus(): {
+			expireAt: Date;
+			name: string;
+			token: string;
+			activityStatus: import("bpmn-elements").ActivityStatus;
+		};
 	}
 
 	export {};

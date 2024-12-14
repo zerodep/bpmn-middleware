@@ -11,6 +11,8 @@ export enum StorageType {
 }
 
 export interface BpmnMiddlewareOptions {
+  /** middleware name */
+  name?: string;
   adapter?: IStorageAdapter;
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;
@@ -42,6 +44,13 @@ export interface MiddlewareEngineOptions extends BpmnEngineOptions {
   sequenceNumber?: number;
   expireAt?: Date;
   businessKey?: string;
+}
+
+export interface StartDeploymentOptions {
+  variables?: Record<string, any>;
+  businessKey?: string;
+  caller?: Caller;
+  idleTimeout?: number;
 }
 
 export interface StorageQuery {

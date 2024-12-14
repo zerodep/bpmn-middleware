@@ -16,11 +16,13 @@ import {
  * @param {import('types').BpmnMiddlewareOptions} options
  */
 export function Engines(options) {
+  /** @type {import('smqp').Broker} */
   this.broker = options.broker;
   this.engineOptions = options.engineOptions || {};
   this.idleTimeout = options.idleTimeout;
   this.adapter = options.adapter;
 
+  /** @type {LRUCache<string, any, unknown>} */
   this.engineCache =
     options.engineCache ||
     new LRUCache({
@@ -93,9 +95,9 @@ Engines.prototype.resume = async function resume(token, listener, options) {
       throw new HttpError(`Token ${token} not found`, 404);
     }
 
-    if (state.state === 'idle') {
+    if (state?.state === 'idle') {
       throw new HttpError(`Token ${token} has already completed`, 400);
-    } else if (state.state === 'error') {
+    } else if (state?.state === 'error') {
       throw new HttpError(`Token ${token} has failed`, 400);
     }
 
@@ -232,9 +234,9 @@ Engines.prototype.getStatusByToken = function getStatusByToken(token) {
 };
 
 /**
- * Get running engines by query
+ * Get running engines by querying storage
  * @param {any} [query]
- * @returns {Promise<import('types').MiddlewareEngineState>}
+ * @returns {Promise<import('types').MiddlewareEngineState[]>}
  */
 Engines.prototype.getRunning = async function getRunning(query) {
   const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: ['engine'] });

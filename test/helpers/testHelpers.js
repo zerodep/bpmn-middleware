@@ -46,11 +46,7 @@ export function horizontallyScaled(instances = 2, options) {
       return request(balance());
     },
     stop() {
-      return Promise.all(
-        apps.map((app) => {
-          return request(app).delete('/rest/internal/stop').expect(204);
-        })
-      );
+      apps.forEach((app) => app.emit('bpmn/stop-all'));
     },
     getRunning() {
       return apps.reduce((result, app) => {
@@ -68,6 +64,9 @@ export function horizontallyScaled(instances = 2, options) {
         return result;
       }, []);
     },
+    use(fn) {
+      apps.forEach(fn);
+    },
   };
 
   function balance() {
@@ -78,7 +77,7 @@ export function horizontallyScaled(instances = 2, options) {
 }
 
 /**
- * @param {import('../../types/interfaces.js').MiddlewareEngineOptions} options
+ * @param {import('../../types/interfaces.js').BpmnMiddlewareOptions} options
  */
 export function getAppWithExtensions(options = {}) {
   const app = express();
@@ -88,13 +87,7 @@ export function getAppWithExtensions(options = {}) {
   const { engineOptions, ...middlewareOptions } = options;
   const middleware = bpmnEngineMiddleware({
     broker,
-    engineOptions: {
-      moddleOptions: { camunda },
-      elements,
-      extensions: { onify: extensions },
-      extendFn,
-      ...engineOptions,
-    },
+    engineOptions: getBpmnEngineOptions(engineOptions),
     ...middlewareOptions,
   });
 
@@ -104,6 +97,21 @@ export function getAppWithExtensions(options = {}) {
   app.use('/rest', middleware);
   app.use(errorHandler);
   return app;
+}
+
+/**
+ * Get engine options
+ * @param {import('../../types/interfaces.js').MiddlewareEngineOptions} [engineOptions]
+ * @returns {import('bpmn-engine').MiddlewareEngineOptions}
+ */
+export function getBpmnEngineOptions(engineOptions) {
+  return {
+    moddleOptions: { camunda },
+    elements,
+    extensions: { onify: extensions },
+    extendFn,
+    ...engineOptions,
+  };
 }
 
 export async function getExampleApp() {
@@ -222,7 +230,7 @@ export function waitForProcess(app, nameOrToken) {
       const rnd = randomInt(10000);
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
-      broker.subscribeTmp(
+      broker?.subscribeTmp(
         'event',
         eventRoutingKey,
         (_, msg) => {
@@ -235,7 +243,7 @@ export function waitForProcess(app, nameOrToken) {
         { noAck: true, consumerTag: waitConsumerTag }
       );
 
-      broker.subscribeTmp(
+      broker?.subscribeTmp(
         'event',
         'engine.error',
         (_, msg) => {
@@ -255,7 +263,7 @@ export function waitForProcess(app, nameOrToken) {
       const rnd = randomInt(10000);
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
-      broker.subscribeTmp(
+      broker?.subscribeTmp(
         'event',
         'engine.end',
         (_, msg) => {
@@ -268,7 +276,7 @@ export function waitForProcess(app, nameOrToken) {
         { noAck: true, consumerTag: waitConsumerTag }
       );
 
-      broker.subscribeTmp(
+      broker?.subscribeTmp(
         'event',
         'engine.error',
         (_, msg) => {

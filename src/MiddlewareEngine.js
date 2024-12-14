@@ -1,4 +1,5 @@
 import { Engine } from 'bpmn-engine';
+import { DEFAULT_IDLE_TIMER } from './constants.js';
 
 export class MiddlewareEngine extends Engine {
   /**
@@ -40,7 +41,7 @@ export class MiddlewareEngine extends Engine {
    * Start/Restart execution idle timer
    */
   startIdleTimer() {
-    const delay = this.environment.settings.idleTimeout ?? 120000;
+    const delay = this.environment.settings.idleTimeout ?? DEFAULT_IDLE_TIMER;
     const engineTimers = this.engineTimers;
     const current = this.idleTimer;
     if (current) this.idleTimer = engineTimers.clearTimeout(current);
