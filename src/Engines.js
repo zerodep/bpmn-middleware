@@ -9,6 +9,7 @@ import {
   ENABLE_SAVE_STATE_ROUTINGKEY,
   DISABLE_SAVE_STATE_ROUTINGKEY,
   ERR_STORAGE_KEY_NOT_FOUND,
+  MIDDLEWARE_DEFAULT_EXCHANGE,
 } from './constants.js';
 
 /**
@@ -16,6 +17,7 @@ import {
  * @param {import('types').BpmnMiddlewareOptions} options
  */
 export function Engines(options) {
+  this.name = options.name || MIDDLEWARE_DEFAULT_EXCHANGE;
   /** @type {import('smqp').Broker} */
   this.broker = options.broker;
   this.engineOptions = options.engineOptions || {};
@@ -458,17 +460,20 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   }
 
   if (parentBroker) {
-    parentBroker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
+    parentBroker.assertExchange(this.name, 'topic', { durable: false, autoDelete: false });
     engineBroker.createShovel(
       'app-shovel',
       { exchange: 'event' },
       {
         broker: parentBroker,
-        exchange: 'event',
+        exchange: this.name,
         publishProperties: {
           token: engineOptions.token,
           deployment: engine.name,
         },
+      },
+      {
+        ...(engineOptions.caller && { cloneMessage: createCloneCallerMessage(engine) }),
       }
     );
   }
@@ -677,4 +682,20 @@ function disableSaveState(...args) {
   }
 
   callback(null, true);
+}
+
+/**
+ * Clone called process message
+ * @param {MiddlewareEngine} engine
+ * @returns
+ */
+function createCloneCallerMessage(engine) {
+  /** @type {(message: import('smqp').MessageMessage) => import('smqp').MessageMessage} */
+  return function cloneMessage(msg) {
+    const { fields, content, properties } = msg;
+    if (fields.routingKey === 'definition.end' || fields.routingKey === 'definition.error') {
+      content.caller = { ...engine.options.caller };
+    }
+    return { fields, content, properties };
+  };
 }

@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -30,7 +30,8 @@
   "keywords": [
     "bpmn",
     "middleware",
-    "express"
+    "express",
+    "call activity"
   ],
   "author": {
     "name": "Zerodep AB",
@@ -75,7 +76,8 @@
   "peerDependencies": {
     "bpmn-engine": ">=15",
     "debug": "*",
-    "express": ">=4"
+    "express": ">=4",
+    "smqp": "*"
   },
   "files": [
     "src/",

@@ -4,6 +4,7 @@ import express from 'express';
 import FormData from 'form-data';
 import request from 'supertest';
 import { LRUCache } from 'lru-cache';
+import { Broker } from 'smqp';
 
 import * as middleware from '../src/index.js';
 import { getAppWithExtensions, waitForProcess, errorHandler } from './helpers/testHelpers.js';
@@ -55,8 +56,23 @@ describe('express-middleware', () => {
       expect(middleware.bpmnEngineMiddleware().middleware).to.be.instanceof(middleware.BpmnEngineMiddleware);
     });
 
+    it('creates a middleware broker with middleware as owner', () => {
+      const router = middleware.bpmnEngineMiddleware();
+      expect(router.middleware.broker).to.be.ok;
+      expect(router.middleware.broker.owner).to.equal(router.middleware);
+    });
+
+    it('accepts middleware broker', () => {
+      const broker = new Broker();
+      expect(middleware.bpmnEngineMiddleware({ broker }).middleware.broker).to.equal(broker);
+    });
+
     it('exposes engines', () => {
       expect(middleware.bpmnEngineMiddleware().engines).to.be.instanceof(middleware.Engines);
+    });
+
+    it('middleware name not a string throws TypeError', () => {
+      expect(() => middleware.bpmnEngineMiddleware({ name: {} })).to.throw(TypeError);
     });
   });
 
@@ -72,18 +88,18 @@ describe('express-middleware', () => {
 
       await request(myApp).get('/rest/version').expect(200);
 
-      expect(myApp.listenerCount('bpmn/end')).to.equal(1);
+      expect(myApp.listenerCount('bpmn/stop-all'), 'app stop all event listeners').to.equal(1);
     });
   });
 
-  describe('addEngineLocals', () => {
+  describe('addResponseLocals', () => {
     it('adds engines, adapter, and listener to res.locals', async () => {
       const adapter = new middleware.MemoryAdapter();
       const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter }, new middleware.Engines({ adapter }));
 
       const myApp = express();
       myApp.use('/rest', engineMiddleware.init.bind(engineMiddleware));
-      myApp.get('/rest/locals', engineMiddleware._addEngineLocals, (req, res) => {
+      myApp.get('/rest/locals', engineMiddleware.addResponseLocals(), (req, res) => {
         res.send({
           engines: !!res.locals.engines,
           adapter: !!res.locals.adapter,
@@ -104,6 +120,8 @@ describe('express-middleware', () => {
         adapter: true,
         listener: true,
       });
+
+      expect(myApp.listenerCount('bpmn/stop-all'), 'app stop all event listeners').to.equal(1);
     });
 
     it('adds locals even if init has not ran', async () => {
@@ -111,7 +129,7 @@ describe('express-middleware', () => {
       const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter }, new middleware.Engines({ adapter }));
 
       const myApp = express();
-      myApp.use('/rest/locals', engineMiddleware._addEngineLocals, (req, res) => {
+      myApp.use('/rest/locals', engineMiddleware.addResponseLocals(), (req, res) => {
         res.send({
           engines: !!res.locals.engines,
           adapter: !!res.locals.adapter,
@@ -126,6 +144,8 @@ describe('express-middleware', () => {
         adapter: true,
         listener: true,
       });
+
+      expect(myApp.listenerCount('bpmn/stop-all'), 'app stop all event listeners').to.equal(1);
     });
   });
 
@@ -343,11 +363,11 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>
       `,
         `${deploymentName}.bpmn`
       );
@@ -402,12 +422,11 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>
-      `,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`
       );
 
@@ -445,12 +464,11 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>
-      `,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`
       );
 
@@ -514,17 +532,16 @@ describe('express-middleware', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>
-      `,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="bound-timer" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`
       );
 
@@ -576,8 +593,7 @@ describe('express-middleware', () => {
               <script>next(new Error('Unexpected'));</script>
             </scriptTask>
           </process>
-        </definitions>
-      `,
+        </definitions>`,
         `${deploymentName}.bpmn`
       );
 

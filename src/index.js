@@ -48,14 +48,14 @@ export function bpmnEngineMiddleware(options) {
   router.post('(*)?/cancel/:token', middleware.cancel());
   router.get('(*)?/script/:deploymentName', middleware.preStart(), middleware.getScript.bind(middleware));
   router.get('(*)?/timers/:deploymentName', middleware.preStart(), middleware.getDeploymentTimers.bind(middleware));
-  router.get('(*)?/running', middleware._addEngineLocals, middleware.getRunning.bind(middleware));
-  router.get('(*)?/status/:token', middleware._addEngineLocals, middleware.getStatusByToken.bind(middleware));
-  router.get('(*)?/status/:token/:activityId', middleware._addEngineLocals, middleware.getActivityStatus.bind(middleware));
+  router.get('(*)?/running', middleware.addResponseLocals(), middleware.getRunning.bind(middleware));
+  router.get('(*)?/status/:token', middleware.addResponseLocals(), middleware.getStatusByToken.bind(middleware));
+  router.get('(*)?/status/:token/:activityId', middleware.addResponseLocals(), middleware.getActivityStatus.bind(middleware));
   router.post('(*)?/fail/:token', middleware.preResume(), middleware.failActivity.bind(middleware));
-  router.get('(*)?/state/:token', middleware._addEngineLocals, middleware.getStateByToken.bind(middleware));
-  router.delete('(*)?/state/:token', middleware._addEngineLocals, middleware.deleteStateByToken.bind(middleware));
-  router.delete('(*)?/internal/stop', middleware._addEngineLocals, middleware.internalStopAll.bind(middleware));
-  router.delete('(*)?/internal/stop/:token', middleware._addEngineLocals, middleware.internalStopByToken.bind(middleware));
+  router.get('(*)?/state/:token', middleware.addResponseLocals(), middleware.getStateByToken.bind(middleware));
+  router.delete('(*)?/state/:token', middleware.addResponseLocals(), middleware.deleteStateByToken.bind(middleware));
+  router.delete('(*)?/internal/stop', middleware.addResponseLocals(), middleware.internalStopAll.bind(middleware));
+  router.delete('(*)?/internal/stop/:token', middleware.addResponseLocals(), middleware.internalStopByToken.bind(middleware));
 
   Object.defineProperties(router, {
     engines: {

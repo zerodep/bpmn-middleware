@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.12.0] - 2024-12-19
+
+- introduce middleware name to facilitate separation between middleware instances
+- start relying on middleware broker to manage call activities, consequently stop relying on app events to manage call activities. App events are still fired
+
 ## [0.11.0] - 2024-12-14
 
 - add middleware class functions that returns request pipelines to facilitate adding own routes

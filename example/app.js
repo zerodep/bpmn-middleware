@@ -25,8 +25,6 @@ const app = express();
 const adapter = new MemoryAdapter();
 const broker = (app.locals.broker = new Broker(app));
 
-broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
-
 const middleware = bpmnEngineMiddleware({
   adapter,
   broker,
@@ -45,8 +43,9 @@ app.use('/rest', basicAuth(adapter, true), middleware);
 
 app.use(errorHandler);
 
-/* c8 ignore next 3 */
+/* c8 ignore next 4 */
 if (isMainModule) {
+  adapter.upsert('user', 'admin', { password: 'supers3cret' });
   app.listen(3000);
 }
 

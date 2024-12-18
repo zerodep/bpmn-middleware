@@ -53,9 +53,24 @@ Feature('custom routes', () => {
 
     let end;
     let app;
-    When('custom route starts call activity process', async () => {
+    let token;
+    When('default route starts wait process', async () => {
       app = apps.balance();
-      end = testHelpers.waitForProcess(app, 'call-process').end();
+      const response = await request(app).post('/rest/process-definition/wait-process/start').expect(201);
+      token = response.body.id;
+      end = testHelpers.waitForProcess(app, token).end();
+    });
+
+    And('process is signalled', () => {
+      return request(app).post(`/rest/signal/${token}`).send({ id: 'wait' }).expect(200);
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
+
+    When('custom route starts call activity process', async () => {
+      end = testHelpers.waitForProcess(app, 'call-process', 'custom').end();
 
       const response = await request(app).post('/api/v1/start/call-process');
       expect(response.statusCode, response.text).to.equal(201);

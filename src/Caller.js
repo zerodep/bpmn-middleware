@@ -20,11 +20,11 @@ export class Caller {
 }
 
 /**
- * Create caller from activity Api
- * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} activityApi
+ * Create caller from activity message
+ * @param {import('smqp').Message} activityApi
  */
-export function fromActivityApi(activityApi) {
-  const { token, name: deployment } = activityApi.environment.options;
+export function fromActivityMessage(activityApi) {
+  const { token, deployment } = activityApi.properties;
   const { id, type, executionId } = activityApi.content;
   return new Caller(token, deployment, id, type, executionId);
 }

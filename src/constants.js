@@ -6,3 +6,4 @@ export const SAVE_STATE_ROUTINGKEY = 'activity.state.save';
 export const ENABLE_SAVE_STATE_ROUTINGKEY = 'activity.state.save.enable';
 export const DISABLE_SAVE_STATE_ROUTINGKEY = 'activity.state.save.disable';
 export const ERR_STORAGE_KEY_NOT_FOUND = 'ERR_BPMN_MIDDLEWARE_STORAGE_KEY_NOT_FOUND';
+export const MIDDLEWARE_DEFAULT_EXCHANGE = 'default';

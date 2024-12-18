@@ -3,13 +3,14 @@ import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { json } from 'express';
+import { Broker } from 'smqp';
 
-import { STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from './constants.js';
+import { MIDDLEWARE_DEFAULT_EXCHANGE, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from './constants.js';
 import { Engines } from './Engines.js';
 import { MemoryAdapter } from './MemoryAdapter.js';
 import { HttpError, StorageError } from './Errors.js';
 import { MiddlewareEngine } from './MiddlewareEngine.js';
-import { fromActivityApi } from './Caller.js';
+import { fromActivityMessage } from './Caller.js';
 import debug from './debug.js';
 
 const nodeRequire = createRequire(fileURLToPath(import.meta.url));
@@ -27,9 +28,20 @@ const snakeReplacePattern = /\W/g;
  * @param {Engines} [engines]
  */
 export function BpmnEngineMiddleware(options, engines) {
+  /** @type {string} BPMN Middleware name */
+  const name = (this.name = options.name || MIDDLEWARE_DEFAULT_EXCHANGE);
   this.adapter = options.adapter;
   this.engines = engines ?? new Engines({ ...options });
   this.engineOptions = { ...options.engineOptions };
+
+  /** @type {import('smqp').Broker} */
+  const broker = (this.broker = options.broker || new Broker(this));
+  broker.assertExchange(name, 'topic', { autoDelete: false, durable: false });
+
+  broker.subscribeTmp(name, 'activity.call', (_, msg) => this._startProcessByCallActivity(msg), { noAck: true });
+  broker.subscribeTmp(name, 'activity.call.cancel', (_, msg) => this._cancelProcessByCallActivity(msg), { noAck: true });
+  broker.subscribeTmp(name, 'definition.end', (_, msg) => this._postProcessDefinitionRun(msg), { noAck: true });
+  broker.subscribeTmp(name, 'definition.error', (_, msg) => this._postProcessDefinitionRun(msg), { noAck: true });
 
   this[kInitilialized] = false;
 
@@ -72,15 +84,6 @@ BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
   const app = req.app;
   this._bpmnEngineListener = new BpmnPrefixListener(app);
 
-  // @ts-ignore
-  app.on('bpmn/end', (engine) => this._postProcessRun(engine));
-  // @ts-ignore
-  app.on('bpmn/error', (err, engine) => this._postProcessRun(engine, err));
-  // @ts-ignore
-  app.on('bpmn/activity.call', (callActivityApi) => this._startProcessByCallActivity(callActivityApi));
-  // @ts-ignore
-  app.on('bpmn/activity.call.cancel', (callActivityApi) => this._cancelProcessByCallActivity(callActivityApi));
-  // @ts-ignore
   app.on('bpmn/stop-all', () => this.engines.stopAll());
 
   return next();
@@ -123,33 +126,42 @@ BpmnEngineMiddleware.prototype.cancel = function cancel() {
 };
 
 /**
+ * Add BPMN engine execution middleware response locals
+ * @returns {import('express').RequestHandler[]}
+ */
+BpmnEngineMiddleware.prototype.addResponseLocals = function addResponseLocals() {
+  // @ts-ignore
+  return [this._init, this._addEngineLocals];
+};
+
+/**
  * Add middleware response locals
- * @param {import('express').Request} req
+ * @param {import('express').Request} _req
  * @param {import('express').Response<any, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
-BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(req, res, next) {
+BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(_req, res, next) {
   res.locals.engines = res.locals.engines ?? this.engines;
   res.locals.adapter = res.locals.adapter ?? this.adapter;
-  res.locals.listener = res.locals.listener ?? this._bpmnEngineListener ?? new BpmnPrefixListener(req.app);
+  res.locals.listener = res.locals.listener ?? this._bpmnEngineListener;
   next();
 };
 
 /**
  * Get package version
- * @param {import('express').Request} _
+ * @param {import('express').Request} _req
  * @param {import('express').Response<any, {version:string}>} res
  */
-BpmnEngineMiddleware.prototype.getVersion = function getVersion(_, res) {
+BpmnEngineMiddleware.prototype.getVersion = function getVersion(_req, res) {
   return res.send({ version: packageInfo.version });
 };
 
 /**
  * Get deployment/package name
- * @param {import('express').Request} _
+ * @param {import('express').Request} _req
  * @param {import('express').Response<{name:string}>} res
  */
-BpmnEngineMiddleware.prototype.getDeployment = function getDeployment(_, res) {
+BpmnEngineMiddleware.prototype.getDeployment = function getDeployment(_req, res) {
   return res.send({ name: packageInfo.name });
 };
 
@@ -184,7 +196,7 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
  */
 BpmnEngineMiddleware.prototype.preStart = function preStart() {
   // @ts-ignore
-  return [json(), this._init, this._addEngineLocals, this.__validateLocals, this._createEngine];
+  return [json(), ...this.addResponseLocals(), this.__validateLocals, this._createEngine];
 };
 
 /**
@@ -387,7 +399,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
  */
 BpmnEngineMiddleware.prototype.preResume = function preResume() {
   // @ts-ignore
-  return [json(), this._init, this._addEngineLocals, this.__resumeOptions];
+  return [json(), ...this.addResponseLocals(), this.__resumeOptions];
 };
 
 /**
@@ -557,29 +569,42 @@ BpmnEngineMiddleware.prototype._resumeOptions = function resumeOptions(req, res,
 /**
  * Start process by call activity
  * @internal
- * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} callActivityApi
+ * @param {import('smqp').Message} callActivityMessage
  */
-BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function startProcessByCallActivity(callActivityApi) {
-  const { owner: activity, content } = callActivityApi;
-  const [category, ...rest] = content.calledElement.split(':');
-
-  if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
-  const deploymentName = rest.join(':');
-
-  if (content.isRecovered) return;
-
-  const caller = fromActivityApi(callActivityApi);
-
+BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function startProcessByCallActivity(callActivityMessage) {
   try {
+    const { content } = callActivityMessage;
+    const [category, ...rest] = content.calledElement.split(':');
+
+    if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
+    // eslint-disable-next-line no-var
+    var deploymentName = rest.join(':');
+
+    if (content.isRecovered) return;
+
+    // eslint-disable-next-line no-var
+    var caller = fromActivityMessage(callActivityMessage);
+
     return await this._startDeployment(deploymentName, {
-      listener: activity.environment.options.listener,
+      listener: this._bpmnEngineListener,
       settings: { caller: { ...caller } },
       variables: { ...content.input },
       caller,
     });
   } catch (err) {
-    // @ts-ignore
-    callActivityApi.fail(err);
+    // eslint-disable-next-line no-var
+    var error = err;
+    debug(`failed to start ${deploymentName} by call activity ${caller?.executionId}`, err);
+  }
+
+  try {
+    return await this.engines.failActivity(caller.token, this._bpmnEngineListener, {
+      ...caller,
+      message: error,
+    });
+  } catch (err) {
+    debug(`failed to fail call activity ${caller?.executionId}`, err);
+    this._bpmnEngineListener.emit('warn', err);
   }
 };
 
@@ -622,14 +647,14 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
 /**
  * Cancel process by call activity
  * @internal
- * @param {import('bpmn-elements').Api<import('bpmn-elements').Activity>} callActivityApi
+ * @param {import('smqp').Message} callActivityMessage
  */
-BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function cancelProcessByCallActivity(callActivityApi) {
-  const [category, ...rest] = callActivityApi.content.calledElement.split(':');
+BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function cancelProcessByCallActivity(callActivityMessage) {
+  const [category, ...rest] = callActivityMessage.content.calledElement.split(':');
 
   if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
 
-  const caller = fromActivityApi(callActivityApi);
+  const caller = fromActivityMessage(callActivityMessage);
 
   const { records } = await this.adapter.query(STORAGE_TYPE_STATE, { state: 'running', caller });
   if (!records?.length) return;
@@ -638,31 +663,31 @@ BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function can
 };
 
 /**
- * Post process engine run
+ * Post process engine definition run
  * @internal
- * @param {MiddlewareEngine} engine
- * @param {Error} [error]
+ * @param {import('smqp').MessageMessage} definitionEndMessage
  */
-BpmnEngineMiddleware.prototype._postProcessRun = async function postProcessRun(engine, error) {
-  const { options, environment } = engine;
+BpmnEngineMiddleware.prototype._postProcessDefinitionRun = async function postProcessDefinitionRun(definitionEndMessage) {
+  const { fields, content, properties } = definitionEndMessage;
+  const { caller } = content;
+  if (!caller) return;
+
   try {
-    if (options.caller?.token) {
-      if (!error) {
-        await this.engines.signalActivity(options.caller.token, options.listener, {
-          ...options.caller,
-          from: engine.token,
-          message: environment.output,
-        });
-      } else {
-        await this.engines.failActivity(options.caller.token, options.listener, {
-          ...options.caller,
-          fromToken: engine.token,
-          message: error,
-        });
-      }
+    if (fields.routingKey === 'definition.error') {
+      await this.engines.failActivity(caller.token, this._bpmnEngineListener, {
+        ...caller,
+        fromToken: properties.token,
+        message: content.error,
+      });
+    } else {
+      await this.engines.signalActivity(caller.token, this._bpmnEngineListener, {
+        ...caller,
+        fromToken: properties.token,
+        message: content.output,
+      });
     }
   } catch (err) {
-    options.listener.emit('warn', err);
+    this._bpmnEngineListener.emit('warn', err);
   }
 };
 
@@ -670,7 +695,7 @@ BpmnEngineMiddleware.prototype._postProcessRun = async function postProcessRun(e
  * Bpmn prefix listener
  * @param {import('express').Application} app Express app
  */
-export function BpmnPrefixListener(app) {
+function BpmnPrefixListener(app) {
   this.app = app;
 }
 
@@ -722,7 +747,7 @@ function slugify(...args) {
  * Create deployment result
  * @typedef {Object} CreateDeploymentResponseBody
  * @property {string} id - Deployment name
- * @property {Date} deploymentTime - Storage adapter
+ * @property {Date} deploymentTime - Deployed at date
  * @property {any} deployedProcessDefinitions - Deployed process definitions
  */
 

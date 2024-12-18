@@ -12,6 +12,7 @@ import { Broker } from 'smqp';
 import { LRUCache } from 'lru-cache';
 
 import { bpmnEngineMiddleware } from '../../src/index.js';
+import { MIDDLEWARE_DEFAULT_EXCHANGE } from '../../src/constants.js';
 import { HttpError } from '../../src/Errors.js';
 import { MemoryAdapter } from '../../src/MemoryAdapter.js';
 import debug from '../../src/debug.js';
@@ -160,8 +161,9 @@ export async function createDeploymentForm(name, source, additionalFiles) {
  * Wait for process event
  * @param {import('express').Express} app
  * @param {string} nameOrToken
+ * @param {string} [exchangeName] event exchange name
  */
-export function waitForProcess(app, nameOrToken) {
+export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAULT_EXCHANGE) {
   const broker = app.locals.broker;
   return {
     end,
@@ -231,7 +233,7 @@ export function waitForProcess(app, nameOrToken) {
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
       broker?.subscribeTmp(
-        'event',
+        exchangeName,
         eventRoutingKey,
         (_, msg) => {
           if (filterByNameOrToken(msg, expectFn)) {
@@ -244,7 +246,7 @@ export function waitForProcess(app, nameOrToken) {
       );
 
       broker?.subscribeTmp(
-        'event',
+        exchangeName,
         'engine.error',
         (_, msg) => {
           if (filterByNameOrToken(msg)) {
@@ -264,7 +266,7 @@ export function waitForProcess(app, nameOrToken) {
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
       broker?.subscribeTmp(
-        'event',
+        exchangeName,
         'engine.end',
         (_, msg) => {
           if (filterByNameOrToken(msg)) {
@@ -277,7 +279,7 @@ export function waitForProcess(app, nameOrToken) {
       );
 
       broker?.subscribeTmp(
-        'event',
+        exchangeName,
         'engine.error',
         (_, msg) => {
           if (filterByNameOrToken(msg)) {

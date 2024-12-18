@@ -150,6 +150,7 @@ declare module 'bpmn-middleware' {
 		 * 
 		 */
 		constructor(options: BpmnMiddlewareOptions, engines?: Engines);
+		name: string;
 		adapter: IStorageAdapter;
 		engines: Engines;
 		engineOptions: {
@@ -172,6 +173,7 @@ declare module 'bpmn-middleware' {
 			extensions?: Record<string, import("bpmn-elements").Extension>;
 			expressions?: import("bpmn-elements").IExpressions;
 		};
+		broker: import("smqp").Broker;
 		/**
 		 * Bound init
 		 */
@@ -179,7 +181,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Bound addEngineLocals
 		 */
-		_addEngineLocals: (req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
+		_addEngineLocals: (_req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
 		/**
 		 * Bound createEngine
 		 */
@@ -216,13 +218,17 @@ declare module 'bpmn-middleware' {
 		 * */
 		cancel(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, SignalBody, ResumeQuery>[];
 		/**
+		 * Add BPMN engine execution middleware response locals
+		 * */
+		addResponseLocals(): import("express").RequestHandler[];
+		/**
 		 * Add middleware response locals
 		 * */
-		addEngineLocals(req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
+		addEngineLocals(_req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
 		/**
 		 * Get package version
 		 * */
-		getVersion(_: import("express").Request, res: import("express").Response<any, {
+		getVersion(_req: import("express").Request, res: import("express").Response<any, {
 			version: string;
 		}>): import("express").Response<any, {
 			version: string;
@@ -230,7 +236,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Get deployment/package name
 		 * */
-		getDeployment(_: import("express").Request, res: import("express").Response<{
+		getDeployment(_req: import("express").Request, res: import("express").Response<{
 			name: string;
 		}>): import("express").Response<{
 			name: string;
@@ -331,7 +337,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Start process by call activity
 		 * */
-		_startProcessByCallActivity(callActivityApi: import("bpmn-elements").Api<import("bpmn-elements").Activity>): Promise<{
+		_startProcessByCallActivity(callActivityMessage: import("smqp").Message): Promise<MiddlewareEngine | {
 			id: string;
 		}>;
 		/**
@@ -344,30 +350,12 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Cancel process by call activity
 		 * */
-		_cancelProcessByCallActivity(callActivityApi: import("bpmn-elements").Api<import("bpmn-elements").Activity>): Promise<void>;
+		_cancelProcessByCallActivity(callActivityMessage: import("smqp").Message): Promise<void>;
 		/**
-		 * Post process engine run
-		 * 
-		 */
-		_postProcessRun(engine: MiddlewareEngine, error?: Error): Promise<void>;
-		[kInitilialized]: boolean;
-	}
-	/**
-	 * Bpmn prefix listener
-	 * @param app Express app
-	 */
-	function BpmnPrefixListener(app: import("express").Application): void;
-	class BpmnPrefixListener {
-		/**
-		 * Bpmn prefix listener
-		 * @param app Express app
-		 */
-		constructor(app: import("express").Application);
-		app: import("express").Application;
-		/**
-		 * Emit event on Express app
+		 * Post process engine definition run
 		 * */
-		emit(eventName: string, ...args: any[]): boolean;
+		_postProcessDefinitionRun(definitionEndMessage: import("smqp").MessageMessage): Promise<void>;
+		[kInitilialized]: boolean;
 	}
 	/**
 	 * Middleware response locals
@@ -425,7 +413,7 @@ declare module 'bpmn-middleware' {
 		 */
 		id: string;
 		/**
-		 * - Storage adapter
+		 * - Deployed at date
 		 */
 		deploymentTime: Date;
 		/**
@@ -442,6 +430,23 @@ declare module 'bpmn-middleware' {
 		 */
 		autosaveEngineState?: string;
 	};
+	/**
+	 * Bpmn prefix listener
+	 * @param app Express app
+	 */
+	function BpmnPrefixListener(app: import("express").Application): void;
+	class BpmnPrefixListener {
+		/**
+		 * Bpmn prefix listener
+		 * @param app Express app
+		 */
+		constructor(app: import("express").Application);
+		app: import("express").Application;
+		/**
+		 * Emit event on Express app
+		 * */
+		emit(eventName: string, ...args: any[]): boolean;
+	}
 	const kInitilialized: unique symbol;
 	export const STORAGE_TYPE_DEPLOYMENT: "deployment";
 	export const STORAGE_TYPE_STATE: "state";
@@ -451,6 +456,7 @@ declare module 'bpmn-middleware' {
 	export const ENABLE_SAVE_STATE_ROUTINGKEY: "activity.state.save.enable";
 	export const DISABLE_SAVE_STATE_ROUTINGKEY: "activity.state.save.disable";
 	export const ERR_STORAGE_KEY_NOT_FOUND: "ERR_BPMN_MIDDLEWARE_STORAGE_KEY_NOT_FOUND";
+	export const MIDDLEWARE_DEFAULT_EXCHANGE: "default";
 	/**
 	 * Engines class
 	 * */
@@ -460,6 +466,7 @@ declare module 'bpmn-middleware' {
 		 * Engines class
 		 * */
 		constructor(options: BpmnMiddlewareOptions);
+		name: string;
 		
 		broker: import("smqp").Broker;
 		engineOptions: import("bpmn-engine").BpmnEngineOptions;

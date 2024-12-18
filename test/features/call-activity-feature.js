@@ -282,7 +282,7 @@ Feature('call activity', () => {
       expect(response.body.engine.environment.output).to.deep.equal({ from: { user: { foo: 'bar' } } });
     });
 
-    Given('called deployed process will fail for some reason', async () => {
+    Given('called deployed process fails for some reason', async () => {
       await createDeployment(
         apps.balance(),
         'called-deployment',
@@ -438,24 +438,24 @@ Feature('call activity', () => {
         apps.balance(),
         'call-deployment',
         `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="main-process" isExecutable="true">
-          <startEvent id="start" />
-          <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
-          <callActivity id="call-activity" calledElement="deployment:called-deployment" />
-          <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
-          <endEvent id="end" />
-        </process>
-      </definitions>`
+          <process id="main-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="deployment:called-deployment" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+            <endEvent id="end" />
+          </process>
+        </definitions>`
       );
 
       await createDeployment(
         apps.balance(),
         'called-deployment',
         `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="called-deployment" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>`
+          <process id="called-deployment" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -706,6 +706,97 @@ Feature('call activity', () => {
 
     And('run is stopped', () => {
       expect(apps.getRunning()).to.have.length(0);
+    });
+  });
+
+  Scenario('calling deployment catches call error', () => {
+    let apps, adapter;
+    before('two parallel app instances with a shared adapter source', () => {
+      adapter = new MemoryAdapter();
+      apps = horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    Given('a process that catch call activity error', async () => {
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="main-process" isExecutable="true">
+              <startEvent id="start" />
+              <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+              <callActivity id="call-activity" calledElement="deployment:called-deployment" />
+              <boundaryEvent id="bound-error" default="to-end-error" attachedToRef="call-activity">
+                <errorEventDefinition />
+              </boundaryEvent>
+              <sequenceFlow id="to-end-error" sourceRef="bound-error" targetRef="end-error" />
+              <sequenceFlow id="from-bound-error" sourceRef="bound-error" targetRef="end" />
+              <endEvent id="end-error" />
+              <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+              <endEvent id="end" />
+            </process>
+          </definitions>`
+      );
+    });
+
+    let end;
+    When('process is started', async () => {
+      const app = apps.balance();
+      end = waitForProcess(app, 'call-deployment').end();
+
+      await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
+    });
+
+    Then('run completes', async () => {
+      await end;
+    });
+
+    And('run is stopped', () => {
+      expect(apps.getRunning()).to.have.length(0);
+    });
+  });
+
+  Scenario('calling a bad deployment', () => {
+    let apps, adapter;
+    before('two parallel app instances with a shared adapter source', () => {
+      adapter = new MemoryAdapter();
+      apps = horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    Given('a process that catch call activity error', async () => {
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="main-process" isExecutable="true">
+            <callActivity id="call-activity" calledElement="deployment:called-deployment" />
+          </process>
+        </definitions>`
+      );
+
+      await createDeployment(apps.balance(), 'called-deployment', `</xml>`);
+    });
+
+    let app;
+    let fail;
+    When('process is started', () => {
+      app = apps.balance();
+
+      fail = waitForProcess(app, 'call-deployment').error();
+
+      return request(app).post('/rest/process-definition/call-deployment/start').expect(201);
+    });
+
+    Then('run fails', () => {
+      return fail;
+    });
+
+    let running;
+    And('no instances are running', async () => {
+      const response = await apps.request().get('/rest/running');
+      running = response.body.engines;
+      expect(running).to.have.length(0);
     });
   });
 

@@ -10,11 +10,12 @@ Options:
 - `engineOptions`: Optional BPMN Engine [options](https://github.com/paed01/bpmn-engine/blob/master/docs/API.md)
 - `maxRunning`: Optional number declaring number of max running engines per instance, passed to engines LRU Cache as max, defaults to 1000
 - `engineCache`: Optional engine [LRU](https://www.npmjs.com/package/lru-cache) in-memory cache, defaults to `new LRUCache({ max: 1000, disposeAfter(engine) })`
-- `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines
+- `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines, events are shoveled on middleware name topic exchange
 - `idleTimeout`: Optional positive integer, engine execution timeout in milliseconds before engine execution is considered idle and is stopped, defaults to 120000ms
 - `autosaveEngineState`: Optional boolean, auto-save engine state during execution, defaults to true
 - [`Services`](#services-factory): Optional function to create engine `environment.services`
 - [`Scripts`](#scripts-factory): Optional function to create engine `environment.scripts` scripts
+- `name`: Optional middleware name, defaults to "default", used to separate middleware instances by creating a broker exchange with said name
 
 Returns Expressjs Router with extra properties:
 
@@ -302,6 +303,14 @@ Handler arguments:
 
 - `err`: Error
 - `engine`: Engine instance
+
+### Event `bpmn/warn`
+
+Middleware has caught some asynchronous error that is not fatal, but just to let you know.
+
+Handler arguments:
+
+- `err`: Error
 
 ## Storage adapter
 
