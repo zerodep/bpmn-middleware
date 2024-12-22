@@ -2,10 +2,19 @@
 
 ## Unreleased
 
-## [0.12.0] - 2024-12-19
+## [0.14.0] - 2024-12-21
+
+- add ability to pass custom start deployment function
+- resuming is now accepting `res.locals.token` to facilitate custom routes
+
+## [0.13.0] - 2024-12-19
 
 - introduce middleware name to facilitate separation between middleware instances
 - start relying on middleware broker to manage call activities, consequently stop relying on app events to manage call activities. App events are still fired
+
+## ~~[0.12.0]~~
+
+- unpublished
 
 ## [0.11.0] - 2024-12-14
 

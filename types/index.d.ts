@@ -173,7 +173,7 @@ declare module 'bpmn-middleware' {
 			extensions?: Record<string, import("bpmn-elements").Extension>;
 			expressions?: import("bpmn-elements").IExpressions;
 		};
-		broker: import("smqp").Broker;
+		broker: Broker;
 		/**
 		 * Bound init
 		 */
@@ -183,26 +183,17 @@ declare module 'bpmn-middleware' {
 		 */
 		_addEngineLocals: (_req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
 		/**
-		 * Bound createEngine
-		 */
-		_createEngine: (req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
-		/**
-		 * Bound validate locals
-		 */
-		__validateLocals: (_req: import("express").Request, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
-		/**
-		 * Bound resume options
-		 */
-		__resumeOptions: (req: import("express").Request<any, any, ResumeQuery>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
-		/**
 		 * Initialize middleware
 		 * */
 		init(req: import("express").Request, _: import("express").Response, next: import("express").NextFunction): void;
 		_bpmnEngineListener: BpmnPrefixListener;
 		/**
 		 * Start deployment request pipeline
+		 * @param fn start request handler
 		 * */
-		start(): import("express").RequestHandler<StartDeployment, {
+		start(fn?: import("express").RequestHandler<StartDeployment, {
+			id: string;
+		}, StartDeploymentOptions>): import("express").RequestHandler<StartDeployment, {
 			id: string;
 		}, StartDeploymentOptions>[];
 		/**
@@ -217,6 +208,10 @@ declare module 'bpmn-middleware' {
 		 * Cancel activity request pipeline
 		 * */
 		cancel(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, SignalBody, ResumeQuery>[];
+		/**
+		 * Fail activity request pipeline
+		 * */
+		fail(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, SignalBody, ResumeQuery>[];
 		/**
 		 * Add BPMN engine execution middleware response locals
 		 * */
@@ -326,6 +321,8 @@ declare module 'bpmn-middleware' {
 		 * Internal create engine middleware
 		 * */
 		createEngine(req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
+		
+		startAndTrackEngine(fn: any): (req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
 		/**
 		 * Internal validate response locals
 		 * */
@@ -362,6 +359,10 @@ declare module 'bpmn-middleware' {
 	 */
 	type BpmnMiddlewareResponseLocals = {
 		/**
+		 * - Middleware name
+		 */
+		middlewareName: string;
+		/**
 		 * - Engine factory
 		 */
 		engines: Engines;
@@ -369,6 +370,10 @@ declare module 'bpmn-middleware' {
 		 * - Storage adapter
 		 */
 		adapter: IStorageAdapter;
+		/**
+		 * - Middleware broker
+		 */
+		broker: Broker;
 		/**
 		 * - BPMN engine listener
 		 */
@@ -529,6 +534,10 @@ declare module 'bpmn-middleware' {
 		 */
 		discardByToken(token?: string): Promise<void>;
 		/**
+		 * Get engine by token
+		 * */
+		getByToken(token: string): MiddlewareEngine | undefined;
+		/**
 		 * Delete and stop engine by token
 		 * */
 		deleteByToken(token: string): Promise<any>;
@@ -579,10 +588,6 @@ declare module 'bpmn-middleware' {
 		 * Internal teardown engine, remove listeners and stuff
 		 * */
 		_teardownEngine(engine: MiddlewareEngine): void;
-		/**
-		 * Internal get activity
-		 * */
-		_getActivityApi(engine: MiddlewareEngine, body: SignalBody): any;
 	}
 	/**
 	 * Memory adapter

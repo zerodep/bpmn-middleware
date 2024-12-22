@@ -6,9 +6,11 @@ import { Broker } from 'smqp';
 import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
-import { bpmnEngineMiddleware, HttpError, MemoryAdapter } from '../src/index.js';
+import { bpmnEngineMiddleware, MemoryAdapter } from '../src/index.js';
 import { factory as ScriptsFactory } from './middleware-scripts.js';
-import { basicAuth, authorize } from './auth.js';
+import { basicAuth, authorize } from './middleware/auth.js';
+import { runToEnd } from './middleware/runtoend.js';
+import { errorHandler } from './middleware/error-handler.js';
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 
@@ -40,6 +42,7 @@ const middleware = bpmnEngineMiddleware({
 app.use('/rest/auth', basicAuth(adapter));
 app.post('/rest/auth/process-definition/:deploymentName/start', middleware.middleware.preStart(), authorize);
 app.use('/rest', basicAuth(adapter, true), middleware);
+app.post('/start/:deploymentName', basicAuth(adapter, true), middleware.middleware.start(runToEnd));
 
 app.use(errorHandler);
 
@@ -49,20 +52,4 @@ if (isMainModule) {
   app.listen(3000);
 }
 
-export { app, middleware };
-
-/**
- * Error handler
- * @param {Error} err
- * @param {import('express').Request} _req
- * @param {import('express').Response} res
- * @param {import('express').NextFunction} next
- */
-function errorHandler(err, _req, res, next) {
-  /* c8 ignore next 3 */
-  if (!(err instanceof Error)) return next();
-  // eslint-disable-next-line no-console
-  if (isMainModule) console.log({ err });
-  if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
-  res.status(502).send({ message: err.message });
-}
+export { app, middleware, runToEnd, errorHandler };

@@ -46,12 +46,12 @@ export function bpmnEngineMiddleware(options) {
   router.post('(*)?/resume/:token', middleware.resume());
   router.post('(*)?/signal/:token', middleware.signal());
   router.post('(*)?/cancel/:token', middleware.cancel());
+  router.post('(*)?/fail/:token', middleware.fail());
   router.get('(*)?/script/:deploymentName', middleware.preStart(), middleware.getScript.bind(middleware));
   router.get('(*)?/timers/:deploymentName', middleware.preStart(), middleware.getDeploymentTimers.bind(middleware));
   router.get('(*)?/running', middleware.addResponseLocals(), middleware.getRunning.bind(middleware));
   router.get('(*)?/status/:token', middleware.addResponseLocals(), middleware.getStatusByToken.bind(middleware));
   router.get('(*)?/status/:token/:activityId', middleware.addResponseLocals(), middleware.getActivityStatus.bind(middleware));
-  router.post('(*)?/fail/:token', middleware.preResume(), middleware.failActivity.bind(middleware));
   router.get('(*)?/state/:token', middleware.addResponseLocals(), middleware.getStateByToken.bind(middleware));
   router.delete('(*)?/state/:token', middleware.addResponseLocals(), middleware.deleteStateByToken.bind(middleware));
   router.delete('(*)?/internal/stop', middleware.addResponseLocals(), middleware.internalStopAll.bind(middleware));
@@ -62,6 +62,7 @@ export function bpmnEngineMiddleware(options) {
       value: engines,
       enumerable: true,
     },
+    /** @type {TypedPropertyDescriptor<BpmnEngineMiddleware>} */
     middleware: {
       value: middleware,
       enumerable: true,

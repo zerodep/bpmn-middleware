@@ -83,33 +83,9 @@ Feature('call activity', () => {
 
     When('user task is signalled', () => {
       const app = apps.balance();
-      wait = waitForProcess(app, token).end();
+      end = waitForProcess(app, token).end();
 
       return request(app).post(`/rest/signal/${token}`).send({ id: 'task' }).expect(200);
-    });
-
-    Then('run completes', () => {
-      return end;
-    });
-
-    When('process is started again', async () => {
-      const app = apps.balance();
-      wait = waitForProcess(app, 'call-internal-user-process').wait('task');
-
-      const response = await request(app).post('/rest/process-definition/call-internal-user-process/start').expect(201);
-
-      token = response.body.id;
-    });
-
-    Then('internal process user task is waiting', () => {
-      return wait;
-    });
-
-    When('user task is errored', () => {
-      const app = apps.balance();
-      wait = waitForProcess(app, token).end();
-
-      return request(app).post(`/rest/fail/${token}`).send({ id: 'task', message: 'foo' }).expect(200);
     });
 
     Then('run completes', () => {
@@ -131,13 +107,38 @@ Feature('call activity', () => {
 
     When('main process call activity is cancelled', () => {
       const app = apps.balance();
-      wait = waitForProcess(app, token).end();
+      end = waitForProcess(app, token).end();
 
       return request(app).post(`/rest/cancel/${token}`).send({ id: 'call-activity' }).expect(200);
     });
 
     Then('run completes', () => {
       return end;
+    });
+
+    When('process is started again', async () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, 'call-internal-user-process').wait('task');
+
+      const response = await request(app).post('/rest/process-definition/call-internal-user-process/start').expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('internal process user task is waiting', () => {
+      return wait;
+    });
+
+    let fail;
+    When('called process user task is errored', () => {
+      const app = apps.balance();
+      fail = waitForProcess(app, token).error();
+
+      return request(app).post(`/rest/fail/${token}`).send({ id: 'task', message: 'foo' }).expect(200);
+    });
+
+    Then('run fails, a bit unexpected but the engine behaves that way since it is in the same definition', () => {
+      return fail;
     });
   });
 

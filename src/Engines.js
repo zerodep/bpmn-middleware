@@ -177,8 +177,12 @@ Engines.prototype.signalActivity = async function signalActivity(token, listener
  */
 Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
-  const api = this._getActivityApi(engine, body);
-  api.cancel();
+  const activtyApi = getActivityApi(engine, body);
+  if (activtyApi.type === 'bpmn:CallActivity') {
+    activtyApi.cancel(body);
+  } else {
+    engine.execution?.cancelActivity(body);
+  }
   return engine;
 };
 
@@ -191,7 +195,7 @@ Engines.prototype.cancelActivity = async function cancelActivity(token, listener
  */
 Engines.prototype.failActivity = async function failActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
-  const api = this._getActivityApi(engine, body);
+  const api = getActivityApi(engine, body);
   api.sendApiMessage('error', body, { type: 'error' });
   return engine;
 };
@@ -262,6 +266,15 @@ Engines.prototype.discardByToken = async function discardByToken(token) {
 };
 
 /**
+ * Get engine by token
+ * @param {string} token
+ * @returns {MiddlewareEngine|undefined}
+ */
+Engines.prototype.getByToken = function getByToken(token) {
+  return this.engineCache.get(token);
+};
+
+/**
  * Delete and stop engine by token
  * @param {string} token
  */
@@ -275,7 +288,7 @@ Engines.prototype.deleteByToken = function deleteByToken(token) {
  * @param {string} token
  */
 Engines.prototype.stopByToken = function stopByToken(token) {
-  const engine = this.engineCache.get(token);
+  const engine = this.getByToken(token);
   if (!engine) return;
   engine.stop();
 };
@@ -605,7 +618,7 @@ Engines.prototype._teardownEngine = function teardownEngine(engine) {
  * @param {MiddlewareEngine} engine
  * @param {import('types').SignalBody} body
  */
-Engines.prototype._getActivityApi = function getActivityApi(engine, body) {
+function getActivityApi(engine, body) {
   const { id, executionId } = body;
 
   // @ts-ignore
@@ -622,7 +635,7 @@ Engines.prototype._getActivityApi = function getActivityApi(engine, body) {
 
   // @ts-ignore
   return activity.getApi();
-};
+}
 
 /**
  * LRU cache disposeAfter function

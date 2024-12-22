@@ -1,5 +1,5 @@
 import { timingSafeEqual, randomUUID } from 'node:crypto';
-import { HttpError } from '../src/index.js';
+import { HttpError } from '../../src/index.js';
 
 /**
  * Basic auth middleware

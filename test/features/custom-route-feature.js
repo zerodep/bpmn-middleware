@@ -1,5 +1,7 @@
+import { json } from 'express';
 import request from 'supertest';
 import * as testHelpers from '../helpers/testHelpers.js';
+import { runToEnd } from '../../example/app.js';
 
 import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from '../../src/index.js';
 
@@ -13,7 +15,7 @@ Feature('custom routes', () => {
     });
     after(() => apps.stop());
 
-    And('custom start route is added with separate storage adapter, disabled auto save, and shared broker', () => {
+    Given('custom start route is added with separate storage adapter, disabled auto save, and shared broker', () => {
       apps.use((app) => {
         const customMiddleware = new BpmnEngineMiddleware({
           name: 'custom',
@@ -120,7 +122,7 @@ Feature('custom routes', () => {
     });
     after(() => apps.stop());
 
-    And('custom start route is added with separate storage adapter and enabled auto save and shared broker', () => {
+    Given('custom start route is added with separate storage adapter and enabled auto save and shared broker', () => {
       apps.use((app) => {
         const customMiddleware = new BpmnEngineMiddleware({
           name: 'custom',
@@ -195,6 +197,326 @@ Feature('custom routes', () => {
     But('not by default adapter', async () => {
       expect(await adapter.fetch(STORAGE_TYPE_STATE, running.records[0].token), running.records[0].name).to.not.be.ok;
       expect(await adapter.fetch(STORAGE_TYPE_STATE, running.records[1].token), running.records[1].name).to.not.be.ok;
+    });
+  });
+
+  Scenario('use middleware functions with custom start router function', () => {
+    let apps;
+    const adapter = new MemoryAdapter();
+    const customAdapter = new MemoryAdapter();
+    before('two parallel app instances', () => {
+      apps = testHelpers.horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    Given('custom start route is added with that waits for engine completion and returns output', () => {
+      apps.use((app) => {
+        const customMiddleware = new BpmnEngineMiddleware({
+          name: 'custom',
+          adapter: customAdapter,
+          broker: app.locals.broker,
+          autosaveEngineState: true,
+          engineOptions: testHelpers.getBpmnEngineOptions(),
+        });
+
+        app.locals.customMiddleware = customMiddleware;
+
+        app.post('/api/v1/start/:deploymentName', customMiddleware.start(runToEnd));
+      });
+    });
+
+    And('a process with output', async () => {
+      await addSource(
+        customAdapter,
+        'script-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="call-process" isExecutable="true">
+            <scriptTask id="task" camunda:resultVariable="result" scriptFormat="js">
+              <script>
+                next(null, {foo: 'bar'})
+              </script>
+            </scriptTask>
+          </process>
+        </definitions>`
+      );
+    });
+
+    let response;
+    When('custom route starts process', async () => {
+      response = await apps.request().post('/api/v1/start/script-process');
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes and output is returned as response', () => {
+      expect(response.body).to.deep.equal({ result: { foo: 'bar' } });
+    });
+
+    Given('a process with timer', async () => {
+      await addSource(
+        customAdapter,
+        'timer-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="timer-process" isExecutable="true">
+            <intermediateCatchEvent id="timer">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">\${environment.variables.timeout}</timeDuration>
+              </timerEventDefinition>
+            </intermediateCatchEvent>
+          </process>
+        </definitions>`
+      );
+    });
+
+    let app;
+    let timer;
+    When('custom route starts process', () => {
+      app = apps.balance();
+      timer = testHelpers.waitForProcess(app, 'timer-process', 'custom').timer();
+
+      request(app)
+        .post('/api/v1/start/timer-process')
+        .send({ variables: { timeout: 'PT90S' } })
+        .then(() => {});
+    });
+
+    let token;
+    Then('timer is started', async () => {
+      const msg = await timer;
+      token = msg.properties.token;
+    });
+
+    let end;
+    And('timer times out', () => {
+      end = testHelpers.waitForProcess(app, 'timer-process', 'custom').end();
+      const engine = app.locals.customMiddleware.engines.getByToken(token);
+      engine.environment.timers.executing.find((t) => t.owner.id === 'timer').callback();
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
+
+    describe('errors', () => {
+      let pendingResponse;
+      When('process with timer is started with a too long timer', async () => {
+        timer = testHelpers.waitForProcess(app, 'timer-process', 'custom').timer();
+        pendingResponse = request(app)
+          .post('/api/v1/start/timer-process')
+          .send({ variables: { timeout: 'PT90S' } })
+          .then((res) => res);
+
+        const msg = await timer;
+        token = msg.properties.token;
+      });
+
+      And('request times out', () => {
+        const engine = app.locals.customMiddleware.engines.getByToken(token);
+        engine.environment.timers.executing.find((t) => t.owner.name === 'custom').callback();
+      });
+
+      Then('run fails with request timeout', async () => {
+        response = await pendingResponse;
+        expect(response.statusCode, response.text).to.equal(504);
+      });
+
+      Given('a process with bad service implementation', async () => {
+        await addSource(
+          customAdapter,
+          'bad-process',
+          `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="timer-process" isExecutable="true">
+              <serviceTask id="task" implementation="\${environment.services.myService" />
+            </process>
+          </definitions>`
+        );
+      });
+
+      When('custom route starts bad service implementation', async () => {
+        response = await apps.request().post('/api/v1/start/bad-process');
+      });
+
+      Then('run fails', () => {
+        expect(response.statusCode, response.text).to.equal(500);
+      });
+
+      Given('a process with script that throws', async () => {
+        await addSource(
+          customAdapter,
+          'bad-script-process',
+          `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="script-process" isExecutable="true">
+              <startEvent id="start">
+                <timerEventDefinition>
+                  <timeDuration xsi:type="tFormalExpression">PT0.001S</timeDuration>
+                </timerEventDefinition>
+              </startEvent>
+              <sequenceFlow id="to-task" sourceRef="start" targetRef="task" />
+              <scriptTask id="task" camunda:resultVariable="result" scriptFormat="js">
+                <script>
+                  next(null, a.b.c);
+                </script>
+              </scriptTask>
+            </process>
+          </definitions>`
+        );
+      });
+
+      When('custom route starts script process', async () => {
+        response = await apps.request().post('/api/v1/start/bad-script-process');
+      });
+
+      Then('run fails', () => {
+        expect(response.statusCode, response.text).to.equal(500);
+        expect(response.text).to.contain('next(null, a.b.c)');
+      });
+
+      Given('a malformatted process', async () => {
+        await addSource(customAdapter, 'malformatted-process', `</xml>`);
+      });
+
+      When('custom route starts malformatted process', async () => {
+        response = await apps.request().post('/api/v1/start/malformatted-process');
+      });
+
+      Then('run fails', () => {
+        expect(response.statusCode, response.text).to.equal(500);
+      });
+    });
+  });
+
+  Scenario('use middleware resume-, signal-, cancel-, and fail-functions ', () => {
+    let apps;
+    const adapter = new MemoryAdapter();
+    const customAdapter = new MemoryAdapter();
+    before('two parallel app instances', () => {
+      apps = testHelpers.horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    Given('custom routes are added', () => {
+      apps.use((app) => {
+        const customMiddleware = new BpmnEngineMiddleware({
+          name: 'custom',
+          adapter: customAdapter,
+          broker: app.locals.broker,
+          autosaveEngineState: true,
+          engineOptions: testHelpers.getBpmnEngineOptions(),
+        });
+
+        app.post('/start/:deploymentName', customMiddleware.start());
+        app.post('/signal', json(), readTokenAndIdFromBody, customMiddleware.signal());
+        app.post('/cancel', json(), readTokenAndIdFromBody, customMiddleware.cancel());
+        app.post('/fail', json(), readTokenAndIdFromBody, customMiddleware.fail());
+      });
+
+      function readTokenAndIdFromBody(req, res, next) {
+        res.locals.token = req.body.token;
+        req.body = req.body.message;
+        next();
+      }
+    });
+
+    And('a process matching scenario', async () => {
+      await addSource(
+        customAdapter,
+        'signal-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="signal-process" isExecutable="true">
+            <manualTask id="task" />
+            <boundaryEvent id="timer" attachedToRef="task"  cancelActivity="true">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
+      );
+    });
+
+    let wait;
+    let token;
+    When('process is started', async () => {
+      const app = apps.balance();
+      wait = testHelpers.waitForProcess(app, 'signal-process', 'custom').wait();
+
+      const response = await request(app).post('/start/signal-process');
+
+      expect(response.statusCode, response.text).to.equal(201);
+
+      token = response.body.id;
+    });
+
+    Then('run is waiting', () => {
+      return wait;
+    });
+
+    let end;
+    When('run is signalled via custom route', async () => {
+      const app = apps.balance();
+      end = testHelpers.waitForProcess(app, 'signal-process', 'custom').end();
+
+      const response = await request(app)
+        .post(`/signal`)
+        .send({ token, message: { id: 'task' } });
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('signalled run completes', () => {
+      return end;
+    });
+
+    When('process is started again', async () => {
+      const app = apps.balance();
+      wait = testHelpers.waitForProcess(app, 'signal-process', 'custom').wait();
+      const response = await request(app).post('/start/signal-process').expect(201);
+      token = response.body.id;
+    });
+
+    Then('run is waiting', () => {
+      return wait;
+    });
+
+    let fail;
+    When('failing activity via custom route', async () => {
+      const app = apps.balance();
+      fail = testHelpers.waitForProcess(app, 'signal-process', 'custom').error();
+
+      const response = await request(app)
+        .post(`/fail`)
+        .send({ token, message: { id: 'task' } });
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run fails', () => {
+      return fail;
+    });
+
+    When('process is started again', async () => {
+      const app = apps.balance();
+      wait = testHelpers.waitForProcess(app, 'signal-process', 'custom').wait();
+      const response = await request(app).post('/start/signal-process').expect(201);
+      token = response.body.id;
+    });
+
+    Then('run is waiting', () => {
+      return wait;
+    });
+
+    When('cancelling activity via custom route', async () => {
+      const app = apps.balance();
+      end = testHelpers.waitForProcess(app, 'signal-process', 'custom').end();
+
+      const response = await request(app)
+        .post(`/cancel`)
+        .send({ token, message: { id: 'timer' } });
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes', () => {
+      return end;
     });
   });
 });

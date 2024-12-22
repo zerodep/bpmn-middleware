@@ -34,7 +34,7 @@ export function BpmnEngineMiddleware(options, engines) {
   this.engines = engines ?? new Engines({ ...options });
   this.engineOptions = { ...options.engineOptions };
 
-  /** @type {import('smqp').Broker} */
+  /** @type {Broker} */
   const broker = (this.broker = options.broker || new Broker(this));
   broker.assertExchange(name, 'topic', { autoDelete: false, durable: false });
 
@@ -54,21 +54,6 @@ export function BpmnEngineMiddleware(options, engines) {
    * Bound addEngineLocals
    */
   this._addEngineLocals = this.addEngineLocals.bind(this);
-
-  /**
-   * Bound createEngine
-   */
-  this._createEngine = this.createEngine.bind(this);
-
-  /**
-   * Bound validate locals
-   */
-  this.__validateLocals = this._validateLocals.bind(this);
-
-  /**
-   * Bound resume options
-   */
-  this.__resumeOptions = this._resumeOptions.bind(this);
 }
 
 /**
@@ -91,11 +76,12 @@ BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
 
 /**
  * Start deployment request pipeline
+ * @param {import('express').RequestHandler<StartDeployment, {id:string}, import('types').StartDeploymentOptions>} [fn] start request handler
  * @returns {import('express').RequestHandler<StartDeployment, {id:string}, import('types').StartDeploymentOptions>[]}
  */
-BpmnEngineMiddleware.prototype.start = function start() {
+BpmnEngineMiddleware.prototype.start = function start(fn) {
   // @ts-ignore
-  return this.preStart().concat(this.runDeployment.bind(this));
+  return this.preStart().concat(fn ? this.startAndTrackEngine(fn) : this.runDeployment.bind(this));
 };
 
 /**
@@ -126,6 +112,15 @@ BpmnEngineMiddleware.prototype.cancel = function cancel() {
 };
 
 /**
+ * Fail activity request pipeline
+ * @returns {import('express').RequestHandler<TokenParameter, ReturnType<Engines['getEngineStatusByToken']>, import('types').SignalBody, ResumeQuery>[]}
+ */
+BpmnEngineMiddleware.prototype.fail = function fail() {
+  // @ts-ignore
+  return this.preResume().concat(this.failActivity.bind(this));
+};
+
+/**
  * Add BPMN engine execution middleware response locals
  * @returns {import('express').RequestHandler[]}
  */
@@ -141,8 +136,10 @@ BpmnEngineMiddleware.prototype.addResponseLocals = function addResponseLocals() 
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(_req, res, next) {
+  res.locals.middlewareName = this.name;
   res.locals.engines = res.locals.engines ?? this.engines;
   res.locals.adapter = res.locals.adapter ?? this.adapter;
+  res.locals.broker = res.locals.broker ?? this.broker;
   res.locals.listener = res.locals.listener ?? this._bpmnEngineListener;
   next();
 };
@@ -196,7 +193,7 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
  */
 BpmnEngineMiddleware.prototype.preStart = function preStart() {
   // @ts-ignore
-  return [json(), ...this.addResponseLocals(), this.__validateLocals, this._createEngine];
+  return [json(), ...this.addResponseLocals(), this._validateLocals.bind(this), this.createEngine.bind(this)];
 };
 
 /**
@@ -207,8 +204,8 @@ BpmnEngineMiddleware.prototype.preStart = function preStart() {
  */
 BpmnEngineMiddleware.prototype.runDeployment = async function run(_req, res, next) {
   try {
-    const engine = res.locals.engine;
-    await res.locals.engines.run(engine, res.locals.listener);
+    const { engines, engine, listener } = res.locals;
+    await engines.run(engine, listener);
     return res.status(201).send({ id: engine.token });
   } catch (err) {
     next(err);
@@ -350,7 +347,7 @@ BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivitySta
  */
 BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(req, res, next) {
   try {
-    const token = req.params.token;
+    const token = res.locals.token ?? req.params.token;
     const engines = res.locals.engines;
     await engines.signalActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
     return res.send(engines.getEngineStatusByToken(token));
@@ -367,7 +364,7 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
  */
 BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(req, res, next) {
   try {
-    const token = req.params.token;
+    const token = res.locals.token ?? req.params.token;
     const engines = res.locals.engines;
     await engines.cancelActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
     return res.send(engines.getEngineStatusByToken(token));
@@ -384,7 +381,7 @@ BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(re
  */
 BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, res, next) {
   try {
-    const token = req.params.token;
+    const token = res.locals.token ?? req.params.token;
     const engines = res.locals.engines;
     await engines.failActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
     return res.send(engines.getEngineStatusByToken(token));
@@ -399,7 +396,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
  */
 BpmnEngineMiddleware.prototype.preResume = function preResume() {
   // @ts-ignore
-  return [json(), ...this.addResponseLocals(), this.__resumeOptions];
+  return [json(), ...this.addResponseLocals(), this._validateLocals.bind(this), this._resumeOptions.bind(this)];
 };
 
 /**
@@ -519,6 +516,30 @@ BpmnEngineMiddleware.prototype.createEngine = async function createEngine(req, r
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * @internal
+ * @param {any} fn
+ * @returns
+ */
+BpmnEngineMiddleware.prototype.startAndTrackEngine = function startAndTrackEngine(fn) {
+  /**
+   * Internal create engine middleware
+   * @internal
+   * @param {import('express').Request<StartDeployment, void, import('types').StartDeploymentOptions>} req
+   * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
+   * @param {import('express').NextFunction} next
+   */
+  return async function trackEngineMiddleware(req, res, next) {
+    try {
+      const { engines, engine, listener } = res.locals;
+      await engines.run(engine, listener);
+      fn(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  };
 };
 
 /**
@@ -723,8 +744,10 @@ function slugify(...args) {
 /**
  * Middleware response locals
  * @typedef {Object} BpmnMiddlewareResponseLocals
+ * @property {string} middlewareName - Middleware name
  * @property {Engines} engines - Engine factory
  * @property {import('types').IStorageAdapter} adapter - Storage adapter
+ * @property {Broker} broker - Middleware broker
  * @property {BpmnPrefixListener} listener - BPMN engine listener
  * @property {string} [token] - BPMN engine execution token
  * @property {MiddlewareEngine} [engine] - BPMN engine instance
