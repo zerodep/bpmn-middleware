@@ -8,7 +8,7 @@ import * as bpmnElements from 'bpmn-elements';
 
 import { bpmnEngineMiddleware, MemoryAdapter } from '../src/index.js';
 import { factory as ScriptsFactory } from './middleware-scripts.js';
-import { basicAuth, authorize } from './middleware/auth.js';
+import { basicAuth, authorize, addUser } from './middleware/auth.js';
 import { runToEnd } from './middleware/runtoend.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -48,8 +48,8 @@ app.use(errorHandler);
 
 /* c8 ignore next 4 */
 if (isMainModule) {
-  adapter.upsert('user', 'admin', { password: 'supers3cret' });
+  addUser(adapter, { username: 'admin', password: 'supers3cret' });
   app.listen(3000);
 }
 
-export { app, middleware, runToEnd, errorHandler };
+export { app, middleware, runToEnd, errorHandler, addUser };

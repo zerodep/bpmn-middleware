@@ -138,17 +138,20 @@ Feature('example app', () => {
     });
 
     And('some users', async () => {
-      await app.locals.middleware.middleware.adapter.upsert('user', 'jan', {
+      await app.locals.addUser(app.locals.middleware.middleware.adapter, {
+        username: 'jan',
         name: 'Jan Bananberg',
         password: 'someuniqueprofanesentence',
         role: ['user'],
       });
-      await app.locals.middleware.middleware.adapter.upsert('user', 'jane', {
+      await app.locals.addUser(app.locals.middleware.middleware.adapter, {
+        username: 'jane',
         name: 'Jane Bananberg',
         password: 'someuniqueprofanesentence',
         role: ['admin'],
       });
-      await app.locals.middleware.middleware.adapter.upsert('user', 'ben', {
+      await app.locals.addUser(app.locals.middleware.middleware.adapter, {
+        username: 'ben',
         name: 'Ben Bananberg',
         password: 'someuniqueprofanesentence',
       });

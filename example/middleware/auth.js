@@ -1,4 +1,4 @@
-import { timingSafeEqual, randomUUID } from 'node:crypto';
+import { timingSafeEqual, randomUUID, randomBytes, pbkdf2 } from 'node:crypto';
 import { HttpError } from '../../src/index.js';
 
 /**
@@ -50,19 +50,21 @@ async function authenticate(adapter, username, password) {
   const challengePassword = Buffer.from(password || randomUUID());
 
   if (!user) {
-    timingSafeEqual(challengePassword, challengePassword);
+    const missingSalt = randomBytes(16).toString('hex');
+    const challengeString = Buffer.from(await hashPassword(missingSalt, challengePassword));
+    timingSafeEqual(challengeString, challengeString);
     return;
   }
 
-  const { password: userPassword, ...rest } = user;
+  const { salt, password: userPassword, ...rest } = user;
 
-  const bufferSize = challengePassword.length > userPassword.length ? challengePassword.length : userPassword.length;
+  const challengeString = await hashPassword(salt, challengePassword);
 
-  if (!timingSafeEqual(Buffer.alloc(bufferSize, userPassword), Buffer.alloc(bufferSize, challengePassword))) {
+  if (!timingSafeEqual(Buffer.from(userPassword), Buffer.from(challengeString))) {
     return;
   }
 
-  return { username, ...rest };
+  return { ...rest, username };
 }
 
 /**
@@ -107,10 +109,35 @@ function sendUnauthorized(res) {
 }
 
 /**
+ * Add User
+ * @param {import('../../types/interfaces.js').IStorageAdapter} adapter
+ * @param {User} newUser
+ */
+export async function addUser(adapter, newUser) {
+  const salt = randomBytes(16).toString('hex');
+  const password = await hashPassword(salt, newUser.password);
+
+  const user = JSON.parse(JSON.stringify({ ...newUser, salt, password }));
+
+  await adapter.upsert('user', newUser.username.toLowerCase(), user);
+}
+
+function hashPassword(salt, password) {
+  return new Promise((resolve, reject) =>
+    pbkdf2(Buffer.from(password), salt, 100000, 64, 'sha512', (err, hash) => {
+      /* c8 ignore next */
+      if (err) return reject(err);
+      return resolve(hash.toString('hex'));
+    })
+  );
+}
+
+/**
  * User
  * @typedef {Object} User
  * @property {string} username
  * @property {string} name
  * @property {string[]} [role]
+ * @property {string} [salt]
  * @property {string} [password]
  */

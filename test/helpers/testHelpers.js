@@ -116,8 +116,9 @@ export function getBpmnEngineOptions(engineOptions) {
 }
 
 export async function getExampleApp() {
-  const { app, middleware } = await import('../../example/app.js');
+  const { app, middleware, addUser } = await import('../../example/app.js');
   app.locals.middleware = middleware;
+  app.locals.addUser = addUser;
   return app;
 }
 

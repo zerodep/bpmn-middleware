@@ -2,10 +2,11 @@
 
 ## Unreleased
 
-## [0.14.0] - 2024-12-21
+## [0.14.0] - 2024-12-22
 
 - add ability to pass custom start deployment function
 - resuming is now accepting `res.locals.token` to facilitate custom routes
+- hash user password in example app, it's bad enough that basic auth over http is used
 
 ## [0.13.0] - 2024-12-19
 
