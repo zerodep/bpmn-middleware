@@ -1,6 +1,6 @@
 import { json } from 'express';
 import request from 'supertest';
-import * as testHelpers from '../helpers/testHelpers.js';
+import * as testHelpers from '../helpers/test-helpers.js';
 import { runToEnd } from '../../example/app.js';
 
 import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from '../../src/index.js';

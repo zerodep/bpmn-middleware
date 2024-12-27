@@ -136,3 +136,5 @@ dist/**/*
 !dist/package.json
 
 *.d.ts.map
+
+Dockerfile

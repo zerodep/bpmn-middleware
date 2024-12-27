@@ -1,6 +1,14 @@
 import request from 'supertest';
+import { STORAGE_TYPE_STATE } from '../../src/index.js';
 
-import { createDeployment, createDeploymentForm, getExampleApp, getResource, waitForProcess } from '../helpers/testHelpers.js';
+import {
+  createDeployment,
+  createDeploymentForm,
+  getExampleApp,
+  getResource,
+  waitForProcess,
+  getExampleResource,
+} from '../helpers/test-helpers.js';
 
 const externalScriptSource = getResource('script-resource.bpmn');
 const roleSource = getResource('requires-role.bpmn');
@@ -289,6 +297,103 @@ Feature('example app', () => {
       Then('502 is returned', () => {
         expect(response.statusCode, response.text).to.equal(502);
       });
+    });
+  });
+
+  Scenario('custom start route that runs to end and returns engine output', () => {
+    let deploymentName;
+    Given('a process with a task awaiting signal', () => {
+      deploymentName = 'sync-process';
+      return createDeployment(app, deploymentName, getExampleResource('task.bpmn'));
+    });
+
+    let response;
+    When('process is started', async () => {
+      response = await request(app).post(`/start/sync/${deploymentName}`);
+    });
+
+    Then('run completed and returned process output', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('output').that.deep.equal({ foo: 'bar' });
+    });
+
+    When('process is started again with option to delete', async () => {
+      response = await request(app).post(`/start/sync/${deploymentName}`).query({ delete: true });
+    });
+
+    Then('run completed and returned process output', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('output').that.deep.equal({ foo: 'bar' });
+    });
+
+    And('state is deleted', async () => {
+      const adapter = app.locals.middleware.middleware.adapter;
+      expect(await adapter.fetch(STORAGE_TYPE_STATE, response.body.token)).to.not.be.ok;
+    });
+  });
+
+  Scenario('custom signal route that runs to end and returns engine output', () => {
+    let deploymentName;
+    Given('a process with a task awaiting signal', () => {
+      deploymentName = 'waiter';
+      return createDeployment(app, deploymentName, getResource('wait.bpmn'));
+    });
+
+    let wait, token;
+    And('process is started', async () => {
+      wait = waitForProcess(app, deploymentName).wait();
+
+      const { body } = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      token = body.id;
+    });
+
+    let waitingTask, response;
+    When('manual task is signalled via custom route', async () => {
+      waitingTask = await wait;
+      response = await request(app).post(`/signal/${token}`).send({ id: waitingTask.content.id, foo: 'bar' });
+    });
+
+    Then('run output is returned', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body)
+        .to.have.property('output')
+        .that.deep.equal({ signal: { id: waitingTask.content.id, foo: 'bar' } });
+    });
+
+    When('same manual task is signalled again via custom route', async () => {
+      waitingTask = await wait;
+      response = await request(app).post(`/signal/${token}`).send({ id: waitingTask.content.id, foo: 'bar' });
+    });
+
+    Then('bad request is returned', () => {
+      expect(response.statusCode, response.text).to.equal(400);
+    });
+
+    Given('process is started again', async () => {
+      wait = waitForProcess(app, deploymentName).wait();
+
+      const { body } = await request(app).post(`/rest/process-definition/${deploymentName}/start`).expect(201);
+      token = body.id;
+    });
+
+    When('manual task is signalled via custom route with query param to delete state when complete', async () => {
+      waitingTask = await wait;
+      response = await request(app).post(`/signal/${token}`).query({ delete: true }).send({ id: waitingTask.content.id, foo: 'bar' });
+    });
+
+    Then('run completes', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    And('run output is returned', () => {
+      expect(response.body)
+        .to.have.property('output')
+        .that.deep.equal({ signal: { id: waitingTask.content.id, foo: 'bar' } });
+    });
+
+    And('state is deleted', async () => {
+      const adapter = app.locals.middleware.middleware.adapter;
+      expect(await adapter.fetch(STORAGE_TYPE_STATE, token)).to.not.be.ok;
     });
   });
 });

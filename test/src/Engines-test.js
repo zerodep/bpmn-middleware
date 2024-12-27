@@ -1,8 +1,7 @@
 import { Broker } from 'smqp';
 import { EventEmitter } from 'events';
 
-import { Engines } from '../../src/Engines.js';
-import { MemoryAdapter } from '../../src/MemoryAdapter.js';
+import { MemoryAdapter, Engines } from '../../src/index.js';
 
 describe('Engines', () => {
   describe('execute', () => {

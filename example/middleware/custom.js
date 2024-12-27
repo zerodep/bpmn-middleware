@@ -2,14 +2,13 @@ import { HttpError } from 'bpmn-middleware';
 
 /**
  * Custom start function
- * @param {import('express').Request} _req
- * @param {import('express').Response<any, {engine:import('bpmn-middleware').MiddlewareEngine}>} res
+ * @param {import('express').Request} req
+ * @param {import('express').Response<any, {engine:import('bpmn-middleware').MiddlewareEngine, engines:import('bpmn-middleware').Engines}>} res
  * @param {import('express').NextFunction} next
  */
-export async function runToEnd(_req, res, next) {
+export async function runToEnd(req, res, next) {
   try {
-    /** @type {import('bpmn-middleware').MiddlewareEngine} */
-    const engine = res.locals.engine;
+    const { engine, engines } = res.locals;
 
     if (engine.state === 'error') {
       return next(new HttpError('run failed', 500));
@@ -42,8 +41,26 @@ export async function runToEnd(_req, res, next) {
       );
     });
 
-    return res.send(engine.environment.output);
+    if ('delete' in req.query) {
+      await engines.deleteByToken(res.locals.token);
+    }
+
+    return res.send({ token: res.locals.token, output: engine.environment.output });
   } catch (err) {
     next(err);
   }
+}
+
+/**
+ * Custom start function
+ * @type {import('connect').NextHandleFunction}
+ * @param {import('express').Request} req
+ * @param {import('express').Response<any, {engine:import('bpmn-middleware').MiddlewareEngine}>} res
+ * @param {import('express').NextFunction} next
+ */
+export function signal(req, res, next) {
+  /** @type {import('bpmn-middleware').MiddlewareEngine} */
+  const engine = res.locals.engine;
+  engine.execution.signal(req.body);
+  return runToEnd(req, res, next);
 }

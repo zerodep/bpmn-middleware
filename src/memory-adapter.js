@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
 
-import { StorageError } from './Errors.js';
+import { StorageError } from './errors.js';
 import { STORAGE_TYPE_STATE, ERR_STORAGE_KEY_NOT_FOUND } from './constants.js';
 
 /**
@@ -9,7 +9,7 @@ import { STORAGE_TYPE_STATE, ERR_STORAGE_KEY_NOT_FOUND } from './constants.js';
  */
 export function MemoryAdapter(storage) {
   /** @type {import('lru-cache').LRUCache<string, any>} */
-  this.storage = storage || new LRUCache({ max: 1000 });
+  this.storage = storage || new LRUCache({ max: 1000, allowStale: false });
 }
 
 /**
@@ -21,6 +21,7 @@ export function MemoryAdapter(storage) {
  */
 MemoryAdapter.prototype.upsert = function upsert(type, key, value, options) {
   const storageKey = `${type}:${key}`;
+
   switch (type) {
     case STORAGE_TYPE_STATE: {
       const current = this.storage.get(storageKey);

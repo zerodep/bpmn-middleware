@@ -177,29 +177,25 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Bound init
 		 */
-		_init: (req: import("express").Request, _: import("express").Response, next: import("express").NextFunction) => void;
+		_init: import("connect").NextHandleFunction;
 		/**
 		 * Bound addEngineLocals
 		 */
-		_addEngineLocals: (_req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => void;
-		/**
-		 * Initialize middleware
-		 * */
-		init(req: import("express").Request, _: import("express").Response, next: import("express").NextFunction): void;
+		_addEngineLocals: import("connect").NextHandleFunction;
+		init(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
 		_bpmnEngineListener: BpmnPrefixListener;
 		/**
 		 * Start deployment request pipeline
 		 * @param fn start request handler
 		 * */
-		start(fn?: import("express").RequestHandler<StartDeployment, {
-			id: string;
-		}, StartDeploymentOptions>): import("express").RequestHandler<StartDeployment, {
+		start(fn?: import("express").RequestHandler): import("express").RequestHandler<StartDeployment, {
 			id: string;
 		}, StartDeploymentOptions>[];
 		/**
 		 * Resume engine request pipeline
+		 * @param fn resume request handler
 		 * */
-		resume(): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, any, ResumeQuery>[];
+		resume(fn?: import("express").RequestHandler): import("express").RequestHandler<TokenParameter, ReturnType<Engines["getEngineStatusByToken"]>, any, ResumeQuery>[];
 		/**
 		 * Signal activity request pipeline
 		 * */
@@ -215,11 +211,8 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Add BPMN engine execution middleware response locals
 		 * */
-		addResponseLocals(): import("express").RequestHandler[];
-		/**
-		 * Add middleware response locals
-		 * */
-		addEngineLocals(_req: import("express").Request, res: import("express").Response<any, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
+		addResponseLocals(): import("connect").NextHandleFunction[];
+		addEngineLocals(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
 		/**
 		 * Get package version
 		 * */
@@ -243,7 +236,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Pre start BPMN engine execution middleware
 		 * */
-		preStart(): import("express").RequestHandler[];
+		preStart(): import("connect").NextHandleFunction[];
 		/**
 		 * Run deployment
 		 * */
@@ -293,10 +286,7 @@ declare module 'bpmn-middleware' {
 		 * Fail activity
 		 * */
 		failActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
-		/**
-		 * Pre resume middleware
-		 * */
-		preResume(): import("express").RequestHandler[];
+		preResume(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
 		/**
 		 * Resume engine by token
 		 * */
@@ -322,11 +312,10 @@ declare module 'bpmn-middleware' {
 		 * */
 		createEngine(req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		
-		startAndTrackEngine(fn: any): (req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
-		/**
-		 * Internal validate response locals
-		 * */
-		_validateLocals(_req: import("express").Request, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): void;
+		startAndTrackEngine(fn: import("express").RequestHandler): (req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
+		
+		resumeAndTrackEngine(fn: import("express").RequestHandler): (req: import("express").Request<StartDeployment, void, ResumeOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
+		_validateLocals(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
 		/**
 		 * Internal get resume options
 		 * */
@@ -501,17 +490,17 @@ declare module 'bpmn-middleware' {
 		 * Signal activity
 		 * 
 		 */
-		signalActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ResumeOptions): Promise<MiddlewareEngine>;
+		resumeAndSignalActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ResumeOptions): Promise<MiddlewareEngine>;
 		/**
 		 * Cancel activity
 		 * 
 		 */
-		cancelActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ResumeOptions): Promise<MiddlewareEngine>;
+		resumeAndCancelActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ResumeOptions): Promise<MiddlewareEngine>;
 		/**
 		 * Fail activity
 		 * 
 		 */
-		failActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ResumeOptions): Promise<MiddlewareEngine>;
+		resuemAndFailActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ResumeOptions): Promise<MiddlewareEngine>;
 		/**
 		 * Get postponed activities by token
 		 * */

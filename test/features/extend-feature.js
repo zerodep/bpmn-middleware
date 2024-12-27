@@ -3,7 +3,7 @@ import request from 'supertest';
 import { json } from 'express';
 
 import { MiddlewareEngine } from '../../src/index.js';
-import * as testHelpers from '../helpers/testHelpers.js';
+import * as testHelpers from '../helpers/test-helpers.js';
 
 class ExtendedEngine extends MiddlewareEngine {}
 

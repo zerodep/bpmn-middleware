@@ -9,7 +9,7 @@ import * as bpmnElements from 'bpmn-elements';
 import { bpmnEngineMiddleware, MemoryAdapter } from '../src/index.js';
 import { factory as ScriptsFactory } from './middleware-scripts.js';
 import { basicAuth, authorize, addUser } from './middleware/auth.js';
-import { runToEnd } from './middleware/runtoend.js';
+import { runToEnd, signal } from './middleware/custom.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
@@ -42,7 +42,8 @@ const middleware = bpmnEngineMiddleware({
 app.use('/rest/auth', basicAuth(adapter));
 app.post('/rest/auth/process-definition/:deploymentName/start', middleware.middleware.preStart(), authorize);
 app.use('/rest', basicAuth(adapter, true), middleware);
-app.post('/start/:deploymentName', basicAuth(adapter, true), middleware.middleware.start(runToEnd));
+app.post('/start/sync/:deploymentName', basicAuth(adapter, true), middleware.middleware.start(runToEnd));
+app.post('/signal/:token', basicAuth(adapter, true), middleware.middleware.resume(signal));
 
 app.use(errorHandler);
 
@@ -52,4 +53,4 @@ if (isMainModule) {
   app.listen(3000);
 }
 
-export { app, middleware, runToEnd, errorHandler, addUser };
+export { app, middleware, runToEnd, errorHandler, addUser, adapter };

@@ -6,11 +6,11 @@ import { json } from 'express';
 import { Broker } from 'smqp';
 
 import { MIDDLEWARE_DEFAULT_EXCHANGE, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from './constants.js';
-import { Engines } from './Engines.js';
-import { MemoryAdapter } from './MemoryAdapter.js';
-import { HttpError, StorageError } from './Errors.js';
-import { MiddlewareEngine } from './MiddlewareEngine.js';
-import { fromActivityMessage } from './Caller.js';
+import { Engines } from './engines.js';
+import { MemoryAdapter } from './memory-adapter.js';
+import { HttpError, StorageError } from './errors.js';
+import { MiddlewareEngine } from './middleware-engine.js';
+import { fromActivityMessage } from './caller.js';
 import debug from './debug.js';
 
 const nodeRequire = createRequire(fileURLToPath(import.meta.url));
@@ -58,9 +58,8 @@ export function BpmnEngineMiddleware(options, engines) {
 
 /**
  * Initialize middleware
+ * @type {import('connect').NextHandleFunction}
  * @param {import('express').Request} req
- * @param {import('express').Response} _
- * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
   if (this[kInitilialized]) return next();
@@ -76,7 +75,7 @@ BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
 
 /**
  * Start deployment request pipeline
- * @param {import('express').RequestHandler<StartDeployment, {id:string}, import('types').StartDeploymentOptions>} [fn] start request handler
+ * @param {import('express').RequestHandler} [fn] start request handler
  * @returns {import('express').RequestHandler<StartDeployment, {id:string}, import('types').StartDeploymentOptions>[]}
  */
 BpmnEngineMiddleware.prototype.start = function start(fn) {
@@ -86,11 +85,12 @@ BpmnEngineMiddleware.prototype.start = function start(fn) {
 
 /**
  * Resume engine request pipeline
+ * @param {import('express').RequestHandler} [fn] resume request handler
  * @returns {import('express').RequestHandler<TokenParameter, ReturnType<Engines['getEngineStatusByToken']>, any, ResumeQuery>[]}
  */
-BpmnEngineMiddleware.prototype.resume = function resume() {
+BpmnEngineMiddleware.prototype.resume = function resume(fn) {
   // @ts-ignore
-  return this.preResume().concat(this.resumeByToken.bind(this));
+  return this.preResume().concat(fn ? this.resumeAndTrackEngine(fn) : this.resumeByToken.bind(this));
 };
 
 /**
@@ -122,10 +122,9 @@ BpmnEngineMiddleware.prototype.fail = function fail() {
 
 /**
  * Add BPMN engine execution middleware response locals
- * @returns {import('express').RequestHandler[]}
+ * @returns {import('connect').NextHandleFunction[]}
  */
 BpmnEngineMiddleware.prototype.addResponseLocals = function addResponseLocals() {
-  // @ts-ignore
   return [this._init, this._addEngineLocals];
 };
 
@@ -135,8 +134,16 @@ BpmnEngineMiddleware.prototype.addResponseLocals = function addResponseLocals() 
  * @param {import('express').Response<any, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
-BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(_req, res, next) {
+
+/**
+ * Add middleware response locals
+ * @type {import('connect').NextHandleFunction}
+ * @param {import('express').Request<TokenParameter>} req
+ * @param {import('express').Response<{id:string}, BpmnMiddlewareResponseLocals>} res
+ */
+BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(req, res, next) {
   res.locals.middlewareName = this.name;
+  res.locals.token = res.locals.token ?? req.params.token;
   res.locals.engines = res.locals.engines ?? this.engines;
   res.locals.adapter = res.locals.adapter ?? this.adapter;
   res.locals.broker = res.locals.broker ?? this.broker;
@@ -189,7 +196,7 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
 
 /**
  * Pre start BPMN engine execution middleware
- * @returns {import('express').RequestHandler[]}
+ * @returns {import('connect').NextHandleFunction[]}
  */
 BpmnEngineMiddleware.prototype.preStart = function preStart() {
   // @ts-ignore
@@ -347,9 +354,8 @@ BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivitySta
  */
 BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(req, res, next) {
   try {
-    const token = res.locals.token ?? req.params.token;
-    const engines = res.locals.engines;
-    await engines.signalActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
+    const { token, engines, listener, resumeOptions } = res.locals;
+    await engines.resumeAndSignalActivity(token, listener, req.body, resumeOptions);
     return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -364,9 +370,8 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
  */
 BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(req, res, next) {
   try {
-    const token = res.locals.token ?? req.params.token;
-    const engines = res.locals.engines;
-    await engines.cancelActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
+    const { token, engines, listener, resumeOptions } = res.locals;
+    await engines.resumeAndCancelActivity(token, listener, req.body, resumeOptions);
     return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -381,9 +386,8 @@ BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(re
  */
 BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, res, next) {
   try {
-    const token = res.locals.token ?? req.params.token;
-    const engines = res.locals.engines;
-    await engines.failActivity(token, res.locals.listener, req.body, res.locals.resumeOptions);
+    const { token, engines, listener, resumeOptions } = res.locals;
+    await engines.resuemAndFailActivity(token, listener, req.body, resumeOptions);
     return res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
@@ -392,7 +396,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
 
 /**
  * Pre resume middleware
- * @returns {import('express').RequestHandler[]}
+ * @type {import('connect').NextHandleFunction}
  */
 BpmnEngineMiddleware.prototype.preResume = function preResume() {
   // @ts-ignore
@@ -520,18 +524,17 @@ BpmnEngineMiddleware.prototype.createEngine = async function createEngine(req, r
 
 /**
  * @internal
- * @param {any} fn
- * @returns
+ * @param {import('express').RequestHandler} fn
  */
 BpmnEngineMiddleware.prototype.startAndTrackEngine = function startAndTrackEngine(fn) {
   /**
-   * Internal create engine middleware
+   * Internal start engine middleware
    * @internal
    * @param {import('express').Request<StartDeployment, void, import('types').StartDeploymentOptions>} req
    * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
    * @param {import('express').NextFunction} next
    */
-  return async function trackEngineMiddleware(req, res, next) {
+  return async function startAndTrackEngineMiddleware(req, res, next) {
     try {
       const { engines, engine, listener } = res.locals;
       await engines.run(engine, listener);
@@ -543,13 +546,42 @@ BpmnEngineMiddleware.prototype.startAndTrackEngine = function startAndTrackEngin
 };
 
 /**
+ * @internal
+ * @param {import('express').RequestHandler} fn
+ */
+BpmnEngineMiddleware.prototype.resumeAndTrackEngine = function resumeAndTrackEngine(fn) {
+  /**
+   * Internal resume engine middleware
+   * @internal
+   * @param {import('express').Request<StartDeployment, void, import('types').ResumeOptions>} req
+   * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
+   * @param {import('express').NextFunction} next
+   */
+  return async function resumeAndTrackEngineMiddleware(req, res, next) {
+    try {
+      const { token, engines, listener, resumeOptions } = res.locals;
+      res.locals.engine = await engines.resume(token, listener, resumeOptions);
+      fn(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  };
+};
+
+/**
  * Internal validate response locals
  * @internal
- * @param {import('express').Request} _req
+ * @param {import('connect').IncomingMessage} _req
  * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
+
+/**
+ * @type {import('connect').NextHandleFunction}
+ * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
+ */
 BpmnEngineMiddleware.prototype._validateLocals = function validateLocals(_req, res, next) {
+  /** @type {BpmnMiddlewareResponseLocals} */
   const { token, engine } = res.locals;
 
   if (token && typeof token !== 'string') {
@@ -619,7 +651,7 @@ BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function star
   }
 
   try {
-    return await this.engines.failActivity(caller.token, this._bpmnEngineListener, {
+    return await this.engines.resuemAndFailActivity(caller.token, this._bpmnEngineListener, {
       ...caller,
       message: error,
     });
@@ -695,13 +727,13 @@ BpmnEngineMiddleware.prototype._postProcessDefinitionRun = async function postPr
 
   try {
     if (fields.routingKey === 'definition.error') {
-      await this.engines.failActivity(caller.token, this._bpmnEngineListener, {
+      await this.engines.resuemAndFailActivity(caller.token, this._bpmnEngineListener, {
         ...caller,
         fromToken: properties.token,
         message: content.error,
       });
     } else {
-      await this.engines.signalActivity(caller.token, this._bpmnEngineListener, {
+      await this.engines.resumeAndSignalActivity(caller.token, this._bpmnEngineListener, {
         ...caller,
         fromToken: properties.token,
         message: content.output,

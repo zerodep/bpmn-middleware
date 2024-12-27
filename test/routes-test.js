@@ -3,9 +3,8 @@ import FormData from 'form-data';
 import request from 'supertest';
 import * as ck from 'chronokinesis';
 
-import { createDeployment, getAppWithExtensions, horizontallyScaled } from './helpers/testHelpers.js';
-import { MemoryAdapter } from '../src/MemoryAdapter.js';
-import { STORAGE_TYPE_STATE, STORAGE_TYPE_FILE } from '../src/constants.js';
+import { createDeployment, getAppWithExtensions, horizontallyScaled } from './helpers/test-helpers.js';
+import { MemoryAdapter, STORAGE_TYPE_STATE, STORAGE_TYPE_FILE } from '../src/index.js';
 
 const nodeRequire = createRequire(import.meta.url);
 const packageInfo = nodeRequire('../package.json');

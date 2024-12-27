@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { LRUCache } from 'lru-cache';
 
-import { MiddlewareEngine } from './MiddlewareEngine.js';
-import { HttpError } from './Errors.js';
+import { MiddlewareEngine } from './middleware-engine.js';
+import { HttpError } from './errors.js';
 import {
   STORAGE_TYPE_STATE,
   SAVE_STATE_ROUTINGKEY,
@@ -155,7 +155,7 @@ Engines.prototype.resume = async function resume(token, listener, options) {
  * @param {import('types').SignalBody} body
  * @param {import('types').ResumeOptions} [options]
  */
-Engines.prototype.signalActivity = async function signalActivity(token, listener, body, options) {
+Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
 
   await new Promise((resolve) => {
@@ -175,7 +175,7 @@ Engines.prototype.signalActivity = async function signalActivity(token, listener
  * @param {import('types').SignalBody} body
  * @param {import('types').ResumeOptions} [options]
  */
-Engines.prototype.cancelActivity = async function cancelActivity(token, listener, body, options) {
+Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
   const activtyApi = getActivityApi(engine, body);
   if (activtyApi.type === 'bpmn:CallActivity') {
@@ -191,9 +191,10 @@ Engines.prototype.cancelActivity = async function cancelActivity(token, listener
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
+
  * @param {import('types').ResumeOptions} [options]
  */
-Engines.prototype.failActivity = async function failActivity(token, listener, body, options) {
+Engines.prototype.resuemAndFailActivity = async function failActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
   const api = getActivityApi(engine, body);
   api.sendApiMessage('error', body, { type: 'error' });

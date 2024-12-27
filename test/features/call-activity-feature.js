@@ -1,9 +1,8 @@
 import request from 'supertest';
 import * as ck from 'chronokinesis';
 
-import { createDeployment, waitForProcess, horizontallyScaled, getAppWithExtensions } from '../helpers/testHelpers.js';
-import { MemoryAdapter } from '../../src/index.js';
-import { DEFAULT_IDLE_TIMER } from '../../src/constants.js';
+import { createDeployment, waitForProcess, horizontallyScaled, getAppWithExtensions } from '../helpers/test-helpers.js';
+import { MemoryAdapter, DEFAULT_IDLE_TIMER } from '../../src/index.js';
 
 Feature('call activity', () => {
   after(ck.reset);

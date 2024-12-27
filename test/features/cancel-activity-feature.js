@@ -1,4 +1,4 @@
-import { createDeployment, horizontallyScaled } from '../helpers/testHelpers.js';
+import { createDeployment, horizontallyScaled } from '../helpers/test-helpers.js';
 import { MemoryAdapter } from '../../src/index.js';
 
 Feature('cancel activity', () => {

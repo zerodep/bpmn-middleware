@@ -1,6 +1,6 @@
 import request from 'supertest';
 
-import * as testHelpers from '../helpers/testHelpers.js';
+import * as testHelpers from '../helpers/test-helpers.js';
 import { MemoryAdapter } from '../../src/index.js';
 
 const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');

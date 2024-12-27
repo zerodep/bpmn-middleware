@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.15.0] - 2024-12-27
+
+- add ability to pass custom resume engine request handler function
+- re-arrange src files
+
 ## [0.14.0] - 2024-12-22
 
 - add ability to pass custom start deployment function

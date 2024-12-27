@@ -1,7 +1,7 @@
 import request from 'supertest';
 
 import { MemoryAdapter } from '../../src/index.js';
-import { createDeployment, horizontallyScaled, getResource, waitForProcess } from '../helpers/testHelpers.js';
+import { createDeployment, horizontallyScaled, getResource, waitForProcess } from '../helpers/test-helpers.js';
 import { factory as ScriptsFactory } from '../../example/middleware-scripts.js';
 
 const externalScriptSource = getResource('script-resource.bpmn');

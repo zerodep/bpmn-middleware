@@ -1,8 +1,7 @@
 import * as ck from 'chronokinesis';
 
-import { MiddlewareEngine } from '../../src/MiddlewareEngine.js';
-import { fakeTimers } from '../helpers/testHelpers.js';
-import { DEFAULT_IDLE_TIMER } from '../../src/constants.js';
+import { MiddlewareEngine, DEFAULT_IDLE_TIMER } from '../../src/index.js';
+import { fakeTimers } from '../helpers/test-helpers.js';
 
 const source = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"

@@ -1,8 +1,7 @@
 import request from 'supertest';
 
-import * as testHelpers from '../helpers/testHelpers.js';
-import { MemoryAdapter, STORAGE_TYPE_STATE } from '../../src/index.js';
-import { StorageError } from '../../src/Errors.js';
+import * as testHelpers from '../helpers/test-helpers.js';
+import { MemoryAdapter, STORAGE_TYPE_STATE, StorageError } from '../../src/index.js';
 
 const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');
 const disableSaveStateResource = testHelpers.getResource('disable-save-state.bpmn');

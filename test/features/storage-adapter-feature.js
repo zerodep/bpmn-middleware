@@ -3,9 +3,8 @@ import * as ck from 'chronokinesis';
 import { LRUCache } from 'lru-cache';
 import FormData from 'form-data';
 
-import { getAppWithExtensions, createDeployment, waitForProcess, horizontallyScaled } from '../helpers/testHelpers.js';
-import { MemoryAdapter } from '../../src/index.js';
-import { STORAGE_TYPE_STATE, STORAGE_TYPE_FILE, STORAGE_TYPE_DEPLOYMENT, DEFAULT_IDLE_TIMER } from '../../src/constants.js';
+import { getAppWithExtensions, createDeployment, waitForProcess, horizontallyScaled } from '../helpers/test-helpers.js';
+import { MemoryAdapter, STORAGE_TYPE_STATE, STORAGE_TYPE_FILE, STORAGE_TYPE_DEPLOYMENT, DEFAULT_IDLE_TIMER } from '../../src/index.js';
 
 class StorageAdapter {
   constructor() {

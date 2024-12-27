@@ -2,11 +2,11 @@ import { Router } from 'express';
 import multer from 'multer';
 
 import { DEFAULT_IDLE_TIMER } from './constants.js';
-import { MulterAdapterStorage } from './MulterAdapterStorage.js';
-import { Engines } from './Engines.js';
-import { MemoryAdapter } from './MemoryAdapter.js';
-import { HttpError, StorageError } from './Errors.js';
-import { MiddlewareEngine } from './MiddlewareEngine.js';
+import { MulterAdapterStorage } from './multer-adapter-storage.js';
+import { Engines } from './engines.js';
+import { MemoryAdapter } from './memory-adapter.js';
+import { HttpError, StorageError } from './errors.js';
+import { MiddlewareEngine } from './middleware-engine.js';
 
 import { BpmnEngineMiddleware } from './bpmn-middleware.js';
 export { BpmnEngineMiddleware } from './bpmn-middleware.js';

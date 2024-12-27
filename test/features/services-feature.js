@@ -1,7 +1,7 @@
 import request from 'supertest';
 
 import { MemoryAdapter } from '../../src/index.js';
-import { createDeployment, horizontallyScaled, getResource, waitForProcess } from '../helpers/testHelpers.js';
+import { createDeployment, horizontallyScaled, getResource, waitForProcess } from '../helpers/test-helpers.js';
 
 const servicesSource = getResource('services.bpmn');
 

@@ -1,7 +1,7 @@
 import request from 'supertest';
 import * as ck from 'chronokinesis';
 
-import { createDeployment, waitForProcess, horizontallyScaled } from '../helpers/testHelpers.js';
+import { createDeployment, waitForProcess, horizontallyScaled } from '../helpers/test-helpers.js';
 
 Feature('recover resume', () => {
   after(ck.reset);

@@ -11,10 +11,7 @@ import request from 'supertest';
 import { Broker } from 'smqp';
 import { LRUCache } from 'lru-cache';
 
-import { bpmnEngineMiddleware } from '../../src/index.js';
-import { MIDDLEWARE_DEFAULT_EXCHANGE } from '../../src/constants.js';
-import { HttpError } from '../../src/Errors.js';
-import { MemoryAdapter } from '../../src/MemoryAdapter.js';
+import { bpmnEngineMiddleware, MemoryAdapter, HttpError, MIDDLEWARE_DEFAULT_EXCHANGE } from '../../src/index.js';
 import debug from '../../src/debug.js';
 
 const nodeRequire = createRequire(import.meta.url);

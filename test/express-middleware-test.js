@@ -7,7 +7,7 @@ import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
 
 import * as middleware from '../src/index.js';
-import { getAppWithExtensions, waitForProcess, errorHandler } from './helpers/testHelpers.js';
+import { getAppWithExtensions, waitForProcess, errorHandler } from './helpers/test-helpers.js';
 
 const { bpmnEngineMiddleware } = middleware;
 const nodeRequire = createRequire(import.meta.url);
@@ -41,6 +41,7 @@ describe('express-middleware', () => {
       expect(middleware.bpmnEngineMiddleware).to.be.a('function');
       expect(middleware.MiddlewareEngine).to.be.a('function');
       expect(middleware.HttpError).to.be.a('function');
+      expect(middleware.StorageError).to.be.a('function');
       expect(middleware.Engines).to.be.a('function');
       expect(middleware.MemoryAdapter).to.be.a('function');
       expect(middleware.BpmnEngineMiddleware).to.be.a('function');
