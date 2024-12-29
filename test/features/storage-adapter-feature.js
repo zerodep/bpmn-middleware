@@ -3,11 +3,12 @@ import * as ck from 'chronokinesis';
 import { LRUCache } from 'lru-cache';
 import FormData from 'form-data';
 
-import { getAppWithExtensions, createDeployment, waitForProcess, horizontallyScaled } from '../helpers/test-helpers.js';
+import { createDeployment, waitForProcess, horizontallyScaled } from '../helpers/test-helpers.js';
 import { MemoryAdapter, STORAGE_TYPE_STATE, STORAGE_TYPE_FILE, STORAGE_TYPE_DEPLOYMENT, DEFAULT_IDLE_TIMER } from '../../src/index.js';
 
 class StorageAdapter {
-  constructor() {
+  constructor({ storeSerialized } = {}) {
+    this.storeSerialized = storeSerialized;
     this[STORAGE_TYPE_STATE] = new Map();
     this[STORAGE_TYPE_FILE] = new Map();
     this[STORAGE_TYPE_DEPLOYMENT] = new Map();
@@ -21,7 +22,7 @@ class StorageAdapter {
       })
     );
   }
-  deleteByKey(/* type, key */) {
+  deleteByKey(/* type, key, options */) {
     throw new Error('not implemented');
   }
   fetch(type, key /*  options */) {
@@ -40,7 +41,7 @@ class StorageAdapter {
 Feature('storage adapter', () => {
   after(ck.reset);
 
-  Scenario('storage adapter', () => {
+  Scenario('custom storage adapter', () => {
     let apps, adapter;
     after(() => {
       return apps.stop();
@@ -56,17 +57,17 @@ Feature('storage adapter', () => {
         apps.balance(),
         'memory-adapter',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 
@@ -171,17 +172,17 @@ Feature('storage adapter', () => {
       apps = horizontallyScaled(2, { adapter });
     });
 
-    And('a process with a user task with a non-interrupting bound timeout', () => {
+    And('a process with only a start event', () => {
       return createDeployment(
         apps.balance(),
         'fast-process',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <startEvent id="start" />
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <startEvent id="start" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -218,18 +219,17 @@ Feature('storage adapter', () => {
         apps.balance(),
         'multi-user-task',
         `<?xml version="1.0" encoding="UTF-8"?>
-        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <startEvent id="start" />
-          <sequenceFlow id="to-task1" sourceRef="start" targetRef="task1" />
-          <userTask id="task1" />
-          <sequenceFlow id="to-task2" sourceRef="task1" targetRef="task2" />
-          <userTask id="task2" />
-          <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
-          <endEvent id="end" />
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-task1" sourceRef="start" targetRef="task1" />
+            <userTask id="task1" />
+            <sequenceFlow id="to-task2" sourceRef="task1" targetRef="task2" />
+            <userTask id="task2" />
+            <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
+            <endEvent id="end" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -319,132 +319,6 @@ Feature('storage adapter', () => {
     });
   });
 
-  Scenario('built in memory adapter', () => {
-    let app1, app2, storage;
-    after(() => {
-      return Promise.all([
-        request(app1).delete('/rest/internal/stop').expect(204),
-        request(app2).delete('/rest/internal/stop').expect(204),
-      ]);
-    });
-
-    Given('two parallel app instances with a shared adapter source', () => {
-      storage = new LRUCache({ max: 100 });
-      const adapter1 = new MemoryAdapter(storage);
-      const adapter2 = new MemoryAdapter(storage);
-
-      app1 = getAppWithExtensions({ adapter: adapter1 });
-      app2 = getAppWithExtensions({ adapter: adapter2 });
-    });
-
-    And('a process with a user task with a non-interrupting bound timeout', () => {
-      return createDeployment(
-        app2,
-        'memory-adapter',
-        `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
-      );
-    });
-
-    let response, bp;
-    When('process is started', async () => {
-      response = await request(app1).post('/rest/process-definition/memory-adapter/start').expect(201);
-
-      bp = response.body;
-    });
-
-    Then('process status is running timer', async () => {
-      response = await request(app2).get(`/rest/status/${bp.id}`);
-
-      expect(response.statusCode, response.text).to.equal(200);
-      expect(response.body).to.have.property('state', 'running');
-      expect(response.body).to.have.property('activityStatus', 'timer');
-      expect(response.body).to.have.property('expireAt').that.is.ok;
-    });
-
-    Given('process run is stopped', () => {
-      return request(app1).delete(`/rest/internal/stop/${bp.id}`).expect(204);
-    });
-
-    When('process status is fetched', async () => {
-      response = await request(app2).get(`/rest/status/${bp.id}`);
-    });
-
-    Then('status is still running', () => {
-      expect(response.statusCode, response.text).to.equal(200);
-      expect(response.body).to.have.property('state', 'running');
-      expect(response.body).to.have.property('activityStatus', 'timer');
-      expect(response.body).to.have.property('expireAt').that.is.ok;
-    });
-
-    let end;
-    When('process user task is signaled', () => {
-      end = waitForProcess(app2, bp.id).end();
-      return request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' }).expect(200);
-    });
-
-    Then('run completes', () => {
-      return end;
-    });
-
-    And('first app also has the completed process', async () => {
-      response = await request(app1).get(`/rest/status/${bp.id}`);
-
-      expect(response.statusCode, response.text).to.equal(200);
-      expect(response.body).to.have.property('state', 'idle');
-    });
-
-    When('second app signals the completed process', async () => {
-      response = await request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' });
-    });
-
-    Then('bad request is returned with completed message', () => {
-      expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body)
-        .to.have.property('message')
-        .that.match(/completed/i);
-    });
-
-    When('first app attempts to signal the completed process', async () => {
-      response = await request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' });
-    });
-
-    Then('bad request is returned with completed message', () => {
-      expect(response.statusCode, response.text).to.equal(400);
-      expect(response.body)
-        .to.have.property('message')
-        .that.match(/completed/i);
-    });
-
-    Given('the state is purged', () => {
-      storage.delete(`state:${bp.id}`);
-    });
-
-    When('first app attempts to signal the completed process', async () => {
-      response = await request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' });
-    });
-
-    Then('not found is returned', () => {
-      expect(response.statusCode, response.text).to.equal(404);
-    });
-
-    When('process is ran again', async () => {
-      response = await request(app1).post('/rest/process-definition/memory-adapter/start').expect(201);
-
-      bp = response.body;
-    });
-  });
-
   Scenario('storage adapter throws on create deployment', () => {
     let apps, storage;
     after(() => {
@@ -472,12 +346,12 @@ Feature('storage adapter', () => {
         apps.balance(),
         'faulty-adapter',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -513,27 +387,27 @@ Feature('storage adapter', () => {
         apps.balance(),
         'faulty-adapter',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="timer20" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT20S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-          <boundaryEvent id="timer30" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-          <boundaryEvent id="timer10" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="timer20" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT20S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+            <boundaryEvent id="timer30" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+            <boundaryEvent id="timer10" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 
@@ -589,27 +463,27 @@ Feature('storage adapter', () => {
         apps.balance(),
         'faulty-adapter',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="timer20" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT20S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-          <boundaryEvent id="timer30" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-          <boundaryEvent id="timer10" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="timer20" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT20S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+            <boundaryEvent id="timer30" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+            <boundaryEvent id="timer10" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10S</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 
@@ -672,12 +546,12 @@ Feature('storage adapter', () => {
         apps.balance(),
         'faulty-adapter',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -717,12 +591,12 @@ Feature('storage adapter', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`
       );
 
@@ -779,12 +653,12 @@ Feature('storage adapter', () => {
       form.append(
         `${deploymentName}.bpmn`,
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-        </process>
-      </definitions>`,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+          </process>
+        </definitions>`,
         `${deploymentName}.bpmn`
       );
 

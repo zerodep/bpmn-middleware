@@ -351,12 +351,13 @@ Fetch entry by key.
 - `options`: optional object with options
   - `exclude`: optional list of fields to exclude
 
-### `async delete(type, key)`
+### `async delete(type, key[, options])`
 
 Delete entry by key.
 
 - `type`: string, storage type, `deployment`, `file`, or `state`
 - `key`: string, storage key
+- `options`: optional object with options
 
 ### `async query(type, qs[, options])`
 

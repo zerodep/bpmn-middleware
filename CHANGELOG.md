@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.15.1] - 2024-12-28
+
+- accept options when deleting from storaga adapter
+
 ## [0.15.0] - 2024-12-27
 
 - add ability to pass custom resume engine request handler function

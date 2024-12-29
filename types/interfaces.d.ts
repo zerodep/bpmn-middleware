@@ -65,7 +65,7 @@ export interface IStorageAdapter {
   upsert<T>(type: string | StorageType, key: string, value: T, options?: any): Promise<any>;
   update<T>(type: string | StorageType, key: string, value: T, options?: any): Promise<any>;
   fetch<T>(type: string | StorageType, key: string, options?: any): Promise<T>;
-  delete(type: string | StorageType, key: string): Promise<any>;
+  delete(type: string | StorageType, key: string, options?: any): Promise<any | undefined>;
   query<T>(type: string | StorageType, qs: StorageQuery, options?: any): Promise<{ records: T[]; [x: string]: any }>;
 }
 
