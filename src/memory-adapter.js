@@ -70,7 +70,7 @@ MemoryAdapter.prototype.delete = function deleteByKey(type, key) {
  * @param {any} [options] Passed as fetch options to LRU cache
  */
 MemoryAdapter.prototype.fetch = async function fetch(type, key, options) {
-  const value = await this.storage.fetch(`${type}:${key}`, options);
+  const value = await this.storage.fetch(`${type}:${key}`, { ...options, context: { ...options } });
   if (!value) return value;
 
   const data = JSON.parse(value);

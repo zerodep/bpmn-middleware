@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -76,7 +76,6 @@
     "bpmn-engine": ">=15",
     "debug": "*",
     "express": ">=4",
-    "moddle-context-serializer": "*",
     "smqp": "*"
   },
   "files": [

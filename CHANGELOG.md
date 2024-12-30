@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.15.2] - 2024-12-30
+
+- add some save state options, more docs to come
+
 ## [0.15.1] - 2024-12-28
 
 - accept options when deleting from storaga adapter

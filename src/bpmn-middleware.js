@@ -613,6 +613,9 @@ BpmnEngineMiddleware.prototype._resumeOptions = function resumeOptions(req, res,
       case 'autosaveenginestate': {
         options.autosaveEngineState = v === 'false' ? false : true;
       }
+      default: {
+        options[k] = v;
+      }
     }
   }
 
@@ -669,12 +672,12 @@ BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function star
  * @returns {Promise<{id:string}>} Started with id token
  */
 BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment(deploymentName, options) {
-  const deployment = await this.adapter.fetch(STORAGE_TYPE_DEPLOYMENT, deploymentName);
+  const deployment = await this.adapter.fetch(STORAGE_TYPE_DEPLOYMENT, deploymentName, options);
   if (!deployment) {
     throw new HttpError(`deployment with name ${deploymentName} does not exist`, 404, 'BPMN_DEPLOYMENT_NOT_FOUND');
   }
 
-  const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
+  const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path, options);
 
   const { listener, variables, businessKey, caller, idleTimeout } = options;
   const token = randomUUID();

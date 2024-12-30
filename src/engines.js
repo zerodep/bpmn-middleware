@@ -91,7 +91,7 @@ Engines.prototype.resume = async function resume(token, listener, options) {
     /** @type {MiddlewareEngine} */
     let engine = engineCache.get(token);
     /** @type {import('types').MiddlewareEngineState} */
-    const state = await this.adapter.fetch(STORAGE_TYPE_STATE, token);
+    const state = await this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
 
     if (!state && !engine) {
       throw new HttpError(`Token ${token} not found`, 404);
@@ -191,7 +191,6 @@ Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token,
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
-
  * @param {import('types').ResumeOptions} [options]
  */
 Engines.prototype.resuemAndFailActivity = async function failActivity(token, listener, body, options) {
@@ -541,17 +540,21 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
 
   let saveState = autosaveEngineState;
   let saveStateIfExists = false;
-  let saveStateOptions;
+  let saveStateOptions = { ...engine.environment.settings.saveEngineStateOptions };
 
   try {
     switch (routingKey) {
       case SAVE_STATE_ROUTINGKEY: {
         saveState = true;
-        saveStateOptions = message.content;
+        saveStateOptions = { ...saveStateOptions, ...message.content };
         break;
       }
       case ENABLE_SAVE_STATE_ROUTINGKEY: {
         engine.environment.settings.autosaveEngineState = true;
+        engine.environment.settings.saveEngineStateOptions = Object.assign(
+          engine.environment.settings.saveEngineStateOptions || {},
+          message.content
+        );
         saveState = false;
         break;
       }
