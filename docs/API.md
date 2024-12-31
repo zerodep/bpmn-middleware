@@ -50,9 +50,12 @@ const middleware = bpmnEngineMiddleware({
 
 function ServiceFactory(_adapter, deploymentName, businessKey) {
   this.addService('createHash', (data, callback) => {
-    return crypto.createHash('md5').update(data).digest('hex');
+    const hash = crypto.createHash('md5').update(data).digest('hex');
+    if (callback) return callback(null, hash);
+    return hash;
   });
 
+  const services = {};
   if (deploymentName === 'my-process' || businessKey === '*') {
     services['myService'] = function myService(...args) {
       const callback = args.pop();
