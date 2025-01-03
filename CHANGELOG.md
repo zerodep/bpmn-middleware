@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.15.3] - 2025-01-02
+
+- publish engine error broker message if save state fails
+- make sure engine broker state exchange and queue is removed when run is completed
+
 ## [0.15.2] - 2024-12-30
 
 - add some save state options, more docs to come

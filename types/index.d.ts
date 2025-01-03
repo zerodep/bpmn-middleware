@@ -472,7 +472,7 @@ declare module 'bpmn-middleware' {
 		Scripts: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
 		Services: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
 		
-		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<boolean | void>;
+		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<void>;
 		/**
 		 * Create and execute engine from options
 		 * */
@@ -572,7 +572,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Internal on state message
 		 * */
-		_onStateMessage(routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine): Promise<boolean | void>;
+		_onStateMessage(routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine): Promise<void>;
 		/**
 		 * Internal teardown engine, remove listeners and stuff
 		 * */

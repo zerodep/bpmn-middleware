@@ -11,6 +11,7 @@ import {
   ERR_STORAGE_KEY_NOT_FOUND,
   MIDDLEWARE_DEFAULT_EXCHANGE,
 } from './constants.js';
+import debug from './debug.js';
 
 /**
  * Engines class
@@ -503,7 +504,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
     { noAck: true, consumerTag: 'sequence-listener' }
   );
 
-  engineBroker.assertExchange('state', 'topic', { durable: false, autoDelete: false });
+  engineBroker.assertExchange('state', 'topic', { durable: false, autoDelete: true });
 
   engineBroker.bindExchange('event', 'state', SAVE_STATE_ROUTINGKEY);
   engineBroker.bindExchange('event', 'state', ENABLE_SAVE_STATE_ROUTINGKEY);
@@ -519,7 +520,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   engineBroker.bindExchange('event', 'state', 'engine.stop');
   engineBroker.bindExchange('event', 'state', 'engine.error');
 
-  engineBroker.assertQueue('state-q', { durable: false, autoDelete: false, maxLength: 2 });
+  engineBroker.assertQueue('state-q', { durable: false, autoDelete: true, maxLength: 2 });
   engineBroker.bindQueue('state-q', 'state', '#');
 
   engineBroker.consume('state-q', this.__onStateMessage, { consumerTag: 'state-listener' });
@@ -597,9 +598,12 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
       await this.saveEngineState(engine, saveStateIfExists, saveStateOptions);
     }
   } catch (err) {
+    engine.broker.cancel('state-listener');
+    engine.broker.publish('event', 'engine.error', err, { type: 'error' });
     this._teardownEngine(engine);
     engine.stop();
-    return engineOptions.listener?.emit('error', err, engine);
+    debug(`failed to save ${engine.name} ${engine.token} state`, err);
+    engineOptions.listener?.emit('error', err, engine);
   }
 
   message.ack();
@@ -625,7 +629,6 @@ Engines.prototype._teardownEngine = function teardownEngine(engine) {
 function getActivityApi(engine, body) {
   const { id, executionId } = body;
 
-  // @ts-ignore
   const activity = engine.execution.getActivityById(id);
   if (!activity) throw new HttpError(`Token ${engine.token} has no activity with id ${id}`, 400);
 

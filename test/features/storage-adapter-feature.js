@@ -411,16 +411,22 @@ Feature('storage adapter', () => {
       );
     });
 
-    let app, response, errored;
+    let app, response, errored, erroredEvent;
     When('process is started', async () => {
       app = apps.balance();
-      errored = new Promise((resolve) => app.once('bpmn/error', resolve));
+      errored = waitForProcess(app, 'faulty-adapter').error();
+      erroredEvent = new Promise((resolve) => app.once('bpmn/error', resolve));
       response = await request(app).post('/rest/process-definition/faulty-adapter/start').expect(201);
 
       expect(response.body.id).to.be.ok;
     });
 
-    Then('an error is emitted', async () => {
+    Then('an error is emitted on app', async () => {
+      const err = await erroredEvent;
+      expect(err).to.match(/DB Error/i);
+    });
+
+    And('an bpmn.error message was published on broker', async () => {
       const err = await errored;
       expect(err).to.match(/DB Error/i);
     });

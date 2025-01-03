@@ -36,8 +36,8 @@ describe('Engines', () => {
     });
   });
 
-  describe('listener', () => {
-    it('clears added listeners when run completes', async () => {
+  describe('engine broker', () => {
+    it('removes state exchange and queue when run completes', async () => {
       const broker = new Broker();
 
       const engines = new Engines({
@@ -66,7 +66,78 @@ describe('Engines', () => {
       await end;
 
       expect(execution.state).to.equal('idle');
-      expect(execution.broker.getQueue('state-q').consumerCount).to.equal(0);
+      expect(execution.broker.getExchange('state')).to.not.be.ok;
+      expect(execution.broker.getQueue('state-q')).to.not.be.ok;
+    });
+
+    it('removes state exchange and queue if run fails', async () => {
+      const broker = new Broker();
+
+      const engines = new Engines({
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker,
+      });
+
+      const listener = new EventEmitter();
+
+      const error = new Promise((resolve) => listener.once('error', resolve));
+
+      const execution = await engines.execute({
+        name: 'foo',
+        token: 'token',
+        listener,
+        source: `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <scriptTask id="task" scriptFormat="javascript">
+              <script>next(new Error('Expected'));</script>
+            </scriptTask>
+          </process>
+        </definitions>`,
+      });
+
+      await error;
+
+      expect(execution.state).to.equal('error');
+      expect(execution.broker.getExchange('state')).to.not.be.ok;
+      expect(execution.broker.getQueue('state-q')).to.not.be.ok;
+    });
+
+    it('removes state exchange and queue when run is stopped', async () => {
+      const broker = new Broker();
+
+      const engines = new Engines({
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker,
+      });
+
+      const listener = new EventEmitter();
+
+      const stopped = new Promise((resolve) => listener.once('stop', resolve));
+
+      const execution = await engines.execute({
+        name: 'foo',
+        token: 'token',
+        listener,
+        source: `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <manualTask id="task" />
+          </process>
+        </definitions>`,
+      });
+
+      execution.stop();
+
+      await stopped;
+
+      expect(execution.state).to.equal('stopped');
+      expect(execution.broker.getExchange('state')).to.not.be.ok;
+      expect(execution.broker.getQueue('state-q')).to.not.be.ok;
     });
   });
 
