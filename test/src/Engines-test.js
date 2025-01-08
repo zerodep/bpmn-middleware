@@ -1,7 +1,7 @@
+import { EventEmitter } from 'node:events';
 import { Broker } from 'smqp';
-import { EventEmitter } from 'events';
 
-import { MemoryAdapter, Engines } from '../../src/index.js';
+import { MemoryAdapter, Engines, STORAGE_TYPE_STATE } from '../../src/index.js';
 
 describe('Engines', () => {
   describe('execute', () => {
@@ -33,6 +33,95 @@ describe('Engines', () => {
       await end;
 
       expect(execution.token).to.be.ok;
+    });
+  });
+
+  describe('run', () => {
+    it('run with callback that times out clears all timers and clears engine broker consumers', async () => {
+      const broker = new Broker();
+
+      const engines = new Engines({
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker,
+      });
+
+      const listener = new EventEmitter();
+
+      const error = new Promise((resolve) => listener.once('error', resolve));
+
+      const engine = engines.createEngine({
+        name: 'foo',
+        listener,
+        source: `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <manualTask id="task" />
+          </process>
+        </definitions>`,
+      });
+
+      await engines.run(engine, listener, () => {});
+
+      engine.idleTimer.callback();
+
+      await error;
+
+      expect(engine.state).to.equal('error');
+      expect(engine.environment.timers.executing.length).to.equal(0);
+      expect(engine.broker.consumerCount).to.equal(0);
+    });
+  });
+
+  describe('resume', () => {
+    it('resume run with callback that times out clears all timers and clears engine broker consumers', async () => {
+      const broker = new Broker();
+
+      const engines = new Engines({
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker,
+      });
+
+      const listener = new EventEmitter();
+
+      const engine = engines.createEngine({
+        name: 'foo',
+        listener,
+        settings: {
+          autosaveEngineState: true,
+        },
+        source: `<?xml version="1.0" encoding="UTF-8"?>
+          <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="bp" isExecutable="true">
+              <manualTask id="task" />
+            </process>
+          </definitions>`,
+      });
+
+      await engines.run(engine);
+
+      engine.idleTimer.callback();
+
+      expect(await engines.adapter.fetch(STORAGE_TYPE_STATE, engine.token)).to.be.ok;
+
+      expect(engine.state).to.equal('stopped');
+      expect(engine.environment.timers.executing.length).to.equal(0);
+      expect(engine.broker.consumerCount, 'stopped consumerCount').to.equal(0);
+
+      const resumedEngine = await engines.resume(engine.token, listener, {}, () => {});
+
+      const error = new Promise((resolve) => resumedEngine.broker.subscribeOnce('event', 'engine.error', resolve));
+
+      resumedEngine.idleTimer.callback();
+
+      await error;
+
+      expect(resumedEngine.state).to.equal('error');
+      expect(resumedEngine.environment.timers.executing.length).to.equal(0);
+      expect(resumedEngine.broker.consumerCount, 'stopped consumerCount').to.equal(0);
     });
   });
 

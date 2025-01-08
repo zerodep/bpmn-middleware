@@ -17,7 +17,7 @@ export interface BpmnMiddlewareOptions {
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;
   /** Executing engines */
-  engineCache?: LRUCache<string, any>;
+  engineCache?: LRUCache<string, import('../src/middleware-engine').MiddlewareEngine, unknown>;
   /** App broker, used for forwarding events from executing engines */
   broker?: Broker;
   /** Engine execution timeout before considered idle, defaults to 120000ms */
@@ -37,6 +37,15 @@ export interface BpmnMiddlewareOptions {
   maxRunning?: number;
 }
 
+export interface ExecuteOptions {
+  autosaveEngineState?: boolean;
+  /** Run until end */
+  sync?: boolean;
+  /** Idle timeout delay */
+  idleTimeout?: number;
+  [x: string]: any;
+}
+
 export interface MiddlewareEngineOptions extends BpmnEngineOptions {
   token?: string;
   caller?: Caller;
@@ -44,6 +53,7 @@ export interface MiddlewareEngineOptions extends BpmnEngineOptions {
   sequenceNumber?: number;
   expireAt?: Date;
   businessKey?: string;
+  sync?: boolean;
 }
 
 export interface StartDeploymentOptions {
@@ -134,9 +144,4 @@ export interface ParsedTimerResult extends ContextTimer {
   delay?: Number;
   repeat?: Number;
   message?: string;
-}
-
-export interface ResumeOptions {
-  autosaveEngineState?: boolean;
-  [x: string]: any;
 }

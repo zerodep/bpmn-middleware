@@ -1,5 +1,8 @@
 # API
 
+- [Middleware](#bpmnenginemiddlewareoptions)
+- [Routes](#routes)
+
 ## `bpmnEngineMiddleware([options])`
 
 Create BPMN engine middleware.
@@ -17,7 +20,7 @@ Options:
 - `autosaveEngineState`: Optional boolean, auto-save engine state during execution, defaults to true
 - [`Services`](#services-factory): Optional function to create engine `environment.services`
 - [`Scripts`](#scripts-factory): Optional function to create engine `environment.scripts` scripts
-- `name`: Optional middleware name, defaults to "default", used to separate middleware instances by creating a broker exchange with said name
+- `name`: Optional middleware name, defaults to "default", used to separate middleware instances by creating a middleware broker exchange with said name
 
 Returns Expressjs Router with extra properties:
 
@@ -157,6 +160,12 @@ Params:
 
 - `deploymentName`: deployment name
 
+**Request query (case insensetive):**
+
+- `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
+- `idleTimeout`: idle timeout delay, positive number of milliseconds or as ISO 8601 duration. Defaults to 60s if `sync` instruction
+- `sync`: run until end instruction, any value will do, or `false` to disable, fails run and returns 504 if not completed within idle timeout
+
 **Request body:**
 
 - `businessKey`: string, business key
@@ -219,17 +228,21 @@ Get process activity status
 
 Resume process run
 
-**Query:**
+**Request query (case insensetive):**
 
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
+- `idleTimeout`: idle timeout delay, positive number of milliseconds or as ISO 8601 duration
+- `sync`: run until end instruction, any value will do, or `false` to disable, returns 504 if not completed within idle timeout
 
 ### `POST (*)?/signal/:token`
 
 Signal process activity.
 
-**Query:**
+**Request query (case insensetive):**
 
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
+- `idleTimeout`: idle timeout delay, positive number of milliseconds or as ISO 8601 duration
+- `sync`: run until end instruction, any value will do, or `false` to disable, returns 504 if not completed within idle timeout
 
 **Request body:**
 
@@ -241,7 +254,7 @@ Signal process activity.
 
 Cancel process activity.
 
-**Query:**
+**Request query (case insensetive):**
 
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 
@@ -254,7 +267,7 @@ Cancel process activity.
 
 Fail process activity.
 
-**Query:**
+**Request query (case insensetive):**
 
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 

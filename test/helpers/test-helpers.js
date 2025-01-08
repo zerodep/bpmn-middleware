@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { setImmediate } from 'node:timers/promises';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -90,6 +91,7 @@ export function getAppWithExtensions(options = {}) {
   });
 
   app.locals.middleware = middleware;
+  app.locals.engines = middleware.engines;
   app.locals.engineCache = middleware.engines.engineCache;
 
   app.use('/rest', middleware);
@@ -115,6 +117,7 @@ export function getBpmnEngineOptions(engineOptions) {
 export async function getExampleApp() {
   const { app, middleware, addUser } = await import('../../example/app.js');
   app.locals.middleware = middleware;
+  app.locals.engines = middleware.engines;
   app.locals.addUser = addUser;
   return app;
 }
@@ -172,6 +175,7 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
     event,
     idle,
     timer,
+    startActivity,
   };
 
   function end() {
@@ -211,14 +215,39 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
       return msg.content.id === activityId;
     });
   }
-
-  function idle() {
-    const engine = app.locals.engineCache.get(nameOrToken);
+  /**
+   * Trigger engine idle timer
+   * @param {boolean} [force] force idle even if timer not passed
+   * @returns {Promise<import('bpmn-elements').Timer|undefined>}
+   */
+  async function idle(force) {
+    const engine = app.locals.engines.getByToken(nameOrToken);
     if (!engine) throw new Error(`No engine with token >>${nameOrToken}<<`);
-    const idleTimer = engine.idleTimer;
-    if (idleTimer.expireAt <= new Date()) {
+
+    let idleTimer = engine.idleTimer;
+
+    // When resuming the idle timer may not have been set before engine is returned
+    if (!idleTimer && engine.state === 'running') {
+      await setImmediate();
+      idleTimer = engine.idleTimer;
+    }
+
+    if (force || idleTimer?.expireAt <= new Date()) {
       idleTimer?.callback();
     }
+
+    return idleTimer;
+  }
+
+  /**
+   * Start acitivity event
+   * @param {string} activityId
+   */
+  function startActivity(activityId) {
+    if (!activityId) return event('activity.start');
+    return event('activity.start', (msg) => {
+      return msg.content.id === activityId;
+    });
   }
 
   /**
@@ -227,7 +256,7 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
    */
   function event(eventRoutingKey, expectFn) {
     return new Promise((resolve, reject) => {
-      const rnd = randomInt(10000);
+      const rnd = randomInt(1000000);
       const errConsumerTag = `err_${rnd}`;
       const waitConsumerTag = `wait_${rnd}`;
       broker?.subscribeTmp(

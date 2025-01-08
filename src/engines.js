@@ -25,7 +25,8 @@ export function Engines(options) {
   this.idleTimeout = options.idleTimeout;
   this.adapter = options.adapter;
 
-  /** @type {LRUCache<string, any, unknown>} */
+  /** @type {LRUCache<string, MiddlewareEngine, unknown>} */
+  // @ts-ignore
   this.engineCache =
     options.engineCache ||
     new LRUCache({
@@ -41,13 +42,20 @@ export function Engines(options) {
   this.__onStateMessage = this._onStateMessage.bind(this);
 }
 
+/** @name module:bpmn-middleware.Engines#running */
+Object.defineProperty(Engines.prototype, 'running', {
+  /** @returns {MiddlewareEngine[]} */
+  get() {
+    return [...this.engineCache.values()];
+  },
+});
+
 /**
  * Create and execute engine from options
  * @param {import('types').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.execute = function execute(executeOptions) {
   const token = executeOptions.token ?? randomUUID();
-
   const engine = this.createEngine({ ...executeOptions, token });
   return this.run(engine, executeOptions.listener);
 };
@@ -56,17 +64,18 @@ Engines.prototype.execute = function execute(executeOptions) {
  * Run prepared engine
  * @param {MiddlewareEngine} engine
  * @param {import('bpmn-engine').IListenerEmitter} [listener]
+ * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback]
  */
-Engines.prototype.run = async function execute(engine, listener) {
+Engines.prototype.run = async function runEngine(engine, listener, callback) {
   const token = engine.token;
   this.engineCache.set(token, engine);
   this._setupEngine(engine);
 
   try {
-    await engine.execute({ listener });
+    await engine.execute({ listener }, callback);
 
     if (engine.state === 'running') {
-      engine.startIdleTimer();
+      engine.startIdleTimer(callback && publishRunTimeoutError);
       engine.broker.publish('event', 'engine.start', {});
     }
 
@@ -81,24 +90,24 @@ Engines.prototype.run = async function execute(engine, listener) {
  * Resume engine execution
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} [listener]
- * @param {import('types').ResumeOptions} [options]
+ * @param {import('types').ExecuteOptions} [options]
+ * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback] resume run completed callback
  * @returns {Promise<MiddlewareEngine>}
  */
-Engines.prototype.resume = async function resume(token, listener, options) {
+Engines.prototype.resume = async function resume(token, listener, options, callback) {
   try {
     const engineCache = this.engineCache;
+    /** @type {import('types').ExecuteOptions} */
     const resumeOptions = { ...options };
 
     /** @type {MiddlewareEngine} */
     let engine = engineCache.get(token);
     /** @type {import('types').MiddlewareEngineState} */
-    const state = await this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
+    let state = await this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
 
     if (!state && !engine) {
       throw new HttpError(`Token ${token} not found`, 404);
-    }
-
-    if (state?.state === 'idle') {
+    } else if (state?.state === 'idle') {
       throw new HttpError(`Token ${token} has already completed`, 400);
     } else if (state?.state === 'error') {
       throw new HttpError(`Token ${token} has failed`, 400);
@@ -114,7 +123,16 @@ Engines.prototype.resume = async function resume(token, listener, options) {
       if ('autosaveEngineState' in resumeOptions) {
         engine.environment.settings.autosaveEngineState = options.autosaveEngineState;
       }
-      return engine;
+      if ('sync' in resumeOptions) {
+        engine.sync = resumeOptions.sync;
+      }
+
+      if (callback) {
+        state = this.createEngineState(engine);
+        this.terminateByToken(token);
+      } else {
+        return engine;
+      }
     }
 
     // @ts-ignore
@@ -123,7 +141,10 @@ Engines.prototype.resume = async function resume(token, listener, options) {
       ...this.engineOptions,
       token,
       ...(this.Scripts && { scripts: this.Scripts(this.adapter, state.name, state.businessKey) }),
+      ...('sync' in resumeOptions && { sync: resumeOptions.sync }),
     }).recover(state.engine);
+
+    this.engineCache.set(token, engine);
 
     engine.options.token = token;
     engine.options.caller = state.caller;
@@ -135,12 +156,17 @@ Engines.prototype.resume = async function resume(token, listener, options) {
       engine.environment.settings.autosaveEngineState = resumeOptions.autosaveEngineState;
     }
 
-    this.engineCache.set(token, engine);
-
     this._setupEngine(engine);
 
-    await engine.resume();
-    engine.startIdleTimer();
+    await engine.resume(null, callback);
+    engine.startIdleTimer(
+      callback &&
+        ((e) => {
+          this._teardownEngine(e);
+          publishRunTimeoutError(e);
+        }),
+      resumeOptions.idleTimeout
+    );
 
     return engine;
   } catch (err) {
@@ -154,10 +180,11 @@ Engines.prototype.resume = async function resume(token, listener, options) {
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
- * @param {import('types').ResumeOptions} [options]
+ * @param {import('types').ExecuteOptions} [options]
+ * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback]
  */
-Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivity(token, listener, body, options) {
-  const engine = await this.resume(token, listener, options);
+Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivity(token, listener, body, options, callback) {
+  const engine = await this.resume(token, listener, options, callback);
 
   await new Promise((resolve) => {
     process.nextTick(() => {
@@ -174,7 +201,7 @@ Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivi
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
- * @param {import('types').ResumeOptions} [options]
+ * @param {import('types').ExecuteOptions} [options]
  */
 Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
@@ -188,13 +215,13 @@ Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token,
 };
 
 /**
- * Fail activity
+ * Resume and fail activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
- * @param {import('types').ResumeOptions} [options]
+ * @param {import('types').ExecuteOptions} [options]
  */
-Engines.prototype.resuemAndFailActivity = async function failActivity(token, listener, body, options) {
+Engines.prototype.resumeAndFailActivity = async function resumeAndFailActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
   const api = getActivityApi(engine, body);
   api.sendApiMessage('error', body, { type: 'error' });
@@ -320,7 +347,7 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
  * @param {import('types').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.createEngine = function createEngine(executeOptions) {
-  const { name, token, source, listener, variables, caller, settings, idleTimeout, businessKey } = executeOptions;
+  const { name, token, source, listener, variables, caller, settings, idleTimeout, businessKey, sync } = executeOptions;
   return new MiddlewareEngine(token, {
     ...this.engineOptions,
     name,
@@ -342,6 +369,7 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
     },
     token,
     sequenceNumber: 0,
+    sync,
     caller,
     businessKey,
     ...(this.Scripts && { scripts: this.Scripts(this.adapter, name, businessKey) }),
@@ -509,11 +537,11 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
   engineBroker.bindExchange('event', 'state', SAVE_STATE_ROUTINGKEY);
   engineBroker.bindExchange('event', 'state', ENABLE_SAVE_STATE_ROUTINGKEY);
   engineBroker.bindExchange('event', 'state', DISABLE_SAVE_STATE_ROUTINGKEY);
+  engineBroker.bindExchange('event', 'state', 'activity.end');
   engineBroker.bindExchange('event', 'state', 'activity.wait');
-  engineBroker.bindExchange('event', 'state', 'activity.call');
   engineBroker.bindExchange('event', 'state', 'activity.timer');
   engineBroker.bindExchange('event', 'state', 'activity.timeout');
-  engineBroker.bindExchange('event', 'state', 'activity.end');
+  engineBroker.bindExchange('event', 'state', 'activity.call');
   engineBroker.bindExchange('event', 'state', 'engine.start');
   engineBroker.bindExchange('event', 'state', 'engine.idle.timer');
   engineBroker.bindExchange('event', 'state', 'engine.end');
@@ -535,13 +563,14 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
 Engines.prototype._onStateMessage = async function onStateMessage(routingKey, message, engine) {
   if (message.content.isRecovered) return message.ack();
 
+  const engineSettings = engine.environment.settings;
   const engineOptions = engine.options;
   /** @type {boolean} */
-  const autosaveEngineState = engine.environment.settings.autosaveEngineState;
+  const autosaveEngineState = engineSettings.autosaveEngineState;
 
   let saveState = autosaveEngineState;
   let saveStateIfExists = false;
-  let saveStateOptions = { ...engine.environment.settings.saveEngineStateOptions };
+  let saveStateOptions = { ...engineSettings.saveEngineStateOptions };
 
   try {
     switch (routingKey) {
@@ -551,11 +580,8 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
         break;
       }
       case ENABLE_SAVE_STATE_ROUTINGKEY: {
-        engine.environment.settings.autosaveEngineState = true;
-        engine.environment.settings.saveEngineStateOptions = Object.assign(
-          engine.environment.settings.saveEngineStateOptions || {},
-          message.content
-        );
+        engineSettings.autosaveEngineState = true;
+        engineSettings.saveEngineStateOptions = Object.assign(engineSettings.saveEngineStateOptions || {}, message.content);
         saveState = false;
         break;
       }
@@ -718,4 +744,17 @@ function createCloneCallerMessage(engine) {
     }
     return { fields, content, properties };
   };
+}
+
+/**
+ * Publish run timeout error to stop engine
+ * @param {MiddlewareEngine} engine
+ */
+function publishRunTimeoutError(engine) {
+  engine.execution.definitions[0].broker.publish(
+    'event',
+    'definition.error',
+    { error: new HttpError('run timed out', 504) },
+    { mandatory: true }
+  );
 }

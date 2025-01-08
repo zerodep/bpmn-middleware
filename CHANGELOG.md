@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-## [0.15.3] - 2025-01-02
+## [0.16.0] - 2025-01-08
 
+- run/resume/signal engine in sync, i.e. run until end and return output as result
 - publish engine error broker message if save state fails
 - make sure engine broker state exchange and queue is removed when run is completed
 

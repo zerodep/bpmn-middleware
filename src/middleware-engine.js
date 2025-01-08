@@ -1,6 +1,8 @@
 import { Engine } from 'bpmn-engine';
 import { DEFAULT_IDLE_TIMER } from './constants.js';
 
+const kToken = Symbol.for('engine token');
+
 export class MiddlewareEngine extends Engine {
   /**
    * @param {string} token
@@ -14,13 +16,18 @@ export class MiddlewareEngine extends Engine {
      * Engine execution token
      * @type {string}
      */
-    this.token = token;
+    this[kToken] = token;
     /**
      * Execution idle timer
      * @type {import('bpmn-elements').Timer | null | void}
      */
     this.idleTimer = null;
-    this.engineTimers = this.environment.timers.register({ id: token });
+
+    this.sync = options.sync;
+    this.engineTimers = this.environment.timers.register({ id: token, type: 'bpmn-middleware:engine' });
+  }
+  get token() {
+    return this[kToken];
   }
   /**
    * Closest due time when a registered timer expires
@@ -39,35 +46,45 @@ export class MiddlewareEngine extends Engine {
   }
   /**
    * Start/Restart execution idle timer
+   * @param {(engine: MiddlewareEngine, delay:number) => void} [customHandler] optional idle timeout handler function
+   * @param {number} [delay] optional delay
    */
-  startIdleTimer() {
-    const delay = this.environment.settings.idleTimeout ?? DEFAULT_IDLE_TIMER;
+  startIdleTimer(customHandler, delay) {
     const engineTimers = this.engineTimers;
     const current = this.idleTimer;
     if (current) this.idleTimer = engineTimers.clearTimeout(current);
     if (this.state !== 'running') return;
 
-    this.idleTimer = engineTimers.setTimeout(() => {
-      const status = this._getCurrentStatus();
-      switch (status.activityStatus) {
-        case 'executing':
-          break;
-        case 'wait': {
+    const delayMs = delay ?? this.environment.settings.idleTimeout ?? DEFAULT_IDLE_TIMER;
+
+    const timeoutHandler = customHandler ? () => customHandler(this, delayMs) : this._idleTimeoutHandler.bind(this, delayMs);
+
+    this.idleTimer = engineTimers.setTimeout(timeoutHandler, delayMs);
+  }
+  /**
+   * @internal
+   * @param {number} delay
+   */
+  _idleTimeoutHandler(delay) {
+    const status = this._getCurrentStatus();
+    switch (status.activityStatus) {
+      case 'executing':
+        break;
+      case 'wait': {
+        this.idleTimer = null;
+        return this.stop();
+      }
+      case 'timer': {
+        if (status.expireAt > new Date(Date.now() + delay * 2)) {
           this.idleTimer = null;
           return this.stop();
         }
-        case 'timer': {
-          if (status.expireAt > new Date(Date.now() + delay * 2)) {
-            this.idleTimer = null;
-            return this.stop();
-          }
-          break;
-        }
+        break;
       }
+    }
 
-      this.startIdleTimer();
-      return this.broker.publish('event', 'engine.idle.timer', status);
-    }, delay);
+    this.startIdleTimer(null, delay);
+    return this.broker.publish('event', 'engine.idle.timer', status);
   }
   /** @interal */
   _getCurrentStatus() {

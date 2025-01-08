@@ -70,6 +70,81 @@ describe('MiddlewareEngine', () => {
       expect(message.content).to.have.property('token', 'token');
       expect(message.content).to.have.property('activityStatus', 'timer');
     });
+
+    it('ignores start if idle', () => {
+      const timers = fakeTimers();
+      const engine = new MiddlewareEngine('token', {
+        name: 'take 5',
+        settings: { idleTimeout: 1000 * 60 * 10 },
+        source,
+        timers,
+      });
+
+      engine.startIdleTimer();
+
+      expect(engine.idleTimer).to.be.null;
+    });
+
+    it('ignores start if stopped', async () => {
+      const timers = fakeTimers();
+      const engine = new MiddlewareEngine('token', {
+        name: 'take 5',
+        settings: { idleTimeout: 1000 * 60 * 10 },
+        source,
+        timers,
+      });
+
+      await engine.execute();
+      engine.stop();
+
+      engine.startIdleTimer();
+
+      expect(engine.idleTimer).to.be.null;
+    });
+
+    it('ignores start if errored', async () => {
+      const timers = fakeTimers();
+      const engine = new MiddlewareEngine('token', {
+        name: 'take 5',
+        settings: { idleTimeout: 1000 * 60 * 10 },
+        source,
+        timers,
+      });
+
+      await engine.execute();
+
+      const errored = engine.waitFor('error');
+
+      engine.execution.getActivityById('task').getApi().fail();
+
+      await errored;
+
+      engine.startIdleTimer();
+
+      expect(engine.idleTimer).to.be.null;
+    });
+
+    it('custom handler is called with engine and delay', async () => {
+      const timers = fakeTimers();
+      const engine = new MiddlewareEngine('token', {
+        name: 'take 5',
+        source,
+        timers,
+      });
+
+      await engine.execute();
+
+      let customArgs;
+      engine.startIdleTimer((...args) => {
+        customArgs = args;
+      });
+
+      engine.idleTimer.callback();
+
+      expect(customArgs).to.have.length(2);
+      expect(customArgs[0], 'engine').to.equal(engine);
+      expect(customArgs[1], 'delay').to.equal(DEFAULT_IDLE_TIMER);
+    });
   });
 
   describe('.expireAt', () => {
