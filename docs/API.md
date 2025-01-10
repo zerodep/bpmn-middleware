@@ -154,7 +154,7 @@ Response body:
 
 ### `POST (*)?/process-definition/:deploymentName/start`
 
-Start deployment.
+Start deployed processes.
 
 Params:
 
@@ -162,9 +162,12 @@ Params:
 
 **Request query (case insensetive):**
 
+All query parameters will be passed to `engine.environment.settings`.
+
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 - `idleTimeout`: idle timeout delay, positive number of milliseconds or as ISO 8601 duration. Defaults to 60s if `sync` instruction
 - `sync`: run until end instruction, any value will do, or `false` to disable, fails run and returns 504 if not completed within idle timeout
+- `[string]: any`: any other query parameters
 
 **Request body:**
 
@@ -284,6 +287,9 @@ Get process engine state.
 ### `DELETE (*)?/state/:token`
 
 Delete process engine state.
+
+**Request body:**
+Is forwarded to adapter as options
 
 ### `DELETE (*)?/internal/stop`
 

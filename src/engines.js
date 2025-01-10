@@ -294,7 +294,7 @@ Engines.prototype.discardByToken = async function discardByToken(token) {
 };
 
 /**
- * Get engine by token
+ * Get running engine by token
  * @param {string} token
  * @returns {MiddlewareEngine|undefined}
  */
@@ -303,12 +303,13 @@ Engines.prototype.getByToken = function getByToken(token) {
 };
 
 /**
- * Delete and stop engine by token
+ * Delete engine state and stop engine by token
  * @param {string} token
+ * @param {any} [options]
  */
-Engines.prototype.deleteByToken = function deleteByToken(token) {
+Engines.prototype.deleteByToken = function deleteByToken(token, options) {
   this.terminateByToken(token);
-  return this.adapter.delete(STORAGE_TYPE_STATE, token);
+  return this.adapter.delete(STORAGE_TYPE_STATE, token, options);
 };
 
 /**

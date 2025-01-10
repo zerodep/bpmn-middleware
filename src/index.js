@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, json } from 'express';
 import multer from 'multer';
 
 import { DEFAULT_IDLE_TIMER } from './constants.js';
@@ -53,7 +53,7 @@ export function bpmnEngineMiddleware(options) {
   router.get('(*)?/status/:token', middleware.addResponseLocals(), middleware.getStatusByToken.bind(middleware));
   router.get('(*)?/status/:token/:activityId', middleware.addResponseLocals(), middleware.getActivityStatus.bind(middleware));
   router.get('(*)?/state/:token', middleware.addResponseLocals(), middleware.getStateByToken.bind(middleware));
-  router.delete('(*)?/state/:token', middleware.addResponseLocals(), middleware.deleteStateByToken.bind(middleware));
+  router.delete('(*)?/state/:token', json(), middleware.addResponseLocals(), middleware.deleteStateByToken.bind(middleware));
   router.delete('(*)?/internal/stop', middleware.addResponseLocals(), middleware.internalStopAll.bind(middleware));
   router.delete('(*)?/internal/stop/:token', middleware.addResponseLocals(), middleware.internalStopByToken.bind(middleware));
 

@@ -22,8 +22,11 @@ class StorageAdapter {
       })
     );
   }
-  deleteByKey(/* type, key, options */) {
-    throw new Error('not implemented');
+  delete(type, key, options) {
+    if (!this[type]) throw TypeError('unknown storage type');
+    if (!options?.mandatory) throw new TypeError('adapter requires mandatory prop');
+
+    this[type].delete(key);
   }
   fetch(type, key /*  options */) {
     return new Promise((resolve) =>
@@ -158,6 +161,23 @@ Feature('storage adapter', () => {
       response = await apps.request().post('/rest/process-definition/memory-adapter/start').expect(201);
 
       bp = response.body;
+    });
+
+    And('run is deleted without required parameters', async () => {
+      response = await apps.request().delete(`/rest/state/${bp.id}`);
+    });
+
+    Then('bad gateway is returned', () => {
+      expect(response.statusCode, response.text).to.equal(502);
+      expect(response.text).to.match(/mandatory/i);
+    });
+
+    When('run is deleted with required adapter parameters', async () => {
+      response = await apps.request().delete(`/rest/state/${bp.id}`).send({ mandatory: '1' });
+    });
+
+    Then('no content is returned', () => {
+      expect(response.statusCode, response.text).to.equal(204);
     });
   });
 

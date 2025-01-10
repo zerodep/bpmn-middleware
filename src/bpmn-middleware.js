@@ -472,14 +472,14 @@ BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(
 
 /**
  * Delete engine by token
- * @param {import('express').Request<TokenParameter>} req
+ * @param {import('express').Request<TokenParameter, void>} req
  * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateByToken(req, res, next) {
   try {
     const token = req.params.token;
-    await res.locals.engines.deleteByToken(token);
+    await res.locals.engines.deleteByToken(token, req.body);
     return res.status(204).send();
   } catch (err) {
     next(err);

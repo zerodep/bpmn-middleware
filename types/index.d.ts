@@ -103,6 +103,7 @@ declare module 'bpmn-middleware' {
 
   interface MiddlewareEngineStatus {
 	token: string;
+	/** Deployment name */
 	name: string;
 	state?: BpmnEngineRunningStatus;
 	activityStatus?: ActivityStatus;
@@ -110,6 +111,8 @@ declare module 'bpmn-middleware' {
 	postponed?: postponed[];
 	caller?: Caller;
 	expireAt?: Date;
+	/** Output from process */
+	result?: Record<string, any>;
 	[x: string]: any;
   }
 
@@ -297,7 +300,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Delete engine by token
 		 * */
-		deleteStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<void, BpmnMiddlewareResponseLocals>>;
+		deleteStateByToken(req: import("express").Request<TokenParameter, void>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<void, BpmnMiddlewareResponseLocals>>;
 		/**
 		 * Stop all running engines
 		 * */
@@ -528,13 +531,14 @@ declare module 'bpmn-middleware' {
 		 */
 		discardByToken(token?: string): Promise<void>;
 		/**
-		 * Get engine by token
+		 * Get running engine by token
 		 * */
 		getByToken(token: string): MiddlewareEngine | undefined;
 		/**
-		 * Delete and stop engine by token
-		 * */
-		deleteByToken(token: string): Promise<any>;
+		 * Delete engine state and stop engine by token
+		 * 
+		 */
+		deleteByToken(token: string, options?: any): Promise<any>;
 		/**
 		 * Stop engine by token
 		 * */

@@ -63,6 +63,11 @@ export interface StartDeploymentOptions {
   idleTimeout?: number;
 }
 
+export interface StartDeploymentResult extends Partial<MiddlewareEngineStatus> {
+  /** Started deployment token */
+  id: string;
+}
+
 export interface StorageQuery {
   /** Fields to exclude */
   exclude?: string[];
@@ -104,6 +109,7 @@ export type postponed = { id: string; type: string };
 
 export interface MiddlewareEngineStatus {
   token: string;
+  /** Deployment name */
   name: string;
   state?: BpmnEngineRunningStatus;
   activityStatus?: ActivityStatus;
@@ -111,6 +117,8 @@ export interface MiddlewareEngineStatus {
   postponed?: postponed[];
   caller?: Caller;
   expireAt?: Date;
+  /** Output from process */
+  result?: Record<string, any>;
   [x: string]: any;
 }
 

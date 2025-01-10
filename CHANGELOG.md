@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.16.1] - 2025-01-10
+
+- `DELETE (*)?/state/:token` forwards body to adapter delete as options
+
 ## [0.16.0] - 2025-01-08
 
 - run/resume/signal engine in sync, i.e. run until end and return output as result

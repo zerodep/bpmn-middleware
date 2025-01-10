@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -82,7 +82,7 @@
   "files": [
     "src/",
     "dist/",
-    "types/index.d.*"
+    "types/"
   ],
   "c8": {
     "include": [
