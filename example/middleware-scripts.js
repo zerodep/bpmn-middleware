@@ -35,7 +35,7 @@ export class MiddlewareScripts extends FlowScripts {
    * @param {import('@onify/flow-extensions/FlowScripts').FlowScriptOptions} [options]
    */
   constructor(adapter, deploymentName, resourceBase, runContext, options) {
-    super(deploymentName, resourceBase, runContext, options);
+    super(deploymentName, resourceBase, runContext, options?.timeout);
     this.adapter = adapter;
   }
   /**

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## [0.17.0] - 2025-01-22
+
+Playing around with custom adapters requiring specials options per engine revealed some problems. An attempt to solve just that.
+
+- forward query parameters as resume options when calling `(*)?/status/:token`
+- forward query parameters as resume options when calling `(*)?/status/:token/:activityId`
+- add ability to clone current `res.locals.engines` with override options to facilitate passing custom adapter per engine
+- pass engine save state options along when tinkering with call activities
+
 ## [0.16.1] - 2025-01-10
 
 - `DELETE (*)?/state/:token` forwards body to adapter delete as options

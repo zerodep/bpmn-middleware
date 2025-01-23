@@ -77,6 +77,11 @@ Feature('sync run', () => {
       expect(response.body).to.have.property('result').with.property('signal').that.deep.equal({ id: waitingMsg.content.id, foo: 'bar' });
     });
 
+    And('status is idle', async () => {
+      const response = await request(app).get(`/rest/status/${token}`).expect(200);
+      expect(response.body).to.have.property('state', 'idle');
+    });
+
     When('starting again with idle timeout of 30s', () => {
       wait = waitForProcess(app, deploymentName).wait();
 

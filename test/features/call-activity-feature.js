@@ -3,10 +3,11 @@ import * as ck from 'chronokinesis';
 
 import { createDeployment, waitForProcess, horizontallyScaled, getAppWithExtensions } from '../helpers/test-helpers.js';
 import { MemoryAdapter, DEFAULT_IDLE_TIMER } from '../../src/index.js';
+import { MiddlewareScripts } from '../../example/middleware-scripts.js';
 
 Feature('call activity', () => {
   after(ck.reset);
-  beforeEachScenario(ck.reset);
+  afterEachScenario(ck.reset);
 
   Scenario('call process in the same diagram', () => {
     let apps, adapter;
@@ -89,6 +90,11 @@ Feature('call activity', () => {
 
     Then('run completes', () => {
       return end;
+    });
+
+    And('status is idle', async () => {
+      const response = await apps.request().get(`/rest/status/${token}`).expect(200);
+      expect(response.body).to.have.property('state', 'idle');
     });
 
     When('process is started again again', async () => {
@@ -206,16 +212,16 @@ Feature('call activity', () => {
         xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
-        <process id="called-deployment" isExecutable="true">
-          <userTask id="task">
-            <extensionElements>
-              <camunda:inputOutput>
-                <camunda:outputParameter name="user">\${content.output.message}</camunda:outputParameter>
-              </camunda:inputOutput>
-            </extensionElements>
-          </userTask>
-        </process>
-      </definitions>`
+          <process id="called-deployment" isExecutable="true">
+            <userTask id="task">
+              <extensionElements>
+                <camunda:inputOutput>
+                  <camunda:outputParameter name="user">\${content.output.message}</camunda:outputParameter>
+                </camunda:inputOutput>
+              </extensionElements>
+            </userTask>
+          </process>
+        </definitions>`
       );
     });
 
@@ -318,7 +324,140 @@ Feature('call activity', () => {
     });
   });
 
-  Scenario('call activity is cancelled', () => {
+  Scenario('a deployed multi-instance call activity', () => {
+    let apps, adapter;
+    before('two parallel app instances with a shared adapter source', () => {
+      adapter = new MemoryAdapter();
+      apps = horizontallyScaled(2, {
+        adapter,
+        Scripts(adapter, deploymentName) {
+          return new MiddlewareScripts(adapter, deploymentName, '.', { console }, { timeout: 120000 });
+        },
+      });
+    });
+    after(() => apps.stop());
+
+    Given('calling with parallel multi-instance call activity', async () => {
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="main-process" isExecutable="true">
+            <callActivity id="call-activity" calledElement="deployment:called-deployment">
+              <multiInstanceLoopCharacteristics isSequential="false">
+                <loopCardinality>4</loopCardinality>
+              </multiInstanceLoopCharacteristics>
+              <extensionElements>
+                <camunda:inputOutput>
+                  <camunda:outputParameter name="foo">
+                    <camunda:script scriptFormat="js">
+                      next(null, { isSequential: content.isSequential, result: content.output.map((o) => o.message.idx) });
+                    </camunda:script>
+                  </camunda:outputParameter>
+                </camunda:inputOutput>
+              </extensionElements>
+            </callActivity>
+          </process>
+        </definitions>`
+      );
+
+      await createDeployment(
+        apps.balance(),
+        'called-deployment',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="called-deployment" isExecutable="true">
+          <scriptTask id="task" scriptFormat="javascript">
+            <script>
+              next(null, environment.settings.caller.index);
+            </script>
+            <extensionElements>
+              <camunda:inputOutput>
+                <camunda:outputParameter name="idx">\${content.output}</camunda:outputParameter>
+              </camunda:inputOutput>
+            </extensionElements>
+          </scriptTask>
+        </process>
+      </definitions>`
+      );
+    });
+
+    let end, token;
+    When('process is started as parallel multi-instance', async () => {
+      const app = apps.balance();
+      end = waitForProcess(app, 'call-deployment').end();
+
+      const response = await request(app)
+        .post('/rest/process-definition/call-deployment/start')
+        .send({ variables: { sequential: false } })
+        .expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('calling process completes', () => {
+      return end;
+    });
+
+    And('parallel calling process has output', async () => {
+      const response = await apps.request().get(`/rest/state/${token}`).expect(200);
+      expect(response.body.engine.environment.output).to.deep.equal({
+        foo: {
+          isSequential: false,
+          result: [0, 1, 2, 3],
+        },
+      });
+    });
+
+    Given('calling process is changed to sequential multi-instance call activity', async () => {
+      await createDeployment(
+        apps.balance(),
+        'call-deployment',
+        `<definitions id="Def_main" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="main-process" isExecutable="true">
+            <callActivity id="call-activity" calledElement="deployment:called-deployment">
+              <multiInstanceLoopCharacteristics isSequential="true">
+                <loopCardinality>4</loopCardinality>
+              </multiInstanceLoopCharacteristics>
+              <extensionElements>
+                <camunda:inputOutput>
+                  <camunda:outputParameter name="foo">
+                    <camunda:script scriptFormat="js">
+                      next(null, { isSequential: content.isSequential, result: content.output.map((o) => o.message.idx) });
+                    </camunda:script>
+                  </camunda:outputParameter>
+                </camunda:inputOutput>
+              </extensionElements>
+            </callActivity>
+          </process>
+        </definitions>`
+      );
+    });
+
+    When('process is started as sequential multi-instance', async () => {
+      const app = apps.balance();
+      end = waitForProcess(app, 'call-deployment').end();
+
+      const response = await request(app).post('/rest/process-definition/call-deployment/start').expect(201);
+
+      token = response.body.id;
+    });
+
+    Then('calling process completes', () => {
+      return end;
+    });
+
+    And('sequential calling process has output', async () => {
+      const response = await apps.request().get(`/rest/state/${token}`).expect(200);
+      expect(response.body.engine.environment.output).to.deep.equal({
+        foo: {
+          isSequential: true,
+          result: [0, 1, 2, 3],
+        },
+      });
+    });
+  });
+
+  Scenario('call activity is cancelled by bound event', () => {
     let apps, adapter;
     before('two parallel app instances with a shared adapter source', () => {
       adapter = new MemoryAdapter();
@@ -422,6 +561,73 @@ Feature('call activity', () => {
 
     And('only the second process engines are running', () => {
       expect(apps.getRunning()).to.have.length(2);
+    });
+
+    Given('a process with parallel multi-instance call activity and a timeout', async () => {
+      await createDeployment(
+        apps.balance(),
+        'call-multi-deployment',
+        `<definitions id="Parent" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <process id="main-process" isExecutable="true">
+          <startEvent id="start" />
+          <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+          <callActivity id="call-activity" calledElement="deployment:called-deployment">
+            <multiInstanceLoopCharacteristics isSequential="false">
+              <loopCardinality>4</loopCardinality>
+            </multiInstanceLoopCharacteristics>
+          </callActivity>
+          <boundaryEvent id="bound-timer" attachedToRef="call-activity" cancelActivity="true">
+            <timerEventDefinition>
+              <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
+            </timerEventDefinition>
+          </boundaryEvent>
+          <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+          <endEvent id="end" />
+        </process>
+      </definitions>`
+      );
+    });
+
+    let token;
+    When('parallel multi-instance process is started', async () => {
+      const app = apps.balance();
+      wait = waitForProcess(app, 'call-multi-deployment').call();
+
+      const response = await request(app).post('/rest/process-definition/call-multi-deployment/start').expect(201);
+
+      token = response.body.id;
+
+      return wait;
+    });
+
+    Then('parent process and 4 multi-instance processes are running', async () => {
+      const response = await apps.request().get('/rest/running').expect(200);
+
+      expect(response.body.engines.length).to.equal(7);
+
+      const parent = response.body.engines.find((e) => e.token === token);
+      expect(parent).to.be.ok;
+
+      expireAt = parent.expireAt;
+    });
+
+    When('calling process times out', () => {
+      ck.travel(expireAt);
+
+      const [engine] = apps.getRunningByToken(token);
+      const completed = engine.waitFor('end');
+      const timer = engine.environment.timers.executing.find((t) => t.owner.id === 'bound-timer');
+      timer.callback();
+      return completed;
+    });
+
+    Then('only the second processes are running', async () => {
+      const response = await apps.request().get('/rest/running').expect(200);
+
+      expect(response.body.engines.length).to.equal(2);
+
+      const parent = response.body.engines.find((e) => e.token === token);
+      expect(parent).to.not.be.ok;
     });
   });
 

@@ -1,7 +1,8 @@
-import { json } from 'express';
 import request from 'supertest';
+import { json } from 'express';
 import * as testHelpers from '../helpers/test-helpers.js';
 import { runToEnd } from '../../example/app.js';
+import { CustomAdapter } from '../../example/adapters/custom-adapter.js';
 
 import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from '../../src/index.js';
 
@@ -37,14 +38,14 @@ Feature('custom routes', () => {
         customAdapter,
         'call-process',
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <process id="call-process" isExecutable="true">
-              <startEvent id="start" />
-              <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
-              <callActivity id="call-activity" calledElement="deployment:wait-process" />
-              <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
-              <endEvent id="end" />
-            </process>
-          </definitions>`
+          <process id="call-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="deployment:wait-process" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+            <endEvent id="end" />
+          </process>
+        </definitions>`
       );
       await addSource(customAdapter, 'wait-process', testHelpers.getResource('wait.bpmn').toString());
     });
@@ -142,14 +143,14 @@ Feature('custom routes', () => {
         customAdapter,
         'call-process',
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <process id="call-process" isExecutable="true">
-              <startEvent id="start" />
-              <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
-              <callActivity id="call-activity" calledElement="deployment:wait-process" />
-              <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
-              <endEvent id="end" />
-            </process>
-          </definitions>`
+          <process id="call-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="deployment:wait-process" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+            <endEvent id="end" />
+          </process>
+        </definitions>`
       );
       await addSource(customAdapter, 'wait-process', testHelpers.getResource('wait.bpmn').toString());
     });
@@ -423,7 +424,7 @@ Feature('custom routes', () => {
         `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
           <process id="signal-process" isExecutable="true">
             <manualTask id="task" />
-            <boundaryEvent id="timer" attachedToRef="task"  cancelActivity="true">
+            <boundaryEvent id="timer" attachedToRef="task" cancelActivity="true">
               <timerEventDefinition>
                 <timeDuration xsi:type="tFormalExpression">PT30S</timeDuration>
               </timerEventDefinition>
@@ -517,6 +518,241 @@ Feature('custom routes', () => {
 
     Then('run completes', () => {
       return end;
+    });
+  });
+
+  Scenario('clone engines to handle custom storage adapter per started engine', () => {
+    class MyAdapter extends CustomAdapter {
+      constructor(rootFolder, storage, stateOptions) {
+        super(rootFolder, storage);
+        this.stateOptions = stateOptions;
+      }
+      upsert(type, key, value, options) {
+        if (type === STORAGE_TYPE_STATE) {
+          options = this.#assertMandatoryOptions({ ...options, ...this.stateOptions });
+          value.country = options.country;
+        }
+
+        return super.upsert(type, key, value, options);
+      }
+      update(type, key, value, options) {
+        if (type === STORAGE_TYPE_STATE) options = this.#assertMandatoryOptions({ ...options, ...this.stateOptions });
+        return super.update(type, key, value, options);
+      }
+      delete(type, key, options) {
+        if (type === STORAGE_TYPE_STATE) options = this.#assertMandatoryOptions({ ...options, ...this.stateOptions });
+        return super.delete(type, key, options);
+      }
+      fetch(type, key, options) {
+        if (type === STORAGE_TYPE_STATE) options = this.#assertMandatoryOptions({ ...options, ...this.stateOptions });
+        return super.fetch(type, key, options);
+      }
+      query(type, qs, options) {
+        if (type === STORAGE_TYPE_STATE) options = this.#assertMandatoryOptions({ ...options, ...this.stateOptions });
+        return super.query(type, qs, options);
+      }
+      #assertMandatoryOptions(options) {
+        if (!options?.country) throw new TypeError('country option is mandatory');
+        return options;
+      }
+    }
+
+    let apps;
+    let adapter;
+    before('two parallel app instances', () => {
+      adapter = new MyAdapter('./test/resources');
+      apps = testHelpers.horizontallyScaled(2, { adapter });
+    });
+    after(() => apps.stop());
+
+    Given('custom start route is added with cloned engines with custom save options', () => {
+      apps.use((app) => {
+        app.use('/api/v1/:country', addCustomEngines, app.locals.middleware);
+
+        function addCustomEngines(req, res, next) {
+          const originalEngines = app.locals.engines;
+          const rootAdapter = originalEngines.adapter;
+
+          res.locals.engines = app.locals.engines.clone({
+            adapter: new MyAdapter(rootAdapter.rootFolder, rootAdapter.storage, { country: req.params.country }),
+            engineOptions: {
+              ...originalEngines.engineOptions,
+              settings: {
+                ...originalEngines.engineOptions?.settings,
+                saveEngineStateOptions: {
+                  ...originalEngines.engineOptions?.settings?.saveEngineStateOptions,
+                  country: req.params.country,
+                },
+              },
+            },
+          });
+
+          next();
+        }
+      });
+    });
+
+    And('a process with call activity and one with waiting task are deployed', async () => {
+      await addSource(
+        adapter,
+        'call-process',
+        `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="call-process" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-call-activity" sourceRef="start" targetRef="call-activity" />
+            <callActivity id="call-activity" calledElement="deployment:fs:wait" />
+            <sequenceFlow id="to-end" sourceRef="call-activity" targetRef="end" />
+            <endEvent id="end" />
+          </process>
+        </definitions>`
+      );
+    });
+
+    let app;
+    let wait;
+    let token;
+    When('default route starts wait process', async () => {
+      app = apps.balance();
+      wait = testHelpers.waitForProcess(app, 'fs:wait').wait('wait');
+
+      const response = await request(app).post('/api/v1/se/process-definition/fs%3Await/start');
+
+      expect(response.statusCode, response.text).to.equal(201);
+
+      token = response.body.id;
+    });
+
+    let end;
+    let response;
+    And('wait process is signalled from another app instance', async () => {
+      await wait;
+
+      app = apps.balance();
+      end = testHelpers.waitForProcess(app, token).end();
+
+      response = await request(app).post(`/api/v1/se/signal/${token}`).send({ id: 'wait' });
+
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('run completes', () => {
+      return end;
+    });
+
+    When('custom route starts call activity process', async () => {
+      wait = testHelpers.waitForProcess(app, 'fs:wait').wait();
+
+      const response = await request(app).post('/api/v1/se/process-definition/call-process/start');
+      expect(response.statusCode, response.text).to.equal(201);
+
+      token = response.body.id;
+    });
+
+    Then('2 engines are running', () => {
+      expect(app.locals.engines.running.length).to.equal(2);
+    });
+
+    let callActivityId;
+    And('caller process is saved to custom adapter', async () => {
+      const response = await apps.request().get(`/api/v1/se/status/${token}`).expect(200);
+      expect(response.body).to.have.property('country', 'se');
+
+      callActivityId = response.body.postponed[0].id;
+    });
+
+    let waitToken;
+    And('called process is saved to custom adapter', async () => {
+      const waitMsg = await wait;
+      waitToken = waitMsg.properties.token;
+
+      const response = await apps.request().get(`/api/v1/se/status/${waitToken}`).expect(200);
+
+      expect(response.body).to.have.property('state', 'running');
+      expect(response.body).to.have.property('country', 'se');
+    });
+
+    When('caller process call activity is cancelled in sync', async () => {
+      app = apps.balance();
+      end = testHelpers.waitForProcess(app, token).end();
+
+      const response = await request(app).post(`/api/v1/se/cancel/${token}?sync`).send({ id: callActivityId });
+      expect(response.statusCode, response.text).to.equal(200);
+    });
+
+    Then('caller process is completed', async () => {
+      await end;
+
+      const response = await apps.request().get(`/api/v1/se/status/${token}`).expect(200);
+
+      expect(response.body).to.have.property('country', 'se');
+      expect(response.body).to.have.property('state', 'idle');
+    });
+
+    And('called process is completed', async () => {
+      const response = await apps.request().get(`/api/v1/se/status/${waitToken}`).expect(200);
+
+      expect(response.body).to.have.property('country', 'se');
+      expect(response.body).to.have.property('state', 'idle');
+    });
+
+    describe('custom adapter', () => {
+      let response;
+      When('attempting to start process via custom route that doesnt exist', async () => {
+        response = await request(app).post(`/api/v1/se/process-definition/${encodeURIComponent('fs:notonfs')}/start`);
+      });
+
+      Then('not found is returned', () => {
+        expect(response.statusCode, response.text).to.equal(404);
+      });
+    });
+
+    describe('edge case where state has progressed when resuming', () => {
+      Given('a process with two user task', async () => {
+        await addSource(
+          adapter,
+          'two-task-process',
+          `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="call-process" isExecutable="true">
+              <startEvent id="start" />
+              <sequenceFlow id="to-task1" sourceRef="start" targetRef="task1" />
+              <userTask id="task1" />
+              <sequenceFlow id="to-task2" sourceRef="task1" targetRef="task2" />
+              <userTask id="task2">
+                <extensionElements>
+                  <camunda:inputOutput>
+                    <camunda:outputParameter name="foo">bar</camunda:outputParameter>
+                  </camunda:inputOutput>
+                </extensionElements>
+              </userTask>
+              <sequenceFlow id="to-end" sourceRef="task2" targetRef="end" />
+              <endEvent id="end" />
+            </process>
+          </definitions>`
+        );
+      });
+
+      let app1;
+      When('process is started on first instance', async () => {
+        app1 = apps.balance();
+        const { body } = await request(app1).post(`/api/v1/se/process-definition/two-task-process/start`);
+        token = body.id;
+      });
+
+      let app2;
+      And('second instance signals first task', async () => {
+        app2 = apps.balance();
+        await request(app2).post(`/api/v1/se/signal/${token}`).send({ id: 'task1' }).expect(200);
+      });
+
+      let response;
+      When('first instance signals second task with sync', async () => {
+        response = await request(app1).post(`/api/v1/se/signal/${token}?sync`).send({ id: 'task2' });
+      });
+
+      Then('output is returned', () => {
+        expect(response.statusCode, response.text).to.equal(200);
+        expect(response.body).to.have.property('result').that.deep.equal({ foo: 'bar' });
+      });
     });
   });
 });

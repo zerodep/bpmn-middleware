@@ -11,7 +11,7 @@ import { Engines } from './engines.js';
 import { MemoryAdapter } from './memory-adapter.js';
 import { HttpError, StorageError } from './errors.js';
 import { MiddlewareEngine } from './middleware-engine.js';
-import { fromActivityMessage } from './caller.js';
+import { createCallerFromActivityMessage } from './caller.js';
 import debug from './debug.js';
 import { DeferredCallback } from './deferred.js';
 
@@ -28,17 +28,20 @@ const snakeReplacePattern = /\W/g;
 /**
  * Bpmn Engine Middleware
  * @param {import('types').BpmnMiddlewareOptions} options
- * @param {Engines} [engines]
  */
-export function BpmnEngineMiddleware(options, engines) {
+export function BpmnEngineMiddleware(options) {
   /** @type {string} BPMN Middleware name */
   const name = (this.name = options.name || MIDDLEWARE_DEFAULT_EXCHANGE);
-  this.adapter = options.adapter;
-  this.engines = engines ?? new Engines({ ...options });
-  this.engineOptions = { ...options.engineOptions };
+
+  /** @type {import('types').IStorageAdapter} */
+  const adapter = (this.adapter = options.adapter || new MemoryAdapter());
 
   /** @type {Broker} */
   const broker = (this.broker = options.broker || new Broker(this));
+
+  this.engines = new Engines({ ...options, name, adapter, broker });
+  this.engineOptions = { ...options.engineOptions };
+
   broker.assertExchange(name, 'topic', { autoDelete: false, durable: false });
 
   broker.subscribeTmp(name, 'activity.call', (_, msg) => this._startProcessByCallActivity(msg), { noAck: true });
@@ -171,9 +174,9 @@ BpmnEngineMiddleware.prototype.addResponseLocals = function addResponseLocals() 
 BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(req, res, next) {
   res.locals.middlewareName = this.name;
   res.locals.token = res.locals.token ?? req.params.token;
-  res.locals.engines = res.locals.engines ?? this.engines;
-  res.locals.adapter = res.locals.adapter ?? this.adapter;
-  res.locals.broker = res.locals.broker ?? this.broker;
+  const engines = (res.locals.engines = res.locals.engines ?? this.engines);
+  res.locals.adapter = res.locals.adapter ?? engines.adapter;
+  res.locals.broker = res.locals.broker ?? engines.broker;
   res.locals.listener = res.locals.listener ?? this._bpmnEngineListener;
   next();
 };
@@ -345,7 +348,7 @@ BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, 
 BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToken(req, res, next) {
   try {
     const token = req.params.token;
-    const status = await res.locals.engines.getStatusByToken(token);
+    const status = await res.locals.engines.getStatusByToken(token, req.query);
     if (!status) throw new HttpError(`Token ${token} not found`, 404);
     return res.send(status);
   } catch (err) {
@@ -406,8 +409,16 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
 BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(req, res, next) {
   try {
     const { token, engines, listener, executeOptions } = res.locals;
-    await engines.resumeAndCancelActivity(token, listener, req.body, executeOptions);
-    return res.send(engines.getEngineStatusByToken(token));
+
+    const sync = executeOptions.sync && new DeferredCallback(syncExecutionCallback);
+
+    const engine = await engines.resumeAndCancelActivity(token, listener, req.body, executeOptions, sync?.callback);
+
+    if (!sync) return res.send(engines.getEngineStatusByToken(token));
+
+    await sync;
+
+    return res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
   } catch (err) {
     next(err);
   }
@@ -695,21 +706,23 @@ BpmnEngineMiddleware.prototype._parseQueryToEngineOptions = function parseQueryT
  */
 BpmnEngineMiddleware.prototype._startProcessByCallActivity = async function startProcessByCallActivity(callActivityMessage) {
   try {
-    const { content } = callActivityMessage;
+    const content = callActivityMessage.content;
+
     const [category, ...rest] = content.calledElement.split(':');
 
     if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
+
     // eslint-disable-next-line no-var
     var deploymentName = rest.join(':');
 
     if (content.isRecovered) return;
 
     // eslint-disable-next-line no-var
-    var caller = fromActivityMessage(callActivityMessage);
+    var caller = createCallerFromActivityMessage(callActivityMessage);
 
     return await this._startDeployment(deploymentName, {
       listener: this._bpmnEngineListener,
-      settings: { caller: { ...caller } },
+      settings: { ...content.settings, caller: { ...caller } },
       variables: { ...content.input },
       caller,
     });
@@ -745,7 +758,7 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
 
   const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path, options);
 
-  const { listener, variables, businessKey, caller, idleTimeout } = options;
+  const { listener, settings, variables, businessKey, caller, idleTimeout } = options;
 
   const token = randomUUID();
 
@@ -755,6 +768,10 @@ BpmnEngineMiddleware.prototype._startDeployment = async function startDeployment
     token,
     source: deploymentSource.content,
     listener,
+    settings: {
+      ...this.engineOptions.settings,
+      ...settings,
+    },
     variables: {
       ...this.engineOptions.variables,
       ...variables,
@@ -778,12 +795,27 @@ BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function can
 
   if (category !== STORAGE_TYPE_DEPLOYMENT || !rest.length) return;
 
-  const caller = fromActivityMessage(callActivityMessage);
+  const deploymentName = rest.join(':');
 
-  const { records } = await this.adapter.query(STORAGE_TYPE_STATE, { state: 'running', caller });
-  if (!records?.length) return;
+  try {
+    // eslint-disable-next-line no-var
+    var caller = createCallerFromActivityMessage(callActivityMessage);
 
-  this.engines.discardByToken(records[0].token);
+    const saveEngineStateOptions = callActivityMessage.content.settings?.saveEngineStateOptions;
+
+    const { records } = await this.adapter.query(STORAGE_TYPE_STATE, { state: 'running', caller }, saveEngineStateOptions);
+
+    if (!records?.length) {
+      return debug(`cancel called process ignored, found no running process with token ${caller.token}`);
+    }
+
+    debug(`discard ${deploymentName} token ${records[0].token} by call activity ${caller?.executionId}`);
+
+    await this.engines.discardByToken(records[0].token, this._bpmnEngineListener, { ...saveEngineStateOptions, resumedBy: caller.token });
+  } catch (err) {
+    debug(`failed to discard ${deploymentName} token ${caller.token} by call activity ${caller?.executionId}`, err);
+    this._bpmnEngineListener.emit('warn', err);
+  }
 };
 
 /**
@@ -793,24 +825,44 @@ BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function can
  */
 BpmnEngineMiddleware.prototype._postProcessDefinitionRun = async function postProcessDefinitionRun(definitionEndMessage) {
   const { fields, content, properties } = definitionEndMessage;
-  const { caller } = content;
+  const { caller, resumedBy, settings } = content;
   if (!caller) return;
 
   try {
+    if (resumedBy === caller.token && !this.engines.getByToken(resumedBy)) {
+      return debug(
+        `process ${properties.deployment} (${properties.token}), resumed by ${caller.deployment} (${caller.token}), has already completed`
+      );
+    }
+
     if (fields.routingKey === 'definition.error') {
-      await this.engines.resumeAndFailActivity(caller.token, this._bpmnEngineListener, {
-        ...caller,
-        fromToken: properties.token,
-        message: content.error,
-      });
+      await this.engines.resumeAndFailActivity(
+        caller.token,
+        this._bpmnEngineListener,
+        {
+          ...caller,
+          fromToken: properties.token,
+          message: content.error,
+        },
+        settings?.saveEngineStateOptions
+      );
     } else {
-      await this.engines.resumeAndSignalActivity(caller.token, this._bpmnEngineListener, {
-        ...caller,
-        fromToken: properties.token,
-        message: content.output,
-      });
+      await this.engines.resumeAndSignalActivity(
+        caller.token,
+        this._bpmnEngineListener,
+        {
+          ...caller,
+          fromToken: properties.token,
+          message: content.output,
+        },
+        settings?.saveEngineStateOptions
+      );
     }
   } catch (err) {
+    debug(
+      `failed to post process ${properties.deployment} token ${properties.token} addressing ${caller.deployment} (${caller.token})`,
+      err
+    );
     this._bpmnEngineListener.emit('warn', err);
   }
 };

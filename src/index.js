@@ -1,7 +1,6 @@
 import { Router, json } from 'express';
 import multer from 'multer';
 
-import { DEFAULT_IDLE_TIMER } from './constants.js';
 import { MulterAdapterStorage } from './multer-adapter-storage.js';
 import { Engines } from './engines.js';
 import { MemoryAdapter } from './memory-adapter.js';
@@ -20,15 +19,8 @@ export * from './constants.js';
  */
 export function bpmnEngineMiddleware(options) {
   const adapter = options?.adapter || new MemoryAdapter();
-  const engines = new Engines({
-    adapter,
-    idleTimeout: DEFAULT_IDLE_TIMER,
-    autosaveEngineState: true,
-    ...options,
-  });
-
   const storage = new MulterAdapterStorage(adapter);
-  const middleware = new BpmnEngineMiddleware({ ...options, adapter }, engines);
+  const middleware = new BpmnEngineMiddleware({ autosaveEngineState: true, ...options, adapter });
 
   const router = Router({ mergeParams: true });
 
@@ -59,7 +51,7 @@ export function bpmnEngineMiddleware(options) {
 
   Object.defineProperties(router, {
     engines: {
-      value: engines,
+      value: middleware.engines,
       enumerable: true,
     },
     /** @type {TypedPropertyDescriptor<BpmnEngineMiddleware>} */

@@ -1,40 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1vemjyv" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.30.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.22.0">
-  <bpmn:process id="Process_182r01y" isExecutable="true">
-    <bpmn:startEvent id="StartEvent_1">
-      <bpmn:outgoing>Flow_18oglm9</bpmn:outgoing>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1vemjyv" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.31.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.22.0">
+  <bpmn:process id="wait-process" isExecutable="true">
+    <bpmn:startEvent id="start">
+      <bpmn:outgoing>to-wait</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_18oglm9" sourceRef="StartEvent_1" targetRef="wait" />
+    <bpmn:sequenceFlow id="to-wait" sourceRef="start" targetRef="wait" />
     <bpmn:manualTask id="wait">
       <bpmn:extensionElements>
         <camunda:inputOutput>
           <camunda:outputParameter name="signal">${content.output}</camunda:outputParameter>
         </camunda:inputOutput>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_18oglm9</bpmn:incoming>
-      <bpmn:outgoing>Flow_1go6ks8</bpmn:outgoing>
+      <bpmn:incoming>to-wait</bpmn:incoming>
+      <bpmn:outgoing>to-end</bpmn:outgoing>
     </bpmn:manualTask>
-    <bpmn:endEvent id="Event_0wg4wgk">
-      <bpmn:incoming>Flow_1go6ks8</bpmn:incoming>
+    <bpmn:endEvent id="end">
+      <bpmn:incoming>to-end</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_1go6ks8" sourceRef="wait" targetRef="Event_0wg4wgk" />
+    <bpmn:sequenceFlow id="to-end" sourceRef="wait" targetRef="end" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_182r01y">
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="wait-process">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="start">
         <dc:Bounds x="179" y="99" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0zci8py_di" bpmnElement="wait">
         <dc:Bounds x="270" y="77" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0wg4wgk_di" bpmnElement="Event_0wg4wgk">
+      <bpmndi:BPMNShape id="Event_0wg4wgk_di" bpmnElement="end">
         <dc:Bounds x="432" y="99" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_18oglm9_di" bpmnElement="Flow_18oglm9">
+      <bpmndi:BPMNEdge id="Flow_18oglm9_di" bpmnElement="to-wait">
         <di:waypoint x="215" y="117" />
         <di:waypoint x="270" y="117" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1go6ks8_di" bpmnElement="Flow_1go6ks8">
+      <bpmndi:BPMNEdge id="Flow_1go6ks8_di" bpmnElement="to-end">
         <di:waypoint x="370" y="117" />
         <di:waypoint x="432" y="117" />
       </bpmndi:BPMNEdge>

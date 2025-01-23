@@ -47,6 +47,8 @@ declare module 'bpmn-middleware' {
 	sync?: boolean;
 	/** Idle timeout delay */
 	idleTimeout?: number;
+	/** Resumed by engine token */
+	resumedBy?: string;
 	[x: string]: any;
   }
 
@@ -57,7 +59,10 @@ declare module 'bpmn-middleware' {
 	sequenceNumber?: number;
 	expireAt?: Date;
 	businessKey?: string;
+	/** Run engine to completed */
 	sync?: boolean;
+	/** Resumed by engine token */
+	resumedBy?: string;
   }
 
   interface StartDeploymentOptions {
@@ -149,17 +154,16 @@ declare module 'bpmn-middleware' {
   }
 	/**
 	 * Bpmn Engine Middleware
-	 * 
-	 */
-	export function BpmnEngineMiddleware(options: BpmnMiddlewareOptions, engines?: Engines): void;
+	 * */
+	export function BpmnEngineMiddleware(options: BpmnMiddlewareOptions): void;
 	export class BpmnEngineMiddleware {
 		/**
 		 * Bpmn Engine Middleware
-		 * 
-		 */
-		constructor(options: BpmnMiddlewareOptions, engines?: Engines);
+		 * */
+		constructor(options: BpmnMiddlewareOptions);
 		name: string;
 		adapter: IStorageAdapter;
+		broker: Broker;
 		engines: Engines;
 		engineOptions: {
 			[x: string]: any;
@@ -181,7 +185,6 @@ declare module 'bpmn-middleware' {
 			extensions?: Record<string, import("bpmn-elements").Extension>;
 			expressions?: import("bpmn-elements").IExpressions;
 		};
-		broker: Broker;
 		/**
 		 * Bound init
 		 */
@@ -455,8 +458,9 @@ declare module 'bpmn-middleware' {
 	export const SAVE_STATE_ROUTINGKEY: "activity.state.save";
 	export const ENABLE_SAVE_STATE_ROUTINGKEY: "activity.state.save.enable";
 	export const DISABLE_SAVE_STATE_ROUTINGKEY: "activity.state.save.disable";
-	export const ERR_STORAGE_KEY_NOT_FOUND: "ERR_BPMN_MIDDLEWARE_STORAGE_KEY_NOT_FOUND";
 	export const MIDDLEWARE_DEFAULT_EXCHANGE: "default";
+	export const ERR_STORAGE_KEY_NOT_FOUND: "ERR_BPMN_MIDDLEWARE_STORAGE_KEY_NOT_FOUND";
+	export const ERR_COMPLETED: "ERR_BPMN_MIDDLEWARE_COMPLETED";
 	/**
 	 * Engines class
 	 * */
@@ -466,20 +470,23 @@ declare module 'bpmn-middleware' {
 		 * Engines class
 		 * */
 		constructor(options: BpmnMiddlewareOptions);
-		name: string;
-		
-		broker: import("smqp").Broker;
 		engineOptions: import("bpmn-engine").BpmnEngineOptions;
 		idleTimeout: number;
-		adapter: IStorageAdapter;
 		
 		engineCache: LRUCache<string, MiddlewareEngine, unknown>;
 		autosaveEngineState: boolean;
 		Scripts: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
 		Services: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
-		
+		/** @internal Bound state message handler */
 		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<void>;
+		get name(): string;
+		get broker(): import("smqp").Broker;
+		get adapter(): IStorageAdapter;
 		get running(): MiddlewareEngine[];
+		/**
+		 * Clone engines instance
+		 * */
+		clone(overrideOptions?: Partial<BpmnMiddlewareOptions>): Engines;
 		/**
 		 * Create and execute engine from options
 		 * */
@@ -503,7 +510,7 @@ declare module 'bpmn-middleware' {
 		 * Cancel activity
 		 * 
 		 */
-		resumeAndCancelActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ExecuteOptions): Promise<MiddlewareEngine>;
+		resumeAndCancelActivity(token: string, listener: import("bpmn-engine").IListenerEmitter, body: SignalBody, options?: ExecuteOptions, callback?: (err: Error, engine: import("bpmn-engine").Execution) => void): Promise<MiddlewareEngine>;
 		/**
 		 * Resume and fail activity
 		 * 
@@ -515,21 +522,23 @@ declare module 'bpmn-middleware' {
 		getPostponed(token: string, listener: import("bpmn-engine").IListenerEmitter): Promise<PostponedElement[]>;
 		/**
 		 * Get engine state by token
+		 * @param options adapter fetch options
 		 * */
-		getStateByToken(token: string, options: any): Promise<MiddlewareEngineState>;
+		getStateByToken(token: string, options?: any): Promise<MiddlewareEngineState>;
 		/**
 		 * Get engine status by token
+		 * @param options adapter fetch options
 		 * */
-		getStatusByToken(token: string): Promise<MiddlewareEngineStatus>;
+		getStatusByToken(token: string, options?: any): Promise<MiddlewareEngineStatus>;
 		/**
 		 * Get running engines by querying storage
 		 * */
 		getRunning(query?: any): Promise<MiddlewareEngineState[]>;
 		/**
 		 * Discards engine by token
-		 * 
+		 * @param options resume options
 		 */
-		discardByToken(token?: string): Promise<void>;
+		discardByToken(token?: string, listener?: import("bpmn-engine").IListenerEmitter, options?: any): Promise<void>;
 		/**
 		 * Get running engine by token
 		 * */
@@ -586,7 +595,20 @@ declare module 'bpmn-middleware' {
 		 * Internal teardown engine, remove listeners and stuff
 		 * */
 		_teardownEngine(engine: MiddlewareEngine): void;
+		[kOptions]: {
+			idleTimeout: number;
+			engineCache: LRUCache<string, MiddlewareEngine, unknown> | LRUCache<string, import("bpmn-engine").Engine, unknown>;
+			name?: string;
+			adapter?: IStorageAdapter;
+			engineOptions?: import("bpmn-engine").BpmnEngineOptions;
+			broker?: import("smqp").Broker;
+			autosaveEngineState?: boolean;
+			Scripts?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
+			Services?: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
+			maxRunning?: number;
+		};
 	}
+	const kOptions: unique symbol;
 	/**
 	 * Memory adapter
 	 * 

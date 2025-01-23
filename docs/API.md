@@ -237,6 +237,8 @@ Resume process run
 - `idleTimeout`: idle timeout delay, positive number of milliseconds or as ISO 8601 duration
 - `sync`: run until end instruction, any value will do, or `false` to disable, returns 504 if not completed within idle timeout
 
+Any other query parametes will also be passed as resume options.
+
 ### `POST (*)?/signal/:token`
 
 Signal process activity.
@@ -246,6 +248,8 @@ Signal process activity.
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 - `idleTimeout`: idle timeout delay, positive number of milliseconds or as ISO 8601 duration
 - `sync`: run until end instruction, any value will do, or `false` to disable, returns 504 if not completed within idle timeout
+
+Any other query parametes will also be passed as resume options.
 
 **Request body:**
 
@@ -261,6 +265,8 @@ Cancel process activity.
 
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
 
+Any other query parametes will also be passed as resume options.
+
 **Request body:**
 
 - `id`: activity id
@@ -273,6 +279,8 @@ Fail process activity.
 **Request query (case insensetive):**
 
 - `autosaveEngineState`: force autosave engine state, any value will do, or `false` to disable auto save engine state
+
+Any other query parametes will also be passed as resume options.
 
 **Request body:**
 

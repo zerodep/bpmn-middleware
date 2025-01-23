@@ -18,10 +18,11 @@ Feature('idle engine', () => {
       ]);
     });
 
+    let adapter1, adapter2;
     Given('two parallel app instances with a shared adapter source', () => {
       storage = new LRUCache({ max: 100 });
-      const adapter1 = new MemoryAdapter(storage);
-      const adapter2 = new MemoryAdapter(storage);
+      adapter1 = new MemoryAdapter(storage);
+      adapter2 = new MemoryAdapter(storage);
 
       app1 = getAppWithExtensions({ adapter: adapter1 });
       app2 = getAppWithExtensions({ adapter: adapter2 });
@@ -46,15 +47,16 @@ Feature('idle engine', () => {
       );
     });
 
-    let response, bp;
+    let response;
+    let token;
     When('process is started', async () => {
       response = await request(app1).post('/rest/process-definition/idle-engine/start').expect(201);
 
-      bp = response.body;
+      token = response.body.id;
     });
 
     Then('process status is timer with expire at', async () => {
-      response = await request(app2).get(`/rest/status/${bp.id}`);
+      response = await request(app2).get(`/rest/status/${token}`);
 
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('activityStatus', 'timer');
@@ -64,8 +66,8 @@ Feature('idle engine', () => {
     let stopped;
     When('idle timeout has passed', () => {
       ck.travel(Date.now() + DEFAULT_IDLE_TIMER);
-      stopped = waitForProcess(app1, bp.id).stop();
-      return waitForProcess(app1, bp.id).idle();
+      stopped = waitForProcess(app1, token).stop();
+      return waitForProcess(app1, token).idle();
     });
 
     Then('execution is considered idle and stopped', () => {
@@ -73,7 +75,9 @@ Feature('idle engine', () => {
     });
 
     let expireAt;
-    And('status is still running with expire date', () => {
+    And('status is still running with expire date', async () => {
+      response = await request(app2).get(`/rest/status/${token}`);
+
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
       expect(response.body).to.have.property('activityStatus', 'timer');
@@ -84,10 +88,12 @@ Feature('idle engine', () => {
     When('process is resumed close to timer timeout', () => {
       ck.travel(new Date(expireAt) - 2 * DEFAULT_IDLE_TIMER + 1000);
 
-      return request(app2).post(`/rest/resume/${bp.id}`).expect(200);
+      return request(app2).post(`/rest/resume/${token}`).expect(200);
     });
 
-    Then('status is still running with expire date', () => {
+    Then('status is still running with expire date', async () => {
+      response = await request(app1).get(`/rest/status/${token}`);
+
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('state', 'running');
       expect(response.body).to.have.property('activityStatus', 'timer');
@@ -96,21 +102,30 @@ Feature('idle engine', () => {
 
     When('idle timeout has passed', () => {
       ck.travel(Date.now() + DEFAULT_IDLE_TIMER);
-      return waitForProcess(app2, bp.id).idle();
+      return waitForProcess(app2, token).idle();
     });
 
     Then('app is still running process since timeout is close', () => {
-      expect(app2.locals.engineCache.get(bp.id)).to.be.ok;
+      expect(app2.locals.engineCache.get(token)).to.be.ok;
     });
 
     let end;
     When('user task is signalled', () => {
-      end = waitForProcess(app2, bp.id).end();
-      return request(app2).post(`/rest/signal/${bp.id}`).send({ id: 'task' }).expect(200);
+      end = waitForProcess(app2, token).end();
+      return request(app2).post(`/rest/signal/${token}`).send({ id: 'task' }).expect(200);
     });
 
     Then('run completes', () => {
       return end;
+    });
+
+    And('status is idle', async () => {
+      response = await request(app1).get(`/rest/status/${token}`);
+
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('state', 'idle');
+      expect(response.body).to.have.property('activityStatus', 'idle');
+      expect(response.body).to.not.have.property('expireAt');
     });
   });
 
@@ -138,17 +153,17 @@ Feature('idle engine', () => {
         app,
         'long-running-service',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <serviceTask id="task" implementation="\${environment.services.get}" />
-          <boundaryEvent id="bound-timer" attachedToRef="task">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10M</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <serviceTask id="task" implementation="\${environment.services.get}" />
+            <boundaryEvent id="bound-timer" attachedToRef="task">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10M</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 
@@ -207,12 +222,12 @@ Feature('idle engine', () => {
         app,
         'long-running-service',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <serviceTask id="task" implementation="\${environment.services.get}" />
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <serviceTask id="task" implementation="\${environment.services.get}" />
+          </process>
+        </definitions>`
       );
     });
 
@@ -282,17 +297,17 @@ Feature('idle engine', () => {
         app,
         'override-idle-timeout',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-          <userTask id="task" />
-          <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
-            <timerEventDefinition>
-              <timeDuration xsi:type="tFormalExpression">PT10M</timeDuration>
-            </timerEventDefinition>
-          </boundaryEvent>
-        </process>
-      </definitions>`
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+            <userTask id="task" />
+            <boundaryEvent id="bound-timer" attachedToRef="task" cancelActivity="false">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">PT10M</timeDuration>
+              </timerEventDefinition>
+            </boundaryEvent>
+          </process>
+        </definitions>`
       );
     });
 

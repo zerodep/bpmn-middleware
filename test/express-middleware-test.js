@@ -68,8 +68,15 @@ describe('express-middleware', () => {
       expect(middleware.bpmnEngineMiddleware({ broker }).middleware.broker).to.equal(broker);
     });
 
-    it('exposes engines', () => {
-      expect(middleware.bpmnEngineMiddleware().engines).to.be.instanceof(middleware.Engines);
+    it('exposes engines with shared adapter, broker, and name', () => {
+      const router = middleware.bpmnEngineMiddleware();
+
+      const engines = router.engines;
+
+      expect(engines).to.be.instanceof(middleware.Engines);
+      expect(engines.name, 'name').to.be.ok.and.equal(router.middleware.name);
+      expect(engines.adapter, 'adapter').to.be.ok.and.equal(router.middleware.adapter);
+      expect(engines.broker, 'broker').to.be.ok.and.equal(router.middleware.broker);
     });
 
     it('middleware name not a string throws TypeError', () => {
@@ -96,7 +103,7 @@ describe('express-middleware', () => {
   describe('addResponseLocals', () => {
     it('adds engines, adapter, and listener to res.locals', async () => {
       const adapter = new middleware.MemoryAdapter();
-      const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter }, new middleware.Engines({ adapter }));
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter });
 
       const myApp = express();
       myApp.use('/rest', engineMiddleware.init.bind(engineMiddleware));
@@ -127,7 +134,7 @@ describe('express-middleware', () => {
 
     it('adds locals even if init has not ran', async () => {
       const adapter = new middleware.MemoryAdapter();
-      const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter }, new middleware.Engines({ adapter }));
+      const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter });
 
       const myApp = express();
       myApp.use('/rest/locals', engineMiddleware.addResponseLocals(), (req, res) => {
@@ -194,11 +201,10 @@ describe('express-middleware', () => {
       form.append(
         'test-deploy-start.bpmn',
         `<?xml version="1.0" encoding="UTF-8"?>
-      <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-        <process id="bp" isExecutable="true">
-        </process>
-      </definitions>
-      `,
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <process id="bp" isExecutable="true">
+          </process>
+        </definitions>`,
         'test-deploy-start.bpmn'
       );
 

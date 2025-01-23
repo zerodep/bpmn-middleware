@@ -9,38 +9,71 @@ import {
   ENABLE_SAVE_STATE_ROUTINGKEY,
   DISABLE_SAVE_STATE_ROUTINGKEY,
   ERR_STORAGE_KEY_NOT_FOUND,
-  MIDDLEWARE_DEFAULT_EXCHANGE,
+  DEFAULT_IDLE_TIMER,
+  ERR_COMPLETED,
 } from './constants.js';
 import debug from './debug.js';
+
+const kOptions = Symbol.for('options');
 
 /**
  * Engines class
  * @param {import('types').BpmnMiddlewareOptions} options
  */
 export function Engines(options) {
-  this.name = options.name || MIDDLEWARE_DEFAULT_EXCHANGE;
-  /** @type {import('smqp').Broker} */
-  this.broker = options.broker;
-  this.engineOptions = options.engineOptions || {};
-  this.idleTimeout = options.idleTimeout;
-  this.adapter = options.adapter;
+  if (!options?.name || typeof options.name !== 'string') throw new TypeError('options.name is mandatory and must be a string');
+  if (!options.adapter) throw new TypeError('options.adapter is mandatory');
+  if (!options.broker) throw new TypeError('options.broker is mandatory');
+
+  const passedOptions = (this[kOptions] = {
+    ...options,
+    idleTimeout: options.idleTimeout || DEFAULT_IDLE_TIMER,
+    engineCache:
+      options.engineCache ||
+      new LRUCache({
+        max: options.maxRunning || 1000,
+        disposeAfter: onEvictEngine,
+      }),
+  });
+
+  this.engineOptions = passedOptions.engineOptions;
+  this.idleTimeout = passedOptions.idleTimeout;
 
   /** @type {LRUCache<string, MiddlewareEngine, unknown>} */
   // @ts-ignore
-  this.engineCache =
-    options.engineCache ||
-    new LRUCache({
-      max: options.maxRunning || 1000,
-      disposeAfter: onEvictEngine,
-    });
+  this.engineCache = passedOptions.engineCache;
 
-  this.autosaveEngineState = options.autosaveEngineState;
-  this.Scripts = options.Scripts;
-  this.Services = options.Services;
+  this.autosaveEngineState = passedOptions.autosaveEngineState;
+  this.Scripts = passedOptions.Scripts;
+  this.Services = passedOptions.Services;
 
-  /** @internal */
+  /** @internal Bound state message handler */
   this.__onStateMessage = this._onStateMessage.bind(this);
 }
+
+/** @name module:bpmn-middleware.Engines#name */
+Object.defineProperty(Engines.prototype, 'name', {
+  /** @returns {string} */
+  get() {
+    return this[kOptions].name;
+  },
+});
+
+/** @name module:bpmn-middleware.Engines#broker */
+Object.defineProperty(Engines.prototype, 'broker', {
+  /** @returns {import('smqp').Broker} */
+  get() {
+    return this[kOptions].broker;
+  },
+});
+
+/** @name module:bpmn-middleware.Engines#adapter */
+Object.defineProperty(Engines.prototype, 'adapter', {
+  /** @returns {import('types').IStorageAdapter} */
+  get() {
+    return this[kOptions].adapter;
+  },
+});
 
 /** @name module:bpmn-middleware.Engines#running */
 Object.defineProperty(Engines.prototype, 'running', {
@@ -49,6 +82,16 @@ Object.defineProperty(Engines.prototype, 'running', {
     return [...this.engineCache.values()];
   },
 });
+
+/**
+ * Clone engines instance
+ * @param {Partial<import('types').BpmnMiddlewareOptions>} [overrideOptions]
+ * @returns {Engines}
+ */
+Engines.prototype.clone = function cloneEnginesInstance(overrideOptions) {
+  // @ts-ignore
+  return new this.constructor({ ...this[kOptions], ...overrideOptions });
+};
 
 /**
  * Create and execute engine from options
@@ -108,23 +151,26 @@ Engines.prototype.resume = async function resume(token, listener, options, callb
     if (!state && !engine) {
       throw new HttpError(`Token ${token} not found`, 404);
     } else if (state?.state === 'idle') {
-      throw new HttpError(`Token ${token} has already completed`, 400);
+      throw new HttpError(`Token ${token} has already completed`, 400, ERR_COMPLETED);
     } else if (state?.state === 'error') {
-      throw new HttpError(`Token ${token} has failed`, 400);
+      throw new HttpError(`Token ${token} has failed`, 400, ERR_COMPLETED);
     }
 
     // @ts-ignore
     if (state?.sequenceNumber > engine?.options.sequenceNumber) {
       this.terminateByToken(token);
-      return this.resume(token, listener);
+      return this.resume(token, listener, options, callback);
     }
 
     if (engine) {
       if ('autosaveEngineState' in resumeOptions) {
-        engine.environment.settings.autosaveEngineState = options.autosaveEngineState;
+        engine.environment.settings.autosaveEngineState = resumeOptions.autosaveEngineState;
       }
       if ('sync' in resumeOptions) {
         engine.sync = resumeOptions.sync;
+      }
+      if (resumeOptions.resumedBy) {
+        engine.options.resumedBy = resumeOptions.resumedBy;
       }
 
       if (callback) {
@@ -151,6 +197,9 @@ Engines.prototype.resume = async function resume(token, listener, options, callb
     engine.options.sequenceNumber = state.sequenceNumber;
     engine.options.expireAt = state.expireAt;
     engine.options.businessKey = state.businessKey;
+    if (resumeOptions.resumedBy) {
+      engine.options.resumedBy = resumeOptions.resumedBy;
+    }
 
     if ('autosaveEngineState' in resumeOptions) {
       engine.environment.settings.autosaveEngineState = resumeOptions.autosaveEngineState;
@@ -159,6 +208,7 @@ Engines.prototype.resume = async function resume(token, listener, options, callb
     this._setupEngine(engine);
 
     await engine.resume(null, callback);
+
     engine.startIdleTimer(
       callback &&
         ((e) => {
@@ -202,10 +252,13 @@ Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivi
  * @param {import('bpmn-engine').IListenerEmitter} listener
  * @param {import('types').SignalBody} body
  * @param {import('types').ExecuteOptions} [options]
+ * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback]
  */
-Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token, listener, body, options) {
-  const engine = await this.resume(token, listener, options);
+Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token, listener, body, options, callback) {
+  const engine = await this.resume(token, listener, options, callback);
+
   const activtyApi = getActivityApi(engine, body);
+
   if (activtyApi.type === 'bpmn:CallActivity') {
     activtyApi.cancel(body);
   } else {
@@ -251,7 +304,7 @@ Engines.prototype.getPostponed = async function getPostponed(token, listener) {
 /**
  * Get engine state by token
  * @param {string} token
- * @param {any} options
+ * @param {any} [options] adapter fetch options
  * @returns {Promise<import('types').MiddlewareEngineState>}
  */
 Engines.prototype.getStateByToken = function getStateByToken(token, options) {
@@ -261,10 +314,11 @@ Engines.prototype.getStateByToken = function getStateByToken(token, options) {
 /**
  * Get engine status by token
  * @param {string} token
+ * @param {any} [options] adapter fetch options
  * @returns {Promise<import('types').MiddlewareEngineStatus>}
  */
-Engines.prototype.getStatusByToken = function getStatusByToken(token) {
-  return this.getStateByToken(token, { exclude: ['engine'] });
+Engines.prototype.getStatusByToken = function getStatusByToken(token, options) {
+  return this.getStateByToken(token, { exclude: ['engine'], ...options });
 };
 
 /**
@@ -281,9 +335,11 @@ Engines.prototype.getRunning = async function getRunning(query) {
 /**
  * Discards engine by token
  * @param {string} [token]
+ * @param {import('bpmn-engine').IListenerEmitter} [listener]
+ * @param {any} [options] resume options
  */
-Engines.prototype.discardByToken = async function discardByToken(token) {
-  const engine = await this.resume(token);
+Engines.prototype.discardByToken = async function discardByToken(token, listener, options) {
+  const engine = await this.resume(token, listener, options);
 
   const definitions = engine.execution?.definitions;
   for (const definition of definitions) {
@@ -349,6 +405,7 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
  */
 Engines.prototype.createEngine = function createEngine(executeOptions) {
   const { name, token, source, listener, variables, caller, settings, idleTimeout, businessKey, sync } = executeOptions;
+
   return new MiddlewareEngine(token, {
     ...this.engineOptions,
     name,
@@ -516,7 +573,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
         },
       },
       {
-        ...(engineOptions.caller && { cloneMessage: createCloneCallerMessage(engine) }),
+        cloneMessage: cloneShovelMessage(engine),
       }
     );
   }
@@ -571,13 +628,13 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
 
   let saveState = autosaveEngineState;
   let saveStateIfExists = false;
-  let saveStateOptions = { ...engineSettings.saveEngineStateOptions };
+  const saveStateOptions = { ...engineSettings.saveEngineStateOptions };
 
   try {
     switch (routingKey) {
       case SAVE_STATE_ROUTINGKEY: {
         saveState = true;
-        saveStateOptions = { ...saveStateOptions, ...message.content };
+        Object.assign(saveStateOptions, message.content);
         break;
       }
       case ENABLE_SAVE_STATE_ROUTINGKEY: {
@@ -732,17 +789,33 @@ function disableSaveState(...args) {
 }
 
 /**
- * Clone called process message
+ * Clone shovel message
  * @param {MiddlewareEngine} engine
- * @returns
  */
-function createCloneCallerMessage(engine) {
-  /** @type {(message: import('smqp').MessageMessage) => import('smqp').MessageMessage} */
+function cloneShovelMessage(engine) {
+  /** @type {(message: import('smqp').MessageMessage) => import('bpmn-elements').ElementBrokerMessage} */
   return function cloneMessage(msg) {
     const { fields, content, properties } = msg;
-    if (fields.routingKey === 'definition.end' || fields.routingKey === 'definition.error') {
-      content.caller = { ...engine.options.caller };
+    switch (fields.routingKey) {
+      case 'definition.end':
+      case 'definition.error': {
+        const { caller, resumedBy } = engine.options;
+        if (caller) {
+          content.caller = { ...caller };
+        }
+        if (resumedBy) {
+          content.resumedBy = resumedBy;
+        }
+      }
+      case 'activity.call':
+      case 'activity.call.cancel': {
+        if (engine.environment.settings.saveEngineStateOptions) {
+          content.settings = { saveEngineStateOptions: { ...engine.environment.settings.saveEngineStateOptions }, ...content.settings };
+        }
+        break;
+      }
     }
+
     return { fields, content, properties };
   };
 }

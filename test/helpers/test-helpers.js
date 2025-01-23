@@ -80,8 +80,7 @@ export function horizontallyScaled(instances = 2, options) {
  */
 export function getAppWithExtensions(options = {}) {
   const app = express();
-  const broker = (app.locals.broker = options.broker ?? new Broker(app));
-  broker.assertExchange('event', 'topic', { durable: false, autoDelete: false });
+  const broker = new Broker(app);
 
   const { engineOptions, ...middlewareOptions } = options;
   const middleware = bpmnEngineMiddleware({
@@ -90,6 +89,7 @@ export function getAppWithExtensions(options = {}) {
     ...middlewareOptions,
   });
 
+  app.locals.broker = broker;
   app.locals.middleware = middleware;
   app.locals.engines = middleware.engines;
   app.locals.engineCache = middleware.engines.engineCache;

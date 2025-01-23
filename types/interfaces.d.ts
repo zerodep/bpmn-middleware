@@ -43,6 +43,8 @@ export interface ExecuteOptions {
   sync?: boolean;
   /** Idle timeout delay */
   idleTimeout?: number;
+  /** Resumed by engine token */
+  resumedBy?: string;
   [x: string]: any;
 }
 
@@ -53,7 +55,10 @@ export interface MiddlewareEngineOptions extends BpmnEngineOptions {
   sequenceNumber?: number;
   expireAt?: Date;
   businessKey?: string;
+  /** Run engine to completed */
   sync?: boolean;
+  /** Resumed by engine token */
+  resumedBy?: string;
 }
 
 export interface StartDeploymentOptions {

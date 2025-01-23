@@ -4,11 +4,31 @@ import { Broker } from 'smqp';
 import { MemoryAdapter, Engines, STORAGE_TYPE_STATE } from '../../src/index.js';
 
 describe('Engines', () => {
+  describe('ctor', () => {
+    it('throws if no options', () => {
+      expect(() => new Engines()).to.throw(TypeError);
+    });
+
+    it('throws if no options.name', () => {
+      expect(() => new Engines({})).to.throw(TypeError, /\.name/i);
+      expect(() => new Engines({ name: {} })).to.throw(TypeError, /\.name/i);
+    });
+
+    it('throws if no options.adapter', () => {
+      expect(() => new Engines({ name: 'event', broker: new Broker() })).to.throw(TypeError, /adapter/i);
+    });
+
+    it('throws if no options.broker', () => {
+      expect(() => new Engines({ name: 'event', adapter: new MemoryAdapter() })).to.throw(TypeError, /broker/i);
+    });
+  });
+
   describe('execute', () => {
     it('execute without token adds token guid', async () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -41,6 +61,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -79,6 +100,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -130,6 +152,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -163,6 +186,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -198,6 +222,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -248,6 +273,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -264,6 +290,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -303,6 +330,7 @@ describe('Engines', () => {
       const broker = new Broker();
 
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
@@ -333,6 +361,7 @@ describe('Engines', () => {
 
     it('keeps engine services when resumed', async () => {
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker: new Broker(),
@@ -373,6 +402,7 @@ describe('Engines', () => {
 
     it('services factory function is called with engine scope (this)', async () => {
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker: new Broker(),
@@ -406,10 +436,10 @@ describe('Engines', () => {
 
     it('on resume services factory function is called after recover', async () => {
       const engines = new Engines({
+        name: 'event',
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker: new Broker(),
-        source,
         Services: function serviceFactory() {
           this.addService('foo', () => {});
         },
@@ -440,6 +470,48 @@ describe('Engines', () => {
 
       const ended = await end;
       expect(ended).to.have.property('token', 'foo-token');
+    });
+  });
+
+  describe('clone()', () => {
+    it('returns a new engine instance with same options', () => {
+      const engines = new Engines({
+        name: 'event',
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker: new Broker(),
+        Services: function serviceFactory() {
+          this.addService('foo', () => {});
+        },
+      });
+
+      const clone = engines.clone();
+
+      expect(clone).to.not.equal(engines);
+      expect(clone.name).to.equal(engines.name);
+      expect(clone.broker).to.equal(engines.broker);
+      expect(clone.adapter).to.equal(engines.adapter);
+      expect(clone.Services).to.equal(engines.Services);
+    });
+
+    it('with override options returns a new engine instance with overridden options', () => {
+      const engines = new Engines({
+        name: 'event',
+        idleTimeout: 1000,
+        adapter: new MemoryAdapter(),
+        broker: new Broker(),
+        Services: function serviceFactory() {
+          this.addService('foo', () => {});
+        },
+      });
+
+      const clone = engines.clone({ adapter: new MemoryAdapter(engines.adapter.storage) });
+
+      expect(clone).to.not.equal(engines);
+      expect(clone.name).to.equal(engines.name);
+      expect(clone.broker).to.equal(engines.broker);
+      expect(clone.adapter).be.instanceof(MemoryAdapter).and.not.to.equal(engines.adapter);
+      expect(clone.Services).to.equal(engines.Services);
     });
   });
 });

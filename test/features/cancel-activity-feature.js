@@ -15,16 +15,16 @@ Feature('cancel activity', () => {
         apps.balance(),
         'task-to-cancel',
         `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <process id="user-task" isExecutable="true">
-        <startEvent id="start" />
-        <sequenceFlow id="to-task" sourceRef="start" targetRef="task" />
-        <userTask id="task">
-          <multiInstanceLoopCharacteristics isSequential="false">
-            <loopCardinality>4</loopCardinality>
-          </multiInstanceLoopCharacteristics>
-        </userTask>
-      </process>
-    </definitions>`
+          <process id="user-task" isExecutable="true">
+            <startEvent id="start" />
+            <sequenceFlow id="to-task" sourceRef="start" targetRef="task" />
+            <userTask id="task">
+              <multiInstanceLoopCharacteristics isSequential="false">
+                <loopCardinality>4</loopCardinality>
+              </multiInstanceLoopCharacteristics>
+            </userTask>
+          </process>
+        </definitions>`
       );
     });
 
@@ -33,14 +33,14 @@ Feature('cancel activity', () => {
         apps.balance(),
         'timer-to-cancel',
         `<definitions id="Child" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-      <process id="user-task" isExecutable="true">
-        <startEvent id="start" name="Long running">
-          <timerEventDefinition>
-            <timeDuration xsi:type="tFormalExpression">P1Y</timeDuration>
-          </timerEventDefinition>
-        </startEvent>
-      </process>
-    </definitions>`
+          <process id="user-task" isExecutable="true">
+            <startEvent id="start" name="Long running">
+              <timerEventDefinition>
+                <timeDuration xsi:type="tFormalExpression">P1Y</timeDuration>
+              </timerEventDefinition>
+            </startEvent>
+          </process>
+        </definitions>`
       );
     });
 
