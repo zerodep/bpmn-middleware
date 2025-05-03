@@ -17,6 +17,8 @@ declare module 'bpmn-middleware' {
   interface BpmnMiddlewareOptions {
 	/** middleware name */
 	name?: string;
+	/** middleware endpoint base path, defaults to `{*splat}` */
+	basePath?: string;
 	adapter?: IStorageAdapter;
 	/** Options passed to each created engine */
 	engineOptions?: BpmnEngineOptions;
@@ -305,7 +307,7 @@ declare module 'bpmn-middleware' {
 		 * */
 		deleteStateByToken(req: import("express").Request<TokenParameter, void>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<void, BpmnMiddlewareResponseLocals>>;
 		/**
-		 * Stop all running engines
+		 * @internal Stop all running engines
 		 * */
 		internalStopAll(_: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
 		/**
@@ -599,6 +601,7 @@ declare module 'bpmn-middleware' {
 			idleTimeout: number;
 			engineCache: LRUCache<string, MiddlewareEngine, unknown> | LRUCache<string, import("bpmn-engine").Engine, unknown>;
 			name?: string;
+			basePath?: string;
 			adapter?: IStorageAdapter;
 			engineOptions?: import("bpmn-engine").BpmnEngineOptions;
 			broker?: import("smqp").Broker;

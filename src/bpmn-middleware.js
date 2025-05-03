@@ -67,7 +67,7 @@ export function BpmnEngineMiddleware(options) {
  * @type {import('connect').NextHandleFunction}
  * @param {import('express').Request} req
  */
-BpmnEngineMiddleware.prototype.init = function init(req, _, next) {
+BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
   if (this[kInitilialized]) return next();
   this[kInitilialized] = true;
 
@@ -498,8 +498,7 @@ BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateBy
 };
 
 /**
- * Stop all running engines
- * @internal
+ * @internal Stop all running engines
  * @param {import('express').Request} _
  * @param {import('express').Response} res
  */
@@ -540,7 +539,7 @@ BpmnEngineMiddleware.prototype.createEngine = async function createEngine(req, r
       throw new HttpError(`Deployment ${deploymentName} not found`, 404);
     }
 
-    const { variables, businessKey, caller, idleTimeout } = req.body;
+    const { variables, businessKey, caller, idleTimeout } = req.body || {};
 
     const deploymentSource = await this.adapter.fetch(STORAGE_TYPE_FILE, deployment[0].path);
 

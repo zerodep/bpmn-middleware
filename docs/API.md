@@ -21,6 +21,7 @@ Options:
 - [`Services`](#services-factory): Optional function to create engine `environment.services`
 - [`Scripts`](#scripts-factory): Optional function to create engine `environment.scripts` scripts
 - `name`: Optional middleware name, defaults to "default", used to separate middleware instances by creating a middleware broker exchange with said name
+- `basePath`: Optional middleware endpoint base path, defaults to `{*splat}`
 
 Returns Expressjs Router with extra properties:
 

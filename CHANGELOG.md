@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.17.1] - 2025-05-03
+
+- support express@5
+- introduce new optional `basePath` option to control middleware endpoint base path
+
 ## [0.17.0] - 2025-01-22
 
 Playing around with custom adapters requiring specials options per engine revealed some problems. An attempt to solve just that.

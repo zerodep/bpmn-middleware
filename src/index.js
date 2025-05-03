@@ -18,6 +18,8 @@ export * from './constants.js';
  * @param {import('types').BpmnMiddlewareOptions} options
  */
 export function bpmnEngineMiddleware(options) {
+  const basePath = options?.basePath || '{*splat}';
+
   const adapter = options?.adapter || new MemoryAdapter();
   const storage = new MulterAdapterStorage(adapter);
   const middleware = new BpmnEngineMiddleware({ autosaveEngineState: true, ...options, adapter });
@@ -31,23 +33,23 @@ export function bpmnEngineMiddleware(options) {
     initialized = true;
     return middleware.init(req, res, next);
   });
-  router.get('(*)?/version', middleware.getVersion.bind(middleware));
-  router.get('(*)?/deployment', middleware.getDeployment.bind(middleware));
-  router.post('(*)?/deployment/create', multer({ storage }).any(), middleware.create.bind(middleware));
-  router.post('(*)?/process-definition/:deploymentName/start', middleware.start());
-  router.post('(*)?/resume/:token', middleware.resume());
-  router.post('(*)?/signal/:token', middleware.signal());
-  router.post('(*)?/cancel/:token', middleware.cancel());
-  router.post('(*)?/fail/:token', middleware.fail());
-  router.get('(*)?/script/:deploymentName', middleware.preStart(), middleware.getScript.bind(middleware));
-  router.get('(*)?/timers/:deploymentName', middleware.preStart(), middleware.getDeploymentTimers.bind(middleware));
-  router.get('(*)?/running', middleware.addResponseLocals(), middleware.getRunning.bind(middleware));
-  router.get('(*)?/status/:token', middleware.addResponseLocals(), middleware.getStatusByToken.bind(middleware));
-  router.get('(*)?/status/:token/:activityId', middleware.addResponseLocals(), middleware.getActivityStatus.bind(middleware));
-  router.get('(*)?/state/:token', middleware.addResponseLocals(), middleware.getStateByToken.bind(middleware));
-  router.delete('(*)?/state/:token', json(), middleware.addResponseLocals(), middleware.deleteStateByToken.bind(middleware));
-  router.delete('(*)?/internal/stop', middleware.addResponseLocals(), middleware.internalStopAll.bind(middleware));
-  router.delete('(*)?/internal/stop/:token', middleware.addResponseLocals(), middleware.internalStopByToken.bind(middleware));
+  router.get(basePath + '/version', middleware.getVersion.bind(middleware));
+  router.get(basePath + '/deployment', middleware.getDeployment.bind(middleware));
+  router.post(basePath + '/deployment/create', multer({ storage }).any(), middleware.create.bind(middleware));
+  router.post(basePath + '/process-definition/:deploymentName/start', middleware.start());
+  router.post(basePath + '/resume/:token', middleware.resume());
+  router.post(basePath + '/signal/:token', middleware.signal());
+  router.post(basePath + '/cancel/:token', middleware.cancel());
+  router.post(basePath + '/fail/:token', middleware.fail());
+  router.get(basePath + '/script/:deploymentName', middleware.preStart(), middleware.getScript.bind(middleware));
+  router.get(basePath + '/timers/:deploymentName', middleware.preStart(), middleware.getDeploymentTimers.bind(middleware));
+  router.get(basePath + '/running', middleware.addResponseLocals(), middleware.getRunning.bind(middleware));
+  router.get(basePath + '/status/:token', middleware.addResponseLocals(), middleware.getStatusByToken.bind(middleware));
+  router.get(basePath + '/status/:token/:activityId', middleware.addResponseLocals(), middleware.getActivityStatus.bind(middleware));
+  router.get(basePath + '/state/:token', middleware.addResponseLocals(), middleware.getStateByToken.bind(middleware));
+  router.delete(basePath + '/state/:token', json(), middleware.addResponseLocals(), middleware.deleteStateByToken.bind(middleware));
+  router.delete(basePath + '/internal/stop', middleware.addResponseLocals(), middleware.internalStopAll.bind(middleware));
+  router.delete(basePath + '/internal/stop/:token', middleware.addResponseLocals(), middleware.internalStopByToken.bind(middleware));
 
   Object.defineProperties(router, {
     engines: {

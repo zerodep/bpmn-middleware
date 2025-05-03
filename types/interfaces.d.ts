@@ -13,6 +13,8 @@ export enum StorageType {
 export interface BpmnMiddlewareOptions {
   /** middleware name */
   name?: string;
+  /** middleware endpoint base path, defaults to `{*splat}` */
+  basePath?: string;
   adapter?: IStorageAdapter;
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;

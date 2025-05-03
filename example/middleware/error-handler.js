@@ -9,7 +9,7 @@ import { HttpError } from '../../src/index.js';
  */
 export function errorHandler(err, _req, res, next) {
   /* c8 ignore next 1 */
-  if (!(err instanceof Error)) return next();
+  if (!(err instanceof Error) || res.headersSent) return next();
   if (err instanceof HttpError) return res.status(err.statusCode).send({ message: err.message });
   res.status(502).send({ message: err.message });
 }

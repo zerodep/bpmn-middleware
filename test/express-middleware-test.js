@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import * as ck from 'chronokinesis';
 import express from 'express';
+import express4 from 'express-4';
 import FormData from 'form-data';
 import request from 'supertest';
 import { LRUCache } from 'lru-cache';
@@ -212,9 +213,9 @@ describe('express-middleware', () => {
 
       const response = await request(app)
         .post('/rest/process-definition/test-deploy-start/start')
-        .expect(201)
         .expect('content-type', 'application/json; charset=utf-8');
 
+      expect(response.statusCode, response.text).to.equal(201);
       expect(response.body, 'token as id').to.have.property('id').that.is.ok;
     });
 
@@ -689,8 +690,56 @@ describe('express-middleware', () => {
       await request(parentApp).get('/rest/version').expect(404);
     });
 
+    it('respects basePath option', async () => {
+      const parentApp = express();
+      parentApp.use(bpmnEngineMiddleware({ basePath: '/bpmn2' }));
+      parentApp.use(errorHandler);
+
+      const { version } = await packageInfo;
+      await request(parentApp).get('/bpmn2/version').expect(200).expect({ version });
+
+      await request(parentApp).get('/rest/version').expect(404);
+    });
+
     it('respects no route but responds to all suffixed routes', async () => {
       const parentApp = express();
+      parentApp.use(bpmnEngineMiddleware());
+      parentApp.use(errorHandler);
+
+      const { version } = await packageInfo;
+      await request(parentApp).get('/version').expect(200).expect({ version });
+
+      await request(parentApp).get('/rest/version').expect({ version });
+
+      await request(parentApp).get('/rest/bpmn/version').expect({ version });
+    });
+  });
+
+  describe('routing in express@4', () => {
+    it('respects parent route', async () => {
+      const parentApp = express4();
+      parentApp.use('/bpmn', bpmnEngineMiddleware());
+      parentApp.use(errorHandler);
+
+      const { version } = await packageInfo;
+      await request(parentApp).get('/bpmn/version').expect(200).expect({ version });
+
+      await request(parentApp).get('/rest/version').expect(404);
+    });
+
+    it('respects basePath option', async () => {
+      const parentApp = express4();
+      parentApp.use(bpmnEngineMiddleware({ basePath: '/bpmn2' }));
+      parentApp.use(errorHandler);
+
+      const { version } = await packageInfo;
+      await request(parentApp).get('/bpmn2/version').expect(200).expect({ version });
+
+      await request(parentApp).get('/rest/version').expect(404);
+    });
+
+    it('respects no route but responds to all suffixed routes', async () => {
+      const parentApp = express4();
       parentApp.use(bpmnEngineMiddleware());
       parentApp.use(errorHandler);
 
