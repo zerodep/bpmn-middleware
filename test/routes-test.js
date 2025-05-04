@@ -28,19 +28,19 @@ describe('routes', () => {
   after(() => apps.stop());
   afterEach(ck.reset);
 
-  describe('GET (*)?/version', () => {
+  describe('GET (*splat)/version', () => {
     it('returns package version', () => {
       return apps.request().get('/rest/version').expect(200).expect({ version: packageInfo.version });
     });
   });
 
-  describe('GET (*)?/deployment', () => {
+  describe('GET (*splat)/deployment', () => {
     it('returns package name', () => {
       return apps.request().get('/rest/deployment').expect(200).expect({ name: packageInfo.name });
     });
   });
 
-  describe('POST (*)?/deployment/create', () => {
+  describe('POST (*splat)/deployment/create', () => {
     it('returns deployment', async () => {
       ck.freeze();
 
@@ -114,7 +114,7 @@ describe('routes', () => {
     });
   });
 
-  describe('POST (*)?/process-definition/:deploymentName/start', () => {
+  describe('POST (*splat)/process-definition/:deploymentName/start', () => {
     it('returns 404 if deployment is not found', () => {
       return apps
         .request()
@@ -152,7 +152,7 @@ describe('routes', () => {
     });
   });
 
-  describe('GET (*)?/running', () => {
+  describe('GET (*splat)/running', () => {
     it('returns running engines status but not engine state', async () => {
       await apps.request().post('/rest/process-definition/test-process/start').expect(201);
 
@@ -175,7 +175,7 @@ describe('routes', () => {
     });
   });
 
-  describe('GET (*)?/status/:token', () => {
+  describe('GET (*splat)/status/:token', () => {
     it('returns engine status but not engine state', async () => {
       const { body } = await apps.request().post('/rest/process-definition/test-process/start').expect(201);
 
@@ -207,7 +207,7 @@ describe('routes', () => {
     });
   });
 
-  describe('GET (*)?/status/:token/:activityId', () => {
+  describe('GET (*splat)/status/:token/:activityId', () => {
     it('returns 404 if token was not found', () => {
       return apps.request().get('/rest/status/no-token/activity-id').expect(404);
     });
@@ -219,7 +219,7 @@ describe('routes', () => {
     });
   });
 
-  describe('POST (*)?/resume/:token', () => {
+  describe('POST (*splat)/resume/:token', () => {
     it('resume a corrupt state returns 502', async () => {
       class VolatileAdapter extends MemoryAdapter {
         fetch(type, key, options) {
@@ -239,7 +239,7 @@ describe('routes', () => {
     });
   });
 
-  describe('POST (*)?/signal/:token', () => {
+  describe('POST (*splat)/signal/:token', () => {
     it('signal a corrupt state returns 502', async () => {
       class VolatileAdapter extends MemoryAdapter {
         fetch(type, key, options) {
@@ -259,7 +259,7 @@ describe('routes', () => {
     });
   });
 
-  describe('POST (*)?/cancel/:token', () => {
+  describe('POST (*splat)/cancel/:token', () => {
     it('cancel a corrupt state returns 502', async () => {
       class VolatileAdapter extends MemoryAdapter {
         fetch(type, key, options) {
@@ -279,13 +279,13 @@ describe('routes', () => {
     });
   });
 
-  describe('POST (*)?/fail/:token', () => {
+  describe('POST (*splat)/fail/:token', () => {
     it('returns 404 if token was not found', () => {
       return apps.request().post('/rest/fail/no-token').send({}).expect(404);
     });
   });
 
-  describe('GET (*)?/state/:token', () => {
+  describe('GET (*splat)/state/:token', () => {
     it('returns 404 if token was not found', () => {
       return apps.request().get('/rest/state/no-token').expect(404);
     });
@@ -314,19 +314,19 @@ describe('routes', () => {
     });
   });
 
-  describe('DELETE (*)?/internal/stop', () => {
+  describe('DELETE (*splat)/internal/stop', () => {
     it('responds', () => {
       return request(apps.balance()).delete('/rest/internal/stop').expect(204);
     });
   });
 
-  describe('DELETE (*)?/internal/stop/:token', () => {
+  describe('DELETE (*splat)/internal/stop/:token', () => {
     it('responds', () => {
       return request(apps.balance()).delete('/rest/internal/stop/token').expect(204);
     });
   });
 
-  describe('GET (*)?/timers/:deploymentName', () => {
+  describe('GET (*splat)/timers/:deploymentName', () => {
     it('returns not found if deployment is not found', () => {
       return apps.request().get('/rest/timers/not-deployed').expect(404);
     });

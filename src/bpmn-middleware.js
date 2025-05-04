@@ -184,10 +184,10 @@ BpmnEngineMiddleware.prototype.addEngineLocals = function addEngineLocals(req, r
 /**
  * Get package version
  * @param {import('express').Request} _req
- * @param {import('express').Response<any, {version:string}>} res
+ * @param {import('express').Response<{version:string}, {version:string}>} res
  */
 BpmnEngineMiddleware.prototype.getVersion = function getVersion(_req, res) {
-  return res.send({ version: packageInfo.version });
+  res.send({ version: packageInfo.version });
 };
 
 /**
@@ -196,7 +196,7 @@ BpmnEngineMiddleware.prototype.getVersion = function getVersion(_req, res) {
  * @param {import('express').Response<{name:string}>} res
  */
 BpmnEngineMiddleware.prototype.getDeployment = function getDeployment(_req, res) {
-  return res.send({ name: packageInfo.name });
+  res.send({ name: packageInfo.name });
 };
 
 /**
@@ -214,7 +214,7 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
 
     await this.adapter.upsert(STORAGE_TYPE_DEPLOYMENT, deploymentName, req.files);
 
-    return res.status(201).send({
+    res.status(201).send({
       id: deploymentName,
       deploymentTime: new Date(),
       deployedProcessDefinitions: { [deploymentName]: { id: deploymentName } },
@@ -271,7 +271,7 @@ export function ${slugify(engine.name, script.name)}(excutionContext, next) {
     }
 
     res.set('content-type', 'text/javascript');
-    return res.send(payload);
+    res.send(payload);
   } catch (err) {
     next(err);
   }
@@ -318,7 +318,7 @@ BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymen
       }
     }
 
-    return res.send({ timers: result });
+    res.send({ timers: result });
   } catch (err) {
     next(err);
   }
@@ -333,7 +333,7 @@ BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymen
 BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, next) {
   try {
     const result = await res.locals.engines.getRunning(req.query);
-    return res.send(result);
+    res.send(result);
   } catch (err) {
     next(err);
   }
@@ -350,7 +350,7 @@ BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToke
     const token = req.params.token;
     const status = await res.locals.engines.getStatusByToken(token, req.query);
     if (!status) throw new HttpError(`Token ${token} not found`, 404);
-    return res.send(status);
+    res.send(status);
   } catch (err) {
     next(err);
   }
@@ -394,7 +394,7 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
 
     await sync;
 
-    return res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
+    res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
   } catch (err) {
     next(err);
   }
@@ -418,7 +418,7 @@ BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(re
 
     await sync;
 
-    return res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
+    res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
   } catch (err) {
     next(err);
   }
@@ -434,7 +434,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
   try {
     const { token, engines, listener, executeOptions } = res.locals;
     await engines.resumeAndFailActivity(token, listener, req.body, executeOptions);
-    return res.send(engines.getEngineStatusByToken(token));
+    res.send(engines.getEngineStatusByToken(token));
   } catch (err) {
     next(err);
   }
@@ -454,11 +454,14 @@ BpmnEngineMiddleware.prototype.resumeByToken = async function resumeByToken(_req
 
     const engine = await engines.resume(token, listener, executeOptions, sync?.callback);
 
-    if (!sync) return res.send(engines.getEngineStatusByToken(token));
+    if (!sync) {
+      res.send(engines.getEngineStatusByToken(token));
+      return;
+    }
 
     await sync;
 
-    return res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
+    res.send({ ...engines.getEngineStatus(engine), result: engine.environment.output });
   } catch (err) {
     next(err);
   }
@@ -475,7 +478,7 @@ BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(
     const token = req.params.token;
     const state = await res.locals.engines.getStateByToken(token);
     if (!state) throw new HttpError(`State with token ${token} not found`, 404);
-    return res.send(state);
+    res.send(state);
   } catch (err) {
     next(err);
   }
@@ -491,7 +494,7 @@ BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateBy
   try {
     const token = req.params.token;
     await res.locals.engines.deleteByToken(token, req.body);
-    return res.status(204).send();
+    res.sendStatus(204);
   } catch (err) {
     next(err);
   }
@@ -504,7 +507,7 @@ BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateBy
  */
 BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res) {
   this.engines.stopAll();
-  return res.status(204).send();
+  res.sendStatus(204);
 };
 
 /**
@@ -516,7 +519,7 @@ BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res
 BpmnEngineMiddleware.prototype.internalStopByToken = function internalStopByToken(req, res) {
   const token = req.params.token;
   this.engines.stopByToken(token);
-  return res.status(204).send();
+  res.sendStatus(204);
 };
 
 /**

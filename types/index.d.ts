@@ -234,23 +234,21 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Get package version
 		 * */
-		getVersion(_req: import("express").Request, res: import("express").Response<any, {
+		getVersion(_req: import("express").Request, res: import("express").Response<{
 			version: string;
-		}>): import("express").Response<any, {
+		}, {
 			version: string;
-		}>;
+		}>): void;
 		/**
 		 * Get deployment/package name
 		 * */
 		getDeployment(_req: import("express").Request, res: import("express").Response<{
 			name: string;
-		}>): import("express").Response<{
-			name: string;
-		}, Record<string, any>>;
+		}>): void;
 		/**
 		 * Create deployment
 		 * */
-		create(req: import("express").Request, res: import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>>;
+		create(req: import("express").Request, res: import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Run deployment
 		 * */
@@ -258,23 +256,21 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Start deployment
 		 * */
-		getScript(_req: import("express").Request<StartDeployment>, res: import("express").Response<string, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<string, BpmnMiddlewareResponseLocals>>;
+		getScript(_req: import("express").Request<StartDeployment>, res: import("express").Response<string, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Start deployment
 		 * */
 		getDeploymentTimers(_req: import("express").Request<StartDeployment>, res: import("express").Response<{
 			timers: ParsedTimerResult[];
-		}>, next: import("express").NextFunction): Promise<import("express").Response<{
-			timers: ParsedTimerResult[];
-		}, Record<string, any>>>;
+		}>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Get running engines
 		 * */
-		getRunning(req: import("express").Request<StorageQuery>, res: import("express").Response<Awaited<ReturnType<Engines["getRunning"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineState[], BpmnMiddlewareResponseLocals>>;
+		getRunning(req: import("express").Request<StorageQuery>, res: import("express").Response<Awaited<ReturnType<Engines["getRunning"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Get engine status by token
 		 * */
-		getStatusByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStatusByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		getStatusByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStatusByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Get engine activity status
 		 * */
@@ -293,27 +289,27 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Fail activity
 		 * */
-		failActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		failActivity(req: import("express").Request<TokenParameter, SignalBody>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Resume engine by token
 		 * */
-		resumeByToken(_req: import("express").Request<TokenParameter, any, ExecuteOptions>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>>;
+		resumeByToken(_req: import("express").Request<TokenParameter, any, ExecuteOptions>, res: import("express").Response<ReturnType<Engines["getEngineStatusByToken"]>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Get engine state by token
 		 * */
-		getStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStateByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<MiddlewareEngineState, BpmnMiddlewareResponseLocals>>;
+		getStateByToken(req: import("express").Request<TokenParameter>, res: import("express").Response<Awaited<ReturnType<Engines["getStateByToken"]>>, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * Delete engine by token
 		 * */
-		deleteStateByToken(req: import("express").Request<TokenParameter, void>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<import("express").Response<void, BpmnMiddlewareResponseLocals>>;
+		deleteStateByToken(req: import("express").Request<TokenParameter, void>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction): Promise<void>;
 		/**
 		 * @internal Stop all running engines
 		 * */
-		internalStopAll(_: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
+		internalStopAll(_: import("express").Request, res: import("express").Response): void;
 		/**
 		 * Stop engine by token
 		 * */
-		internalStopByToken(req: import("express").Request, res: import("express").Response): import("express").Response<any, Record<string, any>>;
+		internalStopByToken(req: import("express").Request, res: import("express").Response): void;
 		/**
 		 * Internal create engine middleware
 		 * */

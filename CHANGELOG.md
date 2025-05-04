@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+## [0.17.2] - 2025-05-04
+
+- fix complaining type declaration by NOT returning in route functions
+
 ## [0.17.1] - 2025-05-03
 
-- support express@5
+- support express@5, replace wildcard route `(*)?` with `{*splat}`, and apparently `req.body` can be undefined
 - introduce new optional `basePath` option to control middleware endpoint base path
 
 ## [0.17.0] - 2025-01-22

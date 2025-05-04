@@ -100,25 +100,25 @@ const middleware = bpmnEngineMiddleware({
 
 ## Routes
 
-- [`GET (*)?/version`](#get-version)
-- [`GET (*)?/deployment`](#get-deployment)
-- [`POST (*)?/deployment/create`](#post-deploymentcreate)
-- [`POST (*)?/process-definition/:deploymentName/start`](#post-process-definitiondeploymentnamestart)
-- [`GET (*)?/script/:deploymentName`](#get-scriptdeploymentname)
-- [`GET (*)?/timers/:deploymentName`](#get-timersdeploymentname)
-- [`GET (*)?/running`](#get-running)
-- [`GET (*)?/status/:token`](#get-statustoken)
-- [`GET (*)?/status/:token/:activityId`](#get-statustokenactivityid)
-- [`POST (*)?/resume/:token`](#post-resumetoken)
-- [`POST (*)?/signal/:token`](#post-signaltoken)
-- [`POST (*)?/cancel/:token`](#post-canceltoken)
-- [`POST (*)?/fail/:token`](#post-failtoken)
-- [`GET (*)?/state/:token`](#get-statetoken)
-- [`DELETE (*)?/state/:token`](#delete-statetoken)
-- [`DELETE (*)?/internal/stop`](#delete-internalstop)
-- [`DELETE (*)?/internal/stop/:token`](#delete-internalstoptoken)
+- [`GET {*splat}/version`](#get-splatversion)
+- [`GET {*splat}/deployment`](#get-splatdeployment)
+- [`POST {*splat}/deployment/create`](#post-splatdeploymentcreate)
+- [`POST {*splat}/process-definition/:deploymentName/start`](#post-splatprocess-definitiondeploymentnamestart)
+- [`GET {*splat}/script/:deploymentName`](#get-splatscriptdeploymentname)
+- [`GET {*splat}/timers/:deploymentName`](#get-splattimersdeploymentname)
+- [`GET {*splat}/running`](#get-splatrunning)
+- [`GET {*splat}/status/:token`](#get-splatstatustoken)
+- [`GET {*splat}/status/:token/:activityId`](#get-splatstatustokenactivityid)
+- [`POST {*splat}/resume/:token`](#post-splatresumetoken)
+- [`POST {*splat}/signal/:token`](#post-splatsignaltoken)
+- [`POST {*splat}/cancel/:token`](#post-splatcanceltoken)
+- [`POST {*splat}/fail/:token`](#post-splatfailtoken)
+- [`GET {*splat}/state/:token`](#get-splatstatetoken)
+- [`DELETE {*splat}/state/:token`](#delete-splatstatetoken)
+- [`DELETE {*splat}/internal/stop`](#delete-splatinternalstop)
+- [`DELETE {*splat}/internal/stop/:token`](#delete-splatinternalstoptoken)
 
-### `GET (*)?/version`
+### `GET {*splat}/version`
 
 Get app version.
 
@@ -126,7 +126,7 @@ Response body:
 
 - `version`: string, resolved from `process.cwd() + '/package.json`
 
-### `GET (*)?/deployment`
+### `GET {*splat}/deployment`
 
 Get app name.
 
@@ -134,7 +134,7 @@ Response body:
 
 - `name`: string, resolved from `process.cwd() + '/package.json`
 
-### `POST (*)?/deployment/create`
+### `POST {*splat}/deployment/create`
 
 Create deployment by passing multipart form with BPMN diagram file.
 
@@ -153,7 +153,7 @@ Response body:
   - `[deploymentName]`: object, key as deployment name
     - `id`: string, same as deployment name
 
-### `POST (*)?/process-definition/:deploymentName/start`
+### `POST {*splat}/process-definition/:deploymentName/start`
 
 Start deployed processes.
 
@@ -179,7 +179,7 @@ Response body:
 
 - `id`: string, unique execution token
 
-### `GET (*)?/script/:deploymentName`
+### `GET {*splat}/script/:deploymentName`
 
 Get all declared scripts for deployment
 
@@ -188,7 +188,7 @@ Response:
 - `content-type: text/javascript`
 - `body`: module script, exported javascript functions where function name non-word characters are replaced with `_`
 
-### `GET (*)?/timers/:deploymentName`
+### `GET {*splat}/timers/:deploymentName`
 
 Get all declared timers for deployment
 
@@ -208,7 +208,7 @@ Response:
   - `repeat`: optional repeat number
   - `message`: error message if not successfully parsed
 
-### `GET (*)?/running`
+### `GET {*splat}/running`
 
 Get all running instances.
 
@@ -220,15 +220,15 @@ Response body:
   - `state`: string, engine status, `idle`, `running`, `stopped`, or `error`
   - `activityStatus`: string, running activity status, `idle`, `executing`, `timer`, or `wait`
 
-### `GET (*)?/status/:token`
+### `GET {*splat}/status/:token`
 
 Get process status
 
-### `GET (*)?/status/:token/:activityId`
+### `GET {*splat}/status/:token/:activityId`
 
 Get process activity status
 
-### `POST (*)?/resume/:token`
+### `POST {*splat}/resume/:token`
 
 Resume process run
 
@@ -240,7 +240,7 @@ Resume process run
 
 Any other query parametes will also be passed as resume options.
 
-### `POST (*)?/signal/:token`
+### `POST {*splat}/signal/:token`
 
 Signal process activity.
 
@@ -258,7 +258,7 @@ Any other query parametes will also be passed as resume options.
 - `executionId`: optional activity execution id
 - `message`: optional message to signal activity with
 
-### `POST (*)?/cancel/:token`
+### `POST {*splat}/cancel/:token`
 
 Cancel process activity.
 
@@ -273,7 +273,7 @@ Any other query parametes will also be passed as resume options.
 - `id`: activity id
 - `executionId`: optional activity execution id
 
-### `POST (*)?/fail/:token`
+### `POST {*splat}/fail/:token`
 
 Fail process activity.
 
@@ -289,22 +289,22 @@ Any other query parametes will also be passed as resume options.
 - `executionId`: optional activity execution id
 - `message`: optional message to send to activity
 
-### `GET (*)?/state/:token`
+### `GET {*splat}/state/:token`
 
 Get process engine state.
 
-### `DELETE (*)?/state/:token`
+### `DELETE {*splat}/state/:token`
 
 Delete process engine state.
 
 **Request body:**
 Is forwarded to adapter as options
 
-### `DELETE (*)?/internal/stop`
+### `DELETE {*splat}/internal/stop`
 
 Stop all running instances on this specific app instance.
 
-### `DELETE (*)?/internal/stop/:token`
+### `DELETE {*splat}/internal/stop/:token`
 
 Stop running instances by token on this specific app instance.
 
