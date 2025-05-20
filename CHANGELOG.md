@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.18.0] - 2025-05-20
+
+- upgrade [multer@2](https://www.npmjs.com/package/multer) a middleware for handling multipart/form-data
+
 ## [0.17.2] - 2025-05-04
 
 - fix complaining type declaration by NOT returning in route functions

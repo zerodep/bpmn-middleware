@@ -754,6 +754,82 @@ Feature('custom routes', () => {
         expect(response.body).to.have.property('result').that.deep.equal({ foo: 'bar' });
       });
     });
+
+    describe('a process that throws due to some error', () => {
+      Given('a process with a volatile task', async () => {
+        await addSource(
+          adapter,
+          'volatile-task-process',
+          `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="volatile-process" isExecutable="true">
+              <startEvent id="start" />
+              <sequenceFlow id="to-task1" sourceRef="start" targetRef="task1" />
+              <scriptTask id="task1" scriptFormat="javascript">
+                <script>
+                  next(new Error('foo'));
+                </script>
+              </scriptTask>
+              <sequenceFlow id="to-end" sourceRef="task1" targetRef="end" />
+              <endEvent id="end" />
+            </process>
+          </definitions>`
+        );
+      });
+
+      let app;
+      let fail;
+      When('process is started on first instance', async () => {
+        app = apps.balance();
+        fail = testHelpers.waitForProcess(app, 'volatile-task-process').error();
+        const { body } = await request(app).post(`/api/v1/se/process-definition/volatile-task-process/start`).expect(201);
+        token = body.id;
+      });
+
+      Then('run fails', async () => {
+        await fail;
+      });
+
+      Then('run state is errored', async () => {
+        const response = await apps.request().get(`/api/v1/se/status/${token}`);
+
+        expect(response.statusCode, response.text).to.equal(200);
+        expect(response.body).to.have.property('state', 'error');
+      });
+
+      Given('a process with a call activity addressing volatile task', async () => {
+        await addSource(
+          adapter,
+          'call-volatile-task-process',
+          `<definitions id="Def_1" xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <process id="call-volatile-process" isExecutable="true">
+              <startEvent id="start" />
+              <sequenceFlow id="to-call" sourceRef="start" targetRef="call" />
+              <callActivity id="call-activity" calledElement="deployment:volatile-task-process" />
+              <sequenceFlow id="to-end" sourceRef="call" targetRef="end" />
+              <endEvent id="end" />
+            </process>
+          </definitions>`
+        );
+      });
+
+      When('process is started on first instance', async () => {
+        app = apps.balance();
+        fail = testHelpers.waitForProcess(app, 'call-volatile-task-process').error();
+        const { body } = await request(app).post(`/api/v1/se/process-definition/call-volatile-task-process/start`).expect(201);
+        token = body.id;
+      });
+
+      Then('run fails', async () => {
+        await fail;
+      });
+
+      Then('run state is errored', async () => {
+        const response = await apps.request().get(`/api/v1/se/status/${token}`);
+
+        expect(response.statusCode, response.text).to.equal(200);
+        expect(response.body).to.have.property('state', 'error');
+      });
+    });
   });
 });
 

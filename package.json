@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "lru-cache": "^11.0.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^2.0.0"
   },
   "peerDependencies": {
     "@0dep/piso": "2.x",
