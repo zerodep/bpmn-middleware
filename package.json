@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -29,8 +29,9 @@
   },
   "keywords": [
     "bpmn",
-    "middleware",
+    "bpmn-engine",
     "express",
+    "middleware",
     "call activity"
   ],
   "author": {
@@ -48,12 +49,12 @@
     "@types/bpmn-moddle": "^5.1.11",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.1",
-    "@types/multer": "^1.4.11",
+    "@types/multer": "^2.0.0",
     "@types/supertest": "^6.0.2",
     "c8": "^10.1.2",
     "camunda-bpmn-moddle": "^7.0.1",
     "chai": "^5.1.1",
-    "chronokinesis": "^6.0.0",
+    "chronokinesis": "^7.0.0",
     "dts-buddy": "^0.6.0",
     "eslint": "^9.7.0",
     "express": "^5.1.0",
@@ -73,7 +74,7 @@
     "multer": "^2.0.0"
   },
   "peerDependencies": {
-    "@0dep/piso": "2.x",
+    "@0dep/piso": ">=2",
     "bpmn-elements": ">=17",
     "bpmn-engine": ">=15",
     "debug": "4.x",

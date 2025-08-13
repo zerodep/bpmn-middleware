@@ -1,5 +1,5 @@
 import request from 'supertest';
-import ck from 'chronokinesis';
+import * as ck from 'chronokinesis';
 
 import { createDeployment, getExampleApp, getResource, waitForProcess, getExampleResource } from '../helpers/test-helpers.js';
 

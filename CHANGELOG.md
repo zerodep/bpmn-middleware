@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.18.1] - 2025-08-13
+
+- allow @0dep/piso peer dependency above and beyond v2
+
 ## [0.18.0] - 2025-05-20
 
 - upgrade [multer@2](https://www.npmjs.com/package/multer) a middleware for handling multipart/form-data
