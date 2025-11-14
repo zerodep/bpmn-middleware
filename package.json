@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -45,7 +45,7 @@
   "homepage": "https://github.com/zerodep/bpmn-middleware#readme",
   "devDependencies": {
     "@onify/flow-extensions": "^9.0.0",
-    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-commonjs": "^29.0.0",
     "@types/bpmn-moddle": "^5.1.11",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.1",
@@ -67,7 +67,7 @@
     "prettier": "^3.3.3",
     "rollup": "^4.17.2",
     "supertest": "^7.0.0",
-    "texample": "^0.0.8"
+    "texample": "^0.1.0"
   },
   "dependencies": {
     "lru-cache": "^11.0.0",

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.18.2] - 2025-11-13
+
+- pedigree npm release
+
 ## [0.18.1] - 2025-08-13
 
 - allow @0dep/piso peer dependency above and beyond v2
