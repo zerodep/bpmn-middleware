@@ -1,22 +1,18 @@
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import express from 'express';
+import { bpmnEngineMiddleware, MemoryAdapter } from 'bpmn-middleware';
 import { Broker } from 'smqp';
 import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
-import { bpmnEngineMiddleware, MemoryAdapter } from '../src/index.js';
 import { factory as ScriptsFactory } from './middleware-scripts.js';
 import { basicAuth, authorize, addUser } from './middleware/auth.js';
 import { runToEnd, signal } from './middleware/custom.js';
 import { errorHandler } from './middleware/error-handler.js';
+import camunda from 'camunda-bpmn-moddle/resources/camunda.json' with { type: 'json' };
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
-
-const nodeRequire = createRequire(import.meta.url);
-
-const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
 
 const elements = {
   ...bpmnElements,

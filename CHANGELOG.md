@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [0.18.3] - 2026-03-04
+
+- minor type adjustment
+- bump dev deps
+
 ## [0.18.2] - 2025-11-13
 
 - pedigree npm release

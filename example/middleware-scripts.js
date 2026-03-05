@@ -1,6 +1,6 @@
 import path from 'node:path';
+import { HttpError, STORAGE_TYPE_FILE } from 'bpmn-middleware';
 import { FlowScripts, JavaScriptResource } from '@onify/flow-extensions/FlowScripts';
-import { HttpError, STORAGE_TYPE_FILE } from '../src/index.js';
 
 const allowedMimesPattern = /^(application|text)\/(node|javascript|octet-stream)/;
 

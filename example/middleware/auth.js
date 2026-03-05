@@ -1,5 +1,5 @@
 import { timingSafeEqual, randomUUID, randomBytes, pbkdf2 } from 'node:crypto';
-import { HttpError } from '../../src/index.js';
+import { HttpError } from 'bpmn-middleware';
 
 /**
  * Basic auth middleware

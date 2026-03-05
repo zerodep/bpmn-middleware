@@ -1,6 +1,6 @@
 import fs, { promises as fsp } from 'node:fs';
 import { basename, join } from 'node:path';
-import { MemoryAdapter, STORAGE_TYPE_FILE, STORAGE_TYPE_DEPLOYMENT, HttpError } from '../../src/index.js';
+import { MemoryAdapter, STORAGE_TYPE_FILE, STORAGE_TYPE_DEPLOYMENT, HttpError } from 'bpmn-middleware';
 import { LRUCache } from 'lru-cache';
 
 export class CustomAdapter extends MemoryAdapter {

@@ -1,8 +1,7 @@
 import { randomInt } from 'node:crypto';
-import { createRequire } from 'node:module';
 import { setImmediate } from 'node:timers/promises';
 import fs from 'node:fs';
-import path from 'node:path';
+import { basename, join } from 'node:path';
 
 import FormData from 'form-data';
 import { extensions, extendFn, OnifySequenceFlow, OnifyTimerEventDefinition } from '@onify/flow-extensions';
@@ -12,12 +11,9 @@ import request from 'supertest';
 import { Broker } from 'smqp';
 import { LRUCache } from 'lru-cache';
 
-import { bpmnEngineMiddleware, MemoryAdapter, HttpError, MIDDLEWARE_DEFAULT_EXCHANGE } from '../../src/index.js';
+import { bpmnEngineMiddleware, MemoryAdapter, HttpError, MIDDLEWARE_DEFAULT_EXCHANGE } from 'bpmn-middleware';
 import debug from '../../src/debug.js';
-
-const nodeRequire = createRequire(import.meta.url);
-
-const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
+import camunda from 'camunda-bpmn-moddle/resources/camunda.json' with { type: 'json' };
 
 const elements = {
   ...bpmnElements,
@@ -149,7 +145,7 @@ export async function createDeploymentForm(name, source, additionalFiles) {
 
   if (additionalFiles?.length) {
     for (const filePath of additionalFiles) {
-      const filename = path.basename(filePath);
+      const filename = basename(filePath);
       const content = await fs.promises.readFile(filePath);
       form.append(filename, content, { filename, contentType: 'application/octet-stream' });
     }
@@ -369,12 +365,12 @@ export function errorHandler(err, _req, res, next) {
  * @param {string} name
  */
 export function getResource(name) {
-  return fs.readFileSync(path.join('./test/resources/', name));
+  return fs.readFileSync(join('./test/resources/', name));
 }
 
 /**
  * @param {string} name
  */
 export function getExampleResource(name) {
-  return fs.readFileSync(path.join('./example/processes/', name));
+  return fs.readFileSync(join('./example/processes/', name));
 }

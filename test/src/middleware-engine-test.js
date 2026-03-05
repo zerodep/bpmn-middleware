@@ -1,6 +1,6 @@
 import * as ck from 'chronokinesis';
 
-import { MiddlewareEngine, DEFAULT_IDLE_TIMER } from '../../src/index.js';
+import { MiddlewareEngine, DEFAULT_IDLE_TIMER } from 'bpmn-middleware';
 import { fakeTimers } from '../helpers/test-helpers.js';
 
 const source = `<?xml version="1.0" encoding="UTF-8"?>

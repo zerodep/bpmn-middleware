@@ -1,5 +1,5 @@
+import { STORAGE_TYPE_FILE } from 'bpmn-middleware';
 import { CustomAdapter } from '../../../example/adapters/custom-adapter.js';
-import { STORAGE_TYPE_FILE } from '../../../src/index.js';
 
 describe('custom adapter', () => {
   it('throws if file is not found', async () => {

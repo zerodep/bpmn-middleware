@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { STORAGE_TYPE_STATE } from '../../src/index.js';
+import { STORAGE_TYPE_STATE } from 'bpmn-middleware';
 
 import {
   createDeployment,

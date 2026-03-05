@@ -1,5 +1,5 @@
+import { MemoryAdapter } from 'bpmn-middleware';
 import * as testHelpers from '../helpers/test-helpers.js';
-import { MemoryAdapter } from '../../src/index.js';
 
 const timersResource = testHelpers.getResource('timers.bpmn');
 

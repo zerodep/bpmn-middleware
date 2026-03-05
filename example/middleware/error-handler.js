@@ -1,4 +1,4 @@
-import { HttpError } from '../../src/index.js';
+import { HttpError } from 'bpmn-middleware';
 
 /**
  * Error handler

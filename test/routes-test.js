@@ -1,13 +1,11 @@
-import { createRequire } from 'node:module';
+import { MemoryAdapter, STORAGE_TYPE_STATE, STORAGE_TYPE_FILE } from 'bpmn-middleware';
+
 import FormData from 'form-data';
 import request from 'supertest';
 import * as ck from 'chronokinesis';
 
+import pkg from '../package.json' with { type: 'json' };
 import { createDeployment, getAppWithExtensions, horizontallyScaled } from './helpers/test-helpers.js';
-import { MemoryAdapter, STORAGE_TYPE_STATE, STORAGE_TYPE_FILE } from '../src/index.js';
-
-const nodeRequire = createRequire(import.meta.url);
-const packageInfo = nodeRequire('../package.json');
 
 describe('routes', () => {
   let apps, adapter;
@@ -30,13 +28,13 @@ describe('routes', () => {
 
   describe('GET (*splat)/version', () => {
     it('returns package version', () => {
-      return apps.request().get('/rest/version').expect(200).expect({ version: packageInfo.version });
+      return apps.request().get('/rest/version').expect(200).expect({ version: pkg.version });
     });
   });
 
   describe('GET (*splat)/deployment', () => {
     it('returns package name', () => {
-      return apps.request().get('/rest/deployment').expect(200).expect({ name: packageInfo.name });
+      return apps.request().get('/rest/deployment').expect(200).expect({ name: pkg.name });
     });
   });
 

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { json } from 'express';
 
-import { MiddlewareEngine } from '../../src/index.js';
+import { MiddlewareEngine } from 'bpmn-middleware';
 import * as testHelpers from '../helpers/test-helpers.js';
 
 class ExtendedEngine extends MiddlewareEngine {}

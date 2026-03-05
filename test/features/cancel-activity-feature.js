@@ -1,5 +1,5 @@
+import { MemoryAdapter } from 'bpmn-middleware';
 import { createDeployment, horizontallyScaled } from '../helpers/test-helpers.js';
-import { MemoryAdapter } from '../../src/index.js';
 
 Feature('cancel activity', () => {
   let apps, adapter;

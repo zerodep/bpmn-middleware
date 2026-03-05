@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_STATE } from '../../src/index.js';
+import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_STATE } from 'bpmn-middleware';
 
 describe('BpmnEngineMiddleware', () => {
   describe('edge cases', () => {

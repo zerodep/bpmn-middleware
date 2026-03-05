@@ -1,8 +1,8 @@
 import request from 'supertest';
 import * as ck from 'chronokinesis';
+import { MemoryAdapter, DEFAULT_IDLE_TIMER } from 'bpmn-middleware';
 
 import { createDeployment, waitForProcess, horizontallyScaled, getAppWithExtensions } from '../helpers/test-helpers.js';
-import { MemoryAdapter, DEFAULT_IDLE_TIMER } from '../../src/index.js';
 import { MiddlewareScripts } from '../../example/middleware-scripts.js';
 
 Feature('call activity', () => {

@@ -1,10 +1,10 @@
 import request from 'supertest';
 import { json } from 'express';
+import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from 'bpmn-middleware';
+
 import * as testHelpers from '../helpers/test-helpers.js';
 import { runToEnd } from '../../example/app.js';
 import { CustomAdapter } from '../../example/adapters/custom-adapter.js';
-
-import { BpmnEngineMiddleware, MemoryAdapter, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from '../../src/index.js';
 
 Feature('custom routes', () => {
   Scenario('use middleware functions as custom routes with disabled auto save', () => {

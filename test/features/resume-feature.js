@@ -1,7 +1,7 @@
 import request from 'supertest';
 
 import * as testHelpers from '../helpers/test-helpers.js';
-import { MemoryAdapter, STORAGE_TYPE_STATE, StorageError } from '../../src/index.js';
+import { MemoryAdapter, STORAGE_TYPE_STATE, StorageError } from 'bpmn-middleware';
 
 const saveStateResource = testHelpers.getExampleResource('save-state.bpmn');
 

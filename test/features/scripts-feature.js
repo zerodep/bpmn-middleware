@@ -1,6 +1,6 @@
 import request from 'supertest';
 
-import { MemoryAdapter } from '../../src/index.js';
+import { MemoryAdapter } from 'bpmn-middleware';
 import { createDeployment, horizontallyScaled, getResource, waitForProcess } from '../helpers/test-helpers.js';
 import { factory as ScriptsFactory } from '../../example/middleware-scripts.js';
 

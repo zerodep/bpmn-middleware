@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { Broker } from 'smqp';
 
-import { MemoryAdapter, Engines, STORAGE_TYPE_STATE } from '../../src/index.js';
+import { MemoryAdapter, Engines, STORAGE_TYPE_STATE } from 'bpmn-middleware';
 
 describe('Engines', () => {
   describe('ctor', () => {

@@ -74,6 +74,7 @@ BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
   const app = req.app;
   this._bpmnEngineListener = new BpmnPrefixListener(app);
 
+  // @ts-ignore
   app.on('bpmn/stop-all', () => this.engines.stopAll());
 
   return next();
@@ -513,7 +514,7 @@ BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res
 /**
  * Stop engine by token
  * @internal
- * @param {import('express').Request} req
+ * @param {import('express').Request<{token:string}>} req
  * @param {import('express').Response} res
  */
 BpmnEngineMiddleware.prototype.internalStopByToken = function internalStopByToken(req, res) {

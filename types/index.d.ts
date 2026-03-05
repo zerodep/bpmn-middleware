@@ -177,7 +177,7 @@ declare module 'bpmn-middleware' {
 			extendFn?: import("moddle-context-serializer").extendFn;
 			moddleOptions?: any;
 			moddleContext?: import("bpmn-moddle").Definitions;
-			listener?: import("events") | import("bpmn-engine").IListenerEmitter;
+			listener?: import("node:events") | import("bpmn-engine").IListenerEmitter;
 			settings?: import("bpmn-elements").EnvironmentSettings;
 			variables?: Record<string, any>;
 			services?: Record<string, CallableFunction>;
@@ -195,7 +195,7 @@ declare module 'bpmn-middleware' {
 		 * Bound addEngineLocals
 		 */
 		_addEngineLocals: import("connect").NextHandleFunction;
-		init(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
+		init(req: import("connect").IncomingMessage, res: import("node:http").ServerResponse, next: import("connect").NextFunction): void;
 		_bpmnEngineListener: BpmnPrefixListener;
 		/**
 		 * Start deployment request pipeline
@@ -225,12 +225,12 @@ declare module 'bpmn-middleware' {
 		 * Pre start BPMN engine execution middleware
 		 * */
 		preStart(): import("connect").NextHandleFunction;
-		preResume(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
+		preResume(req: import("connect").IncomingMessage, res: import("node:http").ServerResponse, next: import("connect").NextFunction): void;
 		/**
 		 * Add BPMN engine execution middleware response locals
 		 * */
 		addResponseLocals(): import("connect").NextHandleFunction[];
-		addEngineLocals(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
+		addEngineLocals(req: import("connect").IncomingMessage, res: import("node:http").ServerResponse, next: import("connect").NextFunction): void;
 		/**
 		 * Get package version
 		 * */
@@ -309,7 +309,9 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Stop engine by token
 		 * */
-		internalStopByToken(req: import("express").Request, res: import("express").Response): void;
+		internalStopByToken(req: import("express").Request<{
+			token: string;
+		}>, res: import("express").Response): void;
 		/**
 		 * Internal create engine middleware
 		 * */
@@ -318,7 +320,7 @@ declare module 'bpmn-middleware' {
 		startAndTrackEngine(fn: import("express").RequestHandler): (req: import("express").Request<StartDeployment, void, StartDeploymentOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
 		
 		resumeAndTrackEngine(fn: import("express").RequestHandler): (req: import("express").Request<StartDeployment, void, ExecuteOptions>, res: import("express").Response<void, BpmnMiddlewareResponseLocals>, next: import("express").NextFunction) => Promise<void>;
-		_validateLocals(req: import("connect").IncomingMessage, res: import("http").ServerResponse, next: import("connect").NextFunction): void;
+		_validateLocals(req: import("connect").IncomingMessage, res: import("node:http").ServerResponse, next: import("connect").NextFunction): void;
 		/**
 		 * Internal get engine run options from query
 		 * */

@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { LRUCache } from 'lru-cache';
 
+import { MemoryAdapter } from 'bpmn-middleware';
 import { getAppWithExtensions, createDeployment, waitForProcess } from '../helpers/test-helpers.js';
-import { MemoryAdapter } from '../../src/index.js';
 
 Feature('memory adapter', () => {
   Scenario('built in memory adapter', () => {

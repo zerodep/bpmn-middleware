@@ -2,8 +2,8 @@ import request from 'supertest';
 import * as ck from 'chronokinesis';
 import { LRUCache } from 'lru-cache';
 
+import { MemoryAdapter, DEFAULT_IDLE_TIMER } from 'bpmn-middleware';
 import { getAppWithExtensions, createDeployment, waitForProcess } from '../helpers/test-helpers.js';
-import { MemoryAdapter, DEFAULT_IDLE_TIMER } from '../../src/index.js';
 
 Feature('idle engine', () => {
   after(ck.reset);

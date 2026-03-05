@@ -1,4 +1,3 @@
-import { createRequire } from 'node:module';
 import * as ck from 'chronokinesis';
 import express from 'express';
 import express4 from 'express-4';
@@ -6,13 +5,12 @@ import FormData from 'form-data';
 import request from 'supertest';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
+import * as middleware from 'bpmn-middleware';
 
-import * as middleware from '../src/index.js';
+import pkg from '../package.json' with { type: 'json' };
 import { getAppWithExtensions, waitForProcess, errorHandler } from './helpers/test-helpers.js';
 
 const { bpmnEngineMiddleware } = middleware;
-const nodeRequire = createRequire(import.meta.url);
-const packageInfo = nodeRequire('../package.json');
 
 describe('express-middleware', () => {
   let app;
@@ -160,12 +158,12 @@ describe('express-middleware', () => {
 
   describe('modeler integration', () => {
     it('has version route', async () => {
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(app).get('/rest/version').expect(200).expect({ version });
     });
 
     it('has deployment route', async () => {
-      const { name } = await packageInfo;
+      const { name } = await pkg;
       await request(app).get('/rest/deployment').expect(200).expect({ name });
     });
   });
@@ -684,7 +682,7 @@ describe('express-middleware', () => {
       parentApp.use('/bpmn', bpmnEngineMiddleware());
       parentApp.use(errorHandler);
 
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(parentApp).get('/bpmn/version').expect(200).expect({ version });
 
       await request(parentApp).get('/rest/version').expect(404);
@@ -695,7 +693,7 @@ describe('express-middleware', () => {
       parentApp.use(bpmnEngineMiddleware({ basePath: '/bpmn2' }));
       parentApp.use(errorHandler);
 
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(parentApp).get('/bpmn2/version').expect(200).expect({ version });
 
       await request(parentApp).get('/rest/version').expect(404);
@@ -706,7 +704,7 @@ describe('express-middleware', () => {
       parentApp.use(bpmnEngineMiddleware());
       parentApp.use(errorHandler);
 
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(parentApp).get('/version').expect(200).expect({ version });
 
       await request(parentApp).get('/rest/version').expect({ version });
@@ -721,7 +719,7 @@ describe('express-middleware', () => {
       parentApp.use('/bpmn', bpmnEngineMiddleware());
       parentApp.use(errorHandler);
 
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(parentApp).get('/bpmn/version').expect(200).expect({ version });
 
       await request(parentApp).get('/rest/version').expect(404);
@@ -732,7 +730,7 @@ describe('express-middleware', () => {
       parentApp.use(bpmnEngineMiddleware({ basePath: '/bpmn2' }));
       parentApp.use(errorHandler);
 
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(parentApp).get('/bpmn2/version').expect(200).expect({ version });
 
       await request(parentApp).get('/rest/version').expect(404);
@@ -743,7 +741,7 @@ describe('express-middleware', () => {
       parentApp.use(bpmnEngineMiddleware());
       parentApp.use(errorHandler);
 
-      const { version } = await packageInfo;
+      const { version } = await pkg;
       await request(parentApp).get('/version').expect(200).expect({ version });
 
       await request(parentApp).get('/rest/version').expect({ version });
