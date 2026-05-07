@@ -41,6 +41,15 @@ app.use('/rest', basicAuth(adapter, true), middleware);
 app.post('/start/sync/:deploymentName', basicAuth(adapter, true), middleware.middleware.start(runToEnd));
 app.post('/signal/:token', basicAuth(adapter, true), middleware.middleware.resume(signal));
 
+app.get(
+  '/swagger.json',
+  /** @private */
+  async (_req, res) => {
+    const { default: doc } = await import('./swagger.json', { with: { type: 'json' } });
+    res.json(doc);
+  }
+);
+
 app.use(errorHandler);
 
 /* c8 ignore next 4 */

@@ -159,7 +159,6 @@ Feature('custom routes', () => {
       await addSource(adapter, 'wait-process', testHelpers.getResource('wait.bpmn').toString());
     });
 
-    let end;
     When('custom route starts call activity process', async () => {
       const response = await apps.request().post('/api/v1/start/call-process');
       expect(response.statusCode, response.text).to.equal(201);
@@ -176,8 +175,10 @@ Feature('custom routes', () => {
       expect(defaultRunning.records).to.have.length(0);
     });
 
+    let end;
     When('custom signal route is called addressing waiting task', async () => {
       const app = apps.balance();
+      end = testHelpers.waitForProcess(app, 'wait-process', 'custom').end();
 
       const response = await request(app)
         .post('/api/v1/signal/' + running.records.find((e) => e.name === 'wait-process').token)

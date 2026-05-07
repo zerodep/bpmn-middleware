@@ -1,9 +1,17 @@
 import { HttpError } from 'bpmn-middleware';
 
 /**
- * Custom start function
- * @param {import('express').Request} req
- * @param {import('express').Response<any, {engine:import('bpmn-middleware').MiddlewareEngine, engines:import('bpmn-middleware').Engines}>} res
+ * @typedef {object} SyncRunResult
+ * @property {string} token Engine execution token
+ * @property {Record<string, any>} [output] Engine environment output
+ */
+
+/**
+ * Run a deployment synchronously and respond with the engine's final output.
+ * Slot types mirror the start-deployment chain (`/start/sync/:deploymentName`)
+ * since this handler is wired as the terminal of `middleware.start(runToEnd)`.
+ * @param {import('express').Request<import('bpmn-middleware').StartDeployment, SyncRunResult, import('bpmn-middleware').StartDeploymentOptions, import('bpmn-middleware').ExecuteOptions>} req
+ * @param {import('express').Response<SyncRunResult>} res
  * @param {import('express').NextFunction} next
  */
 export async function runToEnd(req, res, next) {
@@ -52,10 +60,9 @@ export async function runToEnd(req, res, next) {
 }
 
 /**
- * Custom start function
- * @type {import('connect').NextHandleFunction}
- * @param {import('express').Request} req
- * @param {import('express').Response<any, {engine:import('bpmn-middleware').MiddlewareEngine}>} res
+ * Signal a waiting activity and run the engine to completion.
+ * @param {import('express').Request<{token:string}, import('bpmn-middleware').MiddlewareEngineState, import('bpmn-middleware').SignalBody>} req
+ * @param {import('express').Response<import('bpmn-middleware').MiddlewareEngineState>} res
  * @param {import('express').NextFunction} next
  */
 export function signal(req, res, next) {

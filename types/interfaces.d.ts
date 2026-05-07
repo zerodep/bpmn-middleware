@@ -3,6 +3,18 @@ import { ActivityStatus, ElementMessageContent, IScripts, Environment } from 'bp
 import { Timer as ContextTimer } from 'moddle-context-serializer';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
+import { Locals } from 'express';
+
+/**
+ * Extend express interfaces (Response/Request)
+ */
+declare global {
+  namespace Express {
+    interface Response {
+      locals: Partial<import('../src/bpmn-middleware.js').BpmnMiddlewareResponseLocals>;
+    }
+  }
+}
 
 export enum StorageType {
   State = 'state',
@@ -19,7 +31,7 @@ export interface BpmnMiddlewareOptions {
   /** Options passed to each created engine */
   engineOptions?: BpmnEngineOptions;
   /** Executing engines */
-  engineCache?: LRUCache<string, import('../src/middleware-engine').MiddlewareEngine, unknown>;
+  engineCache?: LRUCache<string, import('../src/middleware-engine.js').MiddlewareEngine, unknown>;
   /** App broker, used for forwarding events from executing engines */
   broker?: Broker;
   /** Engine execution timeout before considered idle, defaults to 120000ms */
@@ -159,4 +171,25 @@ export interface ParsedTimerResult extends ContextTimer {
   delay?: Number;
   repeat?: Number;
   message?: string;
+}
+
+/**
+ * Result of `GET /<basePath>/running` — running engines listing returned by
+ * `Engines.prototype.getRunning`. `engines` carries the matched records;
+ * adapter-supplied paging/cursor fields flow through the index signature.
+ */
+export interface RunningEngines {
+  engines: MiddlewareEngineState[];
+  [x: string]: any;
+}
+
+/**
+ * Multipart form payload accepted by `POST /<basePath>/deployment/create`.
+ * `multer({ storage }).any()` means file fields are accepted under arbitrary
+ * names; `file` here is illustrative.
+ */
+export interface CreateDeploymentForm {
+  'deployment-name': string;
+  'deployment-source'?: string;
+  file?: import('@aller/express-swagger').Binary;
 }

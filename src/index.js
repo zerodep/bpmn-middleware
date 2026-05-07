@@ -16,6 +16,7 @@ export * from './constants.js';
 /**
  * BPMN 2 Engine middleware
  * @param {import('types').BpmnMiddlewareOptions} options
+ * @returns {import('express').Router & { engines: Engines, middleware: BpmnEngineMiddleware }}
  */
 export function bpmnEngineMiddleware(options) {
   const basePath = options?.basePath || '{*splat}';
@@ -63,5 +64,5 @@ export function bpmnEngineMiddleware(options) {
     },
   });
 
-  return router;
+  return /** @type {import('express').Router & { engines: Engines, middleware: BpmnEngineMiddleware }} */ (router);
 }

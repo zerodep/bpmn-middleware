@@ -68,9 +68,11 @@ async function authenticate(adapter, username, password) {
 }
 
 /**
- * Basic auth
- * @param {import('express').Request} _req
- * @param {import('express').Response<any, {user:import('./auth.js').User}>} res
+ * Authorize the start of a deployment based on Camunda candidateStarterGroups.
+ * Slot types mirror the start-deployment chain (`/rest/auth/process-definition/:deploymentName/start`)
+ * since express-swagger picks this handler as the operation's terminal annotation source.
+ * @param {import('express').Request<import('bpmn-middleware').StartDeployment, import('bpmn-middleware').StartDeploymentResult, import('bpmn-middleware').StartDeploymentOptions, import('bpmn-middleware').ExecuteOptions>} _req
+ * @param {import('express').Response<import('bpmn-middleware').StartDeploymentResult, {user:import('./auth.js').User}>} res
  * @param {import('express').NextFunction} next
  */
 export async function authorize(_req, res, next) {

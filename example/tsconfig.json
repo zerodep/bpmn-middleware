@@ -1,0 +1,16 @@
+{
+  "include": ["./**/*.js", "../src/**/*.js"],
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["es2017"],
+    "target": "es2017",
+    "allowJs": true,
+    "checkJs": false,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "skipLibCheck": true
+  }
+}

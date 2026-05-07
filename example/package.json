@@ -1,0 +1,20 @@
+{
+  "name": "bpmn-middleware-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./app.js",
+  "scripts": {
+    "build:swagger": "node ./build-swagger.js",
+    "start": "node ./app.js"
+  },
+  "dependencies": {
+    "@onify/flow-extensions": "^9.0.0",
+    "bpmn-middleware": "file:..",
+    "camunda-bpmn-moddle": "^7.0.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

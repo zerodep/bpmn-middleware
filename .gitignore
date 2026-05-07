@@ -129,6 +129,10 @@ out
 .yarn/install-state.gz
 .pnp.*
 
+# AI
+.claude/
+CLAUDE.md
+
 package-lock.json
 tmp/
 

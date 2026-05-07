@@ -324,11 +324,10 @@ Engines.prototype.getStatusByToken = function getStatusByToken(token, options) {
 /**
  * Get running engines by querying storage
  * @param {any} [query]
- * @returns {Promise<import('types').MiddlewareEngineState[]>}
+ * @returns {Promise<import('types').RunningEngines>}
  */
 Engines.prototype.getRunning = async function getRunning(query) {
   const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: ['engine'] });
-  // @ts-ignore
   return { engines: records, ...rest };
 };
 
@@ -437,6 +436,7 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
 /**
  * Get running engine status by token
  * @param {string} token
+ * @returns {import('types').MiddlewareEngineStatus | undefined}
  */
 Engines.prototype.getEngineStatusByToken = function getEngineStatusByToken(token) {
   const engine = this.engineCache.get(token);
@@ -537,8 +537,8 @@ Engines.prototype.saveEngineState = async function saveEngineState(engine, ifExi
 };
 
 /**
- * @internal
  * Internal setup engine listeners
+ * @internal
  * @param {MiddlewareEngine} engine
  */
 Engines.prototype._setupEngine = function setupEngine(engine) {
@@ -614,6 +614,7 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
 
 /**
  * Internal on state message
+ * @internal
  * @param {string} routingKey
  * @param {import('smqp').Message} message
  * @param {MiddlewareEngine} engine
@@ -695,6 +696,7 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
 
 /**
  * Internal teardown engine, remove listeners and stuff
+ * @internal
  * @param {MiddlewareEngine} engine
  */
 Engines.prototype._teardownEngine = function teardownEngine(engine) {
@@ -793,7 +795,7 @@ function disableSaveState(...args) {
  * @param {MiddlewareEngine} engine
  */
 function cloneShovelMessage(engine) {
-  /** @type {(message: import('smqp').MessageMessage) => import('bpmn-elements').ElementBrokerMessage} */
+  /** @type {(message: import('smqp').MessageEnvelope) => import('bpmn-elements').ElementBrokerMessage} */
   return function cloneMessage(msg) {
     const { fields, content, properties } = msg;
     switch (fields.routingKey) {

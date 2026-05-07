@@ -1,0 +1,1763 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "BPMN engine express middleware",
+    "version": "0.0.0"
+  },
+  "paths": {
+    "/rest/auth/process-definition/{deploymentName}/start": {
+      "post": {
+        "description": "Authorize the start of a deployment based on Camunda candidateStarterGroups.\nSlot types mirror the start-deployment chain (`/rest/auth/process-definition/:deploymentName/start`)\nsince express-swagger picks this handler as the operation's terminal annotation source.",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartDeploymentResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- Deployment name"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartDeploymentOptions"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/version": {
+      "get": {
+        "description": "Get package version",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "version"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/deployment": {
+      "get": {
+        "description": "Get deployment/package name",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "name"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/deployment/create": {
+      "post": {
+        "description": "Create deployment",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDeploymentResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeploymentForm"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/process-definition/{deploymentName}/start": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartDeploymentResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- Deployment name"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartDeploymentOptions"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/resume/{token}": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteOptions"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/signal/{token}": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/cancel/{token}": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/fail/{token}": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/script/{deploymentName}": {
+      "get": {
+        "description": "Get deployment scripts",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/javascript": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- Deployment name"
+            }
+          }
+        ]
+      }
+    },
+    "/rest/timers/{deploymentName}": {
+      "get": {
+        "description": "Get deployment timers",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "timers": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "timers"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- Deployment name"
+            }
+          }
+        ]
+      }
+    },
+    "/rest/running": {
+      "get": {
+        "description": "Get running engines",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunningEngines"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/status/{token}": {
+      "get": {
+        "description": "Get engine status by token",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineStatus"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          }
+        ]
+      }
+    },
+    "/rest/status/{token}/{activityId}": {
+      "get": {
+        "description": "Get engine activity status",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostponedElement"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/rest/state/{token}": {
+      "get": {
+        "description": "Get engine state by token",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineState"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "description": "Delete engine by token",
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- BPMN engine execution token"
+            }
+          }
+        ]
+      }
+    },
+    "/start/sync/{deploymentName}": {
+      "post": {
+        "description": "Run a deployment synchronously and respond with the engine's final output.\nSlot types mirror the start-deployment chain (`/start/sync/:deploymentName`)\nsince this handler is wired as the terminal of `middleware.start(runToEnd)`.",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncRunResult"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "- Deployment name"
+            }
+          },
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartDeploymentOptions"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/signal/{token}": {
+      "post": {
+        "description": "Signal a waiting activity and run the engine to completion.",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiddlewareEngineState"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignalBody"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SignalBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Activity id"
+          },
+          "executionId": {
+            "type": "string",
+            "description": "Activity execution id, required when signalling a parallel multi-instance tasks"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MiddlewareEngineState": {
+        "type": "object",
+        "properties": {
+          "engine": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "engineVersion": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "idle",
+                  "running",
+                  "stopped",
+                  "error"
+                ]
+              },
+              "stopped": {
+                "type": "boolean"
+              },
+              "environment": {
+                "type": "object",
+                "properties": {
+                  "settings": {
+                    "type": "object",
+                    "properties": {
+                      "enableDummyService": {
+                        "type": "boolean",
+                        "description": "true returns dummy service function for service task if not found"
+                      },
+                      "step": {
+                        "type": "boolean",
+                        "description": "true forces activity runs to go forward in steps, defaults to false"
+                      },
+                      "strict": {
+                        "type": "boolean",
+                        "description": "strict mode, see documentation, defaults to false"
+                      },
+                      "batchSize": {
+                        "type": "number",
+                        "description": "positive integer to control parallel loop batch size, defaults to 50"
+                      },
+                      "disableTrackState": {
+                        "type": "boolean",
+                        "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "variables": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": false
+                  },
+                  "output": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "settings",
+                  "variables",
+                  "output"
+                ]
+              },
+              "definitions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "description": "Serialized moddle-context-serializer context"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "stopped": {
+                      "type": "boolean"
+                    },
+                    "executionId": {
+                      "type": "string"
+                    },
+                    "counters": {
+                      "type": "object",
+                      "properties": {
+                        "completed": {
+                          "type": "number"
+                        },
+                        "discarded": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "completed",
+                        "discarded"
+                      ]
+                    },
+                    "environment": {
+                      "type": "object",
+                      "properties": {
+                        "settings": {
+                          "type": "object",
+                          "properties": {
+                            "enableDummyService": {
+                              "type": "boolean",
+                              "description": "true returns dummy service function for service task if not found"
+                            },
+                            "step": {
+                              "type": "boolean",
+                              "description": "true forces activity runs to go forward in steps, defaults to false"
+                            },
+                            "strict": {
+                              "type": "boolean",
+                              "description": "strict mode, see documentation, defaults to false"
+                            },
+                            "batchSize": {
+                              "type": "number",
+                              "description": "positive integer to control parallel loop batch size, defaults to 50"
+                            },
+                            "disableTrackState": {
+                              "type": "boolean",
+                              "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "variables": {
+                          "type": "object",
+                          "properties": {},
+                          "additionalProperties": false
+                        },
+                        "output": {
+                          "type": "object",
+                          "properties": {},
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "settings",
+                        "variables",
+                        "output"
+                      ]
+                    },
+                    "execution": {
+                      "type": "object",
+                      "properties": {
+                        "executionId": {
+                          "type": "string"
+                        },
+                        "stopped": {
+                          "type": "boolean"
+                        },
+                        "completed": {
+                          "type": "boolean"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "processes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string"
+                              },
+                              "stopped": {
+                                "type": "boolean"
+                              },
+                              "executionId": {
+                                "type": "string"
+                              },
+                              "counters": {
+                                "type": "object",
+                                "properties": {
+                                  "completed": {
+                                    "type": "number"
+                                  },
+                                  "discarded": {
+                                    "type": "number"
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "required": [
+                                  "completed",
+                                  "discarded"
+                                ]
+                              },
+                              "environment": {
+                                "type": "object",
+                                "properties": {
+                                  "settings": {
+                                    "type": "object",
+                                    "properties": {
+                                      "enableDummyService": {
+                                        "type": "boolean",
+                                        "description": "true returns dummy service function for service task if not found"
+                                      },
+                                      "step": {
+                                        "type": "boolean",
+                                        "description": "true forces activity runs to go forward in steps, defaults to false"
+                                      },
+                                      "strict": {
+                                        "type": "boolean",
+                                        "description": "strict mode, see documentation, defaults to false"
+                                      },
+                                      "batchSize": {
+                                        "type": "number",
+                                        "description": "positive integer to control parallel loop batch size, defaults to 50"
+                                      },
+                                      "disableTrackState": {
+                                        "type": "boolean",
+                                        "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  "variables": {
+                                    "type": "object",
+                                    "properties": {},
+                                    "additionalProperties": false
+                                  },
+                                  "output": {
+                                    "type": "object",
+                                    "properties": {},
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "required": [
+                                  "settings",
+                                  "variables",
+                                  "output"
+                                ]
+                              },
+                              "execution": {
+                                "type": "object",
+                                "properties": {
+                                  "executionId": {
+                                    "type": "string"
+                                  },
+                                  "stopped": {
+                                    "type": "boolean"
+                                  },
+                                  "completed": {
+                                    "type": "boolean"
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "children": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "status": {
+                                          "type": "string"
+                                        },
+                                        "executionId": {
+                                          "type": "string"
+                                        },
+                                        "stopped": {
+                                          "type": "boolean"
+                                        },
+                                        "counters": {
+                                          "type": "object",
+                                          "properties": {
+                                            "taken": {
+                                              "type": "number"
+                                            },
+                                            "discarded": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "taken",
+                                            "discarded"
+                                          ]
+                                        },
+                                        "execution": {
+                                          "type": "object",
+                                          "properties": {
+                                            "completed": {
+                                              "type": "boolean"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "completed"
+                                          ]
+                                        },
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "broker": {}
+                                      },
+                                      "additionalProperties": false,
+                                      "required": [
+                                        "executionId",
+                                        "stopped",
+                                        "counters",
+                                        "id",
+                                        "type"
+                                      ]
+                                    }
+                                  },
+                                  "flows": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "counters": {
+                                          "type": "object",
+                                          "properties": {
+                                            "take": {
+                                              "type": "number"
+                                            },
+                                            "discard": {
+                                              "type": "number"
+                                            },
+                                            "looped": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "take",
+                                            "discard",
+                                            "looped"
+                                          ]
+                                        },
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "broker": {}
+                                      },
+                                      "additionalProperties": false,
+                                      "required": [
+                                        "counters",
+                                        "id",
+                                        "type"
+                                      ]
+                                    }
+                                  },
+                                  "messageFlows": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "counters": {
+                                          "type": "object",
+                                          "properties": {
+                                            "messages": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "messages"
+                                          ]
+                                        },
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "broker": {}
+                                      },
+                                      "additionalProperties": false,
+                                      "required": [
+                                        "counters",
+                                        "id",
+                                        "type"
+                                      ]
+                                    }
+                                  },
+                                  "associations": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "counters": {
+                                          "type": "object",
+                                          "properties": {
+                                            "take": {
+                                              "type": "number"
+                                            },
+                                            "discard": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "take",
+                                            "discard"
+                                          ]
+                                        },
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "broker": {}
+                                      },
+                                      "additionalProperties": false,
+                                      "required": [
+                                        "counters",
+                                        "id",
+                                        "type"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "additionalProperties": false,
+                                "required": [
+                                  "executionId",
+                                  "stopped",
+                                  "completed",
+                                  "status",
+                                  "children"
+                                ]
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "broker": {}
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                              "status",
+                              "stopped",
+                              "counters",
+                              "environment",
+                              "id",
+                              "type"
+                            ]
+                          }
+                        }
+                      },
+                      "additionalProperties": false,
+                      "required": [
+                        "executionId",
+                        "stopped",
+                        "completed",
+                        "status",
+                        "processes"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "broker": {}
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "status",
+                    "stopped",
+                    "counters",
+                    "environment",
+                    "id",
+                    "type"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "engineVersion",
+              "state",
+              "stopped",
+              "environment",
+              "definitions"
+            ]
+          },
+          "token": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Deployment name"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "running",
+              "stopped",
+              "error"
+            ]
+          },
+          "activityStatus": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "executing",
+              "timer",
+              "wait"
+            ]
+          },
+          "sequenceNumber": {
+            "type": "number"
+          },
+          "postponed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/postponed"
+            }
+          },
+          "caller": {
+            "$ref": "#/components/schemas/Caller"
+          },
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "description": "Output from process"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "name"
+        ]
+      },
+      "Caller": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Calling process token"
+          },
+          "deployment": {
+            "type": "string",
+            "description": "Calling process deployment name"
+          },
+          "id": {
+            "type": "string",
+            "description": "Calling activity id"
+          },
+          "type": {
+            "type": "string",
+            "description": "Calling activity type"
+          },
+          "executionId": {
+            "type": "string",
+            "description": "Calling activity execution id"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "deployment",
+          "id",
+          "type",
+          "executionId"
+        ]
+      },
+      "postponed": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "StartDeploymentOptions": {
+        "type": "object",
+        "properties": {
+          "variables": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "businessKey": {
+            "type": "string"
+          },
+          "caller": {
+            "$ref": "#/components/schemas/Caller"
+          },
+          "idleTimeout": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SyncRunResult": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Engine execution token"
+          },
+          "output": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "description": "Engine environment output"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ]
+      },
+      "PostponedElement": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "executing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "executionId": {
+                  "type": "string"
+                },
+                "parent": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "executionId": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "type",
+                    "executionId",
+                    "path"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "description": "Activity executions, e.g. executing multi-instance tasks or event definitions"
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "executionId": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "executionId": {
+                "type": "string"
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "executionId",
+              "path"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ]
+      },
+      "MiddlewareEngineStatus": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Deployment name"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "running",
+              "stopped",
+              "error"
+            ]
+          },
+          "activityStatus": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "executing",
+              "timer",
+              "wait"
+            ]
+          },
+          "sequenceNumber": {
+            "type": "number"
+          },
+          "postponed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/postponed"
+            }
+          },
+          "caller": {
+            "$ref": "#/components/schemas/Caller"
+          },
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "description": "Output from process"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "name"
+        ]
+      },
+      "RunningEngines": {
+        "type": "object",
+        "properties": {
+          "engines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MiddlewareEngineState"
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "engines"
+        ]
+      },
+      "ExecuteOptions": {
+        "type": "object",
+        "properties": {
+          "autosaveEngineState": {
+            "type": "boolean"
+          },
+          "sync": {
+            "type": "boolean",
+            "description": "Run until end"
+          },
+          "idleTimeout": {
+            "type": "number",
+            "description": "Idle timeout delay"
+          },
+          "resumedBy": {
+            "type": "string",
+            "description": "Resumed by engine token"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StartDeploymentResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Started deployment token"
+          },
+          "token": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Deployment name"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "running",
+              "stopped",
+              "error"
+            ]
+          },
+          "activityStatus": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "executing",
+              "timer",
+              "wait"
+            ]
+          },
+          "sequenceNumber": {
+            "type": "number"
+          },
+          "postponed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/postponed"
+            }
+          },
+          "caller": {
+            "$ref": "#/components/schemas/Caller"
+          },
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false,
+            "description": "Output from process"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ]
+      },
+      "CreateDeploymentForm": {
+        "type": "object",
+        "properties": {
+          "deployment-name": {
+            "type": "string"
+          },
+          "deployment-source": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "deployment-name"
+        ]
+      },
+      "CreateDeploymentResponseBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Deployment name"
+          },
+          "deploymentTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Deployed at date"
+          },
+          "deployedProcessDefinitions": {
+            "description": "Deployed process definitions"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "deploymentTime",
+          "deployedProcessDefinitions"
+        ]
+      }
+    }
+  }
+}
