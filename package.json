@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.18.3",
+  "version": "0.19.0",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -44,6 +44,8 @@
   },
   "homepage": "https://github.com/zerodep/bpmn-middleware#readme",
   "devDependencies": {
+    "@aller/express-swagger": "^0.0.9",
+    "@eslint/js": "^10.0.1",
     "@onify/flow-extensions": "^9.0.0",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@types/bpmn-moddle": "^5.1.11",
@@ -54,9 +56,9 @@
     "c8": "^11.0.0",
     "camunda-bpmn-moddle": "^7.0.1",
     "chai": "^6.0.1",
-    "chronokinesis": "^7.0.0",
+    "chronokinesis": "^8.0.0",
     "dts-buddy": "^0.7.0",
-    "eslint": "^9.7.0",
+    "eslint": "^10.3.0",
     "express": "^5.1.0",
     "express-4": "npm:express@^4.21.2",
     "form-data": "^4.0.0",
@@ -67,7 +69,7 @@
     "prettier": "^3.3.3",
     "rollup": "^4.17.2",
     "supertest": "^7.0.0",
-    "texample": "^0.1.0"
+    "texample": "^1.0.2"
   },
   "dependencies": {
     "lru-cache": "^11.2.6",
@@ -81,10 +83,21 @@
     "express": ">=4",
     "smqp": ">=9"
   },
+  "overrides": {
+    "c8": {
+      "yargs": "^18.0.0"
+    },
+    "mocha": {
+      "yargs": "^18.0.0"
+    }
+  },
   "files": [
     "src/",
     "dist/",
     "types/"
+  ],
+  "workspaces": [
+    "example"
   ],
   "c8": {
     "include": [

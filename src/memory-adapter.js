@@ -101,8 +101,8 @@ MemoryAdapter.prototype.query = function query(type, qs) {
 };
 
 /**
- * @internal
  * Internal query state
+ * @internal
  * @param {any} qs
  */
 MemoryAdapter.prototype._queryState = function queryState(qs) {

@@ -53,11 +53,13 @@ export function BpmnEngineMiddleware(options) {
 
   /**
    * Bound init
+   * @internal
    */
   this._init = this.init.bind(this);
 
   /**
    * Bound addEngineLocals
+   * @internal
    */
   this._addEngineLocals = this.addEngineLocals.bind(this);
 }
@@ -72,6 +74,7 @@ BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
   this[kInitilialized] = true;
 
   const app = req.app;
+  /** @internal */
   this._bpmnEngineListener = new BpmnPrefixListener(app);
 
   // @ts-ignore
@@ -83,7 +86,7 @@ BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
 /**
  * Start deployment request pipeline
  * @param {import('express').RequestHandler} [fn] start request handler
- * @returns {import('express').RequestHandler<StartDeployment, {id:string}, import('types').StartDeploymentOptions, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<StartDeployment, import('types').StartDeploymentResult, import('types').StartDeploymentOptions, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.start = function start(fn) {
   // @ts-ignore
@@ -93,7 +96,7 @@ BpmnEngineMiddleware.prototype.start = function start(fn) {
 /**
  * Resume engine request pipeline
  * @param {import('express').RequestHandler} [fn] resume request handler
- * @returns {import('express').RequestHandler<TokenParameter, ReturnType<Engines['getEngineStatusByToken']>, any, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').ExecuteOptions, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.resume = function resume(fn) {
   // @ts-ignore
@@ -102,7 +105,7 @@ BpmnEngineMiddleware.prototype.resume = function resume(fn) {
 
 /**
  * Signal activity request pipeline
- * @returns {import('express').RequestHandler<TokenParameter, ReturnType<Engines['getEngineStatusByToken']>, import('types').SignalBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').SignalBody, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.signal = function signal() {
   // @ts-ignore
@@ -111,7 +114,7 @@ BpmnEngineMiddleware.prototype.signal = function signal() {
 
 /**
  * Cancel activity request pipeline
- * @returns {import('express').RequestHandler<TokenParameter, ReturnType<Engines['getEngineStatusByToken']>, import('types').SignalBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').SignalBody, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.cancel = function cancel() {
   // @ts-ignore
@@ -120,7 +123,7 @@ BpmnEngineMiddleware.prototype.cancel = function cancel() {
 
 /**
  * Fail activity request pipeline
- * @returns {import('express').RequestHandler<TokenParameter, ReturnType<Engines['getEngineStatusByToken']>, import('types').SignalBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').SignalBody, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.fail = function fail() {
   // @ts-ignore
@@ -202,7 +205,7 @@ BpmnEngineMiddleware.prototype.getDeployment = function getDeployment(_req, res)
 
 /**
  * Create deployment
- * @param {import('express').Request} req
+ * @param {import('express').Request<any, CreateDeploymentResponseBody, import('@aller/express-swagger').MultipartBody<import('types').CreateDeploymentForm>>} req
  * @param {import('express').Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -251,9 +254,9 @@ BpmnEngineMiddleware.prototype.runDeployment = async function run(_req, res, nex
 };
 
 /**
- * Start deployment
+ * Get deployment scripts
  * @param {import('express').Request<StartDeployment>} _req
- * @param {import('express').Response<string, BpmnMiddlewareResponseLocals>} res
+ * @param {import('@aller/express-swagger').ApiResponse<string, 200, 'text/javascript'>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getScript = async function getScript(_req, res, next) {
@@ -279,7 +282,7 @@ export function ${slugify(engine.name, script.name)}(excutionContext, next) {
 };
 
 /**
- * Start deployment
+ * Get deployment timers
  * @param {import('express').Request<StartDeployment>} _req
  * @param {import('express').Response<{timers:import('types').ParsedTimerResult[]}>} res
  * @param {import('express').NextFunction} next
@@ -328,7 +331,7 @@ BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymen
 /**
  * Get running engines
  * @param {import('express').Request<import('types').StorageQuery>} req
- * @param {import('express').Response<Awaited<ReturnType<Engines['getRunning']>>, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('types').RunningEngines, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, next) {
@@ -343,7 +346,7 @@ BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, 
 /**
  * Get engine status by token
  * @param {import('express').Request<TokenParameter>} req
- * @param {import('express').Response<Awaited<ReturnType<Engines['getStatusByToken']>>, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('types').MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToken(req, res, next) {
@@ -471,7 +474,7 @@ BpmnEngineMiddleware.prototype.resumeByToken = async function resumeByToken(_req
 /**
  * Get engine state by token
  * @param {import('express').Request<TokenParameter>} req
- * @param {import('express').Response<Awaited<ReturnType<Engines['getStateByToken']>>, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('types').MiddlewareEngineState, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(req, res, next) {
@@ -487,8 +490,8 @@ BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(
 
 /**
  * Delete engine by token
- * @param {import('express').Request<TokenParameter, void>} req
- * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Request<TokenParameter>} req
+ * @param {import('express').Response<import('@aller/express-swagger').NoContentResponse, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateByToken(req, res, next) {
@@ -502,9 +505,10 @@ BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateBy
 };
 
 /**
- * @internal Stop all running engines
+ * Stop all running engines
+ * @internal
  * @param {import('express').Request} _
- * @param {import('express').Response} res
+ * @param {import('express').Response<import('@aller/express-swagger').NoContentResponse>} res
  */
 BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res) {
   this.engines.stopAll();
@@ -515,7 +519,7 @@ BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res
  * Stop engine by token
  * @internal
  * @param {import('express').Request<{token:string}>} req
- * @param {import('express').Response} res
+ * @param {import('express').Response<import('@aller/express-swagger').NoContentResponse>} res
  */
 BpmnEngineMiddleware.prototype.internalStopByToken = function internalStopByToken(req, res) {
   const token = req.params.token;
@@ -622,14 +626,10 @@ BpmnEngineMiddleware.prototype.resumeAndTrackEngine = function resumeAndTrackEng
 /**
  * Internal validate response locals
  * @internal
+ * @type {import('connect').NextHandleFunction}
  * @param {import('connect').IncomingMessage} _req
  * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
- */
-
-/**
- * @type {import('connect').NextHandleFunction}
- * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
  */
 BpmnEngineMiddleware.prototype._validateLocals = function validateLocals(_req, res, next) {
   /** @type {BpmnMiddlewareResponseLocals} */
@@ -652,7 +652,7 @@ BpmnEngineMiddleware.prototype._validateLocals = function validateLocals(_req, r
  * Internal get engine run options from query
  * @internal
  * @param {import('express').Request<any, any, import('types').ExecuteOptions>} req
- * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('types').MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype._parseQueryToEngineOptions = function parseQueryToEngineOptions(req, res, next) {
@@ -824,7 +824,7 @@ BpmnEngineMiddleware.prototype._cancelProcessByCallActivity = async function can
 /**
  * Post process engine definition run
  * @internal
- * @param {import('smqp').MessageMessage} definitionEndMessage
+ * @param {import('smqp').Message} definitionEndMessage
  */
 BpmnEngineMiddleware.prototype._postProcessDefinitionRun = async function postProcessDefinitionRun(definitionEndMessage) {
   const { fields, content, properties } = definitionEndMessage;
@@ -936,7 +936,7 @@ function syncExecutionCallback() {}
 /**
  * Create deployment result
  * @typedef {Object} CreateDeploymentResponseBody
- * @property {string} id - Deployment name
- * @property {Date} deploymentTime - Deployed at date
- * @property {any} deployedProcessDefinitions - Deployed process definitions
+ * @property {string} id Deployment name
+ * @property {Date} deploymentTime Deployed at date
+ * @property {any} deployedProcessDefinitions Deployed process definitions
  */
