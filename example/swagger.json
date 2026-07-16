@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "BPMN engine express middleware",
+    "title": "BPMN 2.0 middleware example",
     "version": "0.0.0"
   },
   "paths": {
@@ -810,6 +810,49 @@
           }
         }
       }
+    },
+    "/decision/{deploymentName}/{decisionId}": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "decisionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -826,7 +869,7 @@
             "description": "Activity execution id, required when signalling a parallel multi-instance tasks"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       },
       "MiddlewareEngineState": {
         "type": "object",
@@ -879,17 +922,17 @@
                         "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
                       }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": true
                   },
                   "variables": {
                     "type": "object",
                     "properties": {},
-                    "additionalProperties": false
+                    "additionalProperties": true
                   },
                   "output": {
                     "type": "object",
                     "properties": {},
-                    "additionalProperties": false
+                    "additionalProperties": true
                   }
                 },
                 "additionalProperties": false,
@@ -904,415 +947,16 @@
                 "items": {
                   "type": "object",
                   "properties": {
+                    "state": {
+                      "type": "string"
+                    },
                     "source": {
-                      "type": "string",
-                      "description": "Serialized moddle-context-serializer context"
-                    },
-                    "status": {
                       "type": "string"
-                    },
-                    "stopped": {
-                      "type": "boolean"
-                    },
-                    "executionId": {
-                      "type": "string"
-                    },
-                    "counters": {
-                      "type": "object",
-                      "properties": {
-                        "completed": {
-                          "type": "number"
-                        },
-                        "discarded": {
-                          "type": "number"
-                        }
-                      },
-                      "additionalProperties": false,
-                      "required": [
-                        "completed",
-                        "discarded"
-                      ]
-                    },
-                    "environment": {
-                      "type": "object",
-                      "properties": {
-                        "settings": {
-                          "type": "object",
-                          "properties": {
-                            "enableDummyService": {
-                              "type": "boolean",
-                              "description": "true returns dummy service function for service task if not found"
-                            },
-                            "step": {
-                              "type": "boolean",
-                              "description": "true forces activity runs to go forward in steps, defaults to false"
-                            },
-                            "strict": {
-                              "type": "boolean",
-                              "description": "strict mode, see documentation, defaults to false"
-                            },
-                            "batchSize": {
-                              "type": "number",
-                              "description": "positive integer to control parallel loop batch size, defaults to 50"
-                            },
-                            "disableTrackState": {
-                              "type": "boolean",
-                              "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
-                            }
-                          },
-                          "additionalProperties": false
-                        },
-                        "variables": {
-                          "type": "object",
-                          "properties": {},
-                          "additionalProperties": false
-                        },
-                        "output": {
-                          "type": "object",
-                          "properties": {},
-                          "additionalProperties": false
-                        }
-                      },
-                      "additionalProperties": false,
-                      "required": [
-                        "settings",
-                        "variables",
-                        "output"
-                      ]
-                    },
-                    "execution": {
-                      "type": "object",
-                      "properties": {
-                        "executionId": {
-                          "type": "string"
-                        },
-                        "stopped": {
-                          "type": "boolean"
-                        },
-                        "completed": {
-                          "type": "boolean"
-                        },
-                        "status": {
-                          "type": "string"
-                        },
-                        "processes": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "status": {
-                                "type": "string"
-                              },
-                              "stopped": {
-                                "type": "boolean"
-                              },
-                              "executionId": {
-                                "type": "string"
-                              },
-                              "counters": {
-                                "type": "object",
-                                "properties": {
-                                  "completed": {
-                                    "type": "number"
-                                  },
-                                  "discarded": {
-                                    "type": "number"
-                                  }
-                                },
-                                "additionalProperties": false,
-                                "required": [
-                                  "completed",
-                                  "discarded"
-                                ]
-                              },
-                              "environment": {
-                                "type": "object",
-                                "properties": {
-                                  "settings": {
-                                    "type": "object",
-                                    "properties": {
-                                      "enableDummyService": {
-                                        "type": "boolean",
-                                        "description": "true returns dummy service function for service task if not found"
-                                      },
-                                      "step": {
-                                        "type": "boolean",
-                                        "description": "true forces activity runs to go forward in steps, defaults to false"
-                                      },
-                                      "strict": {
-                                        "type": "boolean",
-                                        "description": "strict mode, see documentation, defaults to false"
-                                      },
-                                      "batchSize": {
-                                        "type": "number",
-                                        "description": "positive integer to control parallel loop batch size, defaults to 50"
-                                      },
-                                      "disableTrackState": {
-                                        "type": "boolean",
-                                        "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
-                                      }
-                                    },
-                                    "additionalProperties": false
-                                  },
-                                  "variables": {
-                                    "type": "object",
-                                    "properties": {},
-                                    "additionalProperties": false
-                                  },
-                                  "output": {
-                                    "type": "object",
-                                    "properties": {},
-                                    "additionalProperties": false
-                                  }
-                                },
-                                "additionalProperties": false,
-                                "required": [
-                                  "settings",
-                                  "variables",
-                                  "output"
-                                ]
-                              },
-                              "execution": {
-                                "type": "object",
-                                "properties": {
-                                  "executionId": {
-                                    "type": "string"
-                                  },
-                                  "stopped": {
-                                    "type": "boolean"
-                                  },
-                                  "completed": {
-                                    "type": "boolean"
-                                  },
-                                  "status": {
-                                    "type": "string"
-                                  },
-                                  "children": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "object",
-                                      "properties": {
-                                        "status": {
-                                          "type": "string"
-                                        },
-                                        "executionId": {
-                                          "type": "string"
-                                        },
-                                        "stopped": {
-                                          "type": "boolean"
-                                        },
-                                        "counters": {
-                                          "type": "object",
-                                          "properties": {
-                                            "taken": {
-                                              "type": "number"
-                                            },
-                                            "discarded": {
-                                              "type": "number"
-                                            }
-                                          },
-                                          "additionalProperties": false,
-                                          "required": [
-                                            "taken",
-                                            "discarded"
-                                          ]
-                                        },
-                                        "execution": {
-                                          "type": "object",
-                                          "properties": {
-                                            "completed": {
-                                              "type": "boolean"
-                                            }
-                                          },
-                                          "additionalProperties": false,
-                                          "required": [
-                                            "completed"
-                                          ]
-                                        },
-                                        "id": {
-                                          "type": "string"
-                                        },
-                                        "type": {
-                                          "type": "string"
-                                        },
-                                        "broker": {}
-                                      },
-                                      "additionalProperties": false,
-                                      "required": [
-                                        "executionId",
-                                        "stopped",
-                                        "counters",
-                                        "id",
-                                        "type"
-                                      ]
-                                    }
-                                  },
-                                  "flows": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "object",
-                                      "properties": {
-                                        "counters": {
-                                          "type": "object",
-                                          "properties": {
-                                            "take": {
-                                              "type": "number"
-                                            },
-                                            "discard": {
-                                              "type": "number"
-                                            },
-                                            "looped": {
-                                              "type": "number"
-                                            }
-                                          },
-                                          "additionalProperties": false,
-                                          "required": [
-                                            "take",
-                                            "discard",
-                                            "looped"
-                                          ]
-                                        },
-                                        "id": {
-                                          "type": "string"
-                                        },
-                                        "type": {
-                                          "type": "string"
-                                        },
-                                        "broker": {}
-                                      },
-                                      "additionalProperties": false,
-                                      "required": [
-                                        "counters",
-                                        "id",
-                                        "type"
-                                      ]
-                                    }
-                                  },
-                                  "messageFlows": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "object",
-                                      "properties": {
-                                        "counters": {
-                                          "type": "object",
-                                          "properties": {
-                                            "messages": {
-                                              "type": "number"
-                                            }
-                                          },
-                                          "additionalProperties": false,
-                                          "required": [
-                                            "messages"
-                                          ]
-                                        },
-                                        "id": {
-                                          "type": "string"
-                                        },
-                                        "type": {
-                                          "type": "string"
-                                        },
-                                        "broker": {}
-                                      },
-                                      "additionalProperties": false,
-                                      "required": [
-                                        "counters",
-                                        "id",
-                                        "type"
-                                      ]
-                                    }
-                                  },
-                                  "associations": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "object",
-                                      "properties": {
-                                        "counters": {
-                                          "type": "object",
-                                          "properties": {
-                                            "take": {
-                                              "type": "number"
-                                            },
-                                            "discard": {
-                                              "type": "number"
-                                            }
-                                          },
-                                          "additionalProperties": false,
-                                          "required": [
-                                            "take",
-                                            "discard"
-                                          ]
-                                        },
-                                        "id": {
-                                          "type": "string"
-                                        },
-                                        "type": {
-                                          "type": "string"
-                                        },
-                                        "broker": {}
-                                      },
-                                      "additionalProperties": false,
-                                      "required": [
-                                        "counters",
-                                        "id",
-                                        "type"
-                                      ]
-                                    }
-                                  }
-                                },
-                                "additionalProperties": false,
-                                "required": [
-                                  "executionId",
-                                  "stopped",
-                                  "completed",
-                                  "status",
-                                  "children"
-                                ]
-                              },
-                              "id": {
-                                "type": "string"
-                              },
-                              "type": {
-                                "type": "string"
-                              },
-                              "broker": {}
-                            },
-                            "additionalProperties": false,
-                            "required": [
-                              "status",
-                              "stopped",
-                              "counters",
-                              "environment",
-                              "id",
-                              "type"
-                            ]
-                          }
-                        }
-                      },
-                      "additionalProperties": false,
-                      "required": [
-                        "executionId",
-                        "stopped",
-                        "completed",
-                        "status",
-                        "processes"
-                      ]
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "type": "string"
-                    },
-                    "broker": {}
+                    }
                   },
-                  "additionalProperties": false,
+                  "additionalProperties": true,
                   "required": [
-                    "status",
-                    "stopped",
-                    "counters",
-                    "environment",
-                    "id",
-                    "type"
+                    "state"
                   ]
                 }
               }
@@ -1344,13 +988,7 @@
             ]
           },
           "activityStatus": {
-            "type": "string",
-            "enum": [
-              "idle",
-              "executing",
-              "timer",
-              "wait"
-            ]
+            "$ref": "#/components/schemas/ActivityStatus"
           },
           "sequenceNumber": {
             "type": "number"
@@ -1371,11 +1009,11 @@
           "result": {
             "type": "object",
             "properties": {},
-            "additionalProperties": false,
+            "additionalProperties": true,
             "description": "Output from process"
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": [
           "token",
           "name"
@@ -1430,13 +1068,30 @@
           "type"
         ]
       },
+      "ActivityStatus": {
+        "type": "string",
+        "enum": [
+          "idle",
+          "error",
+          "entered",
+          "started",
+          "executing",
+          "executed",
+          "end",
+          "discard",
+          "discarded",
+          "formatting",
+          "timer",
+          "wait"
+        ]
+      },
       "StartDeploymentOptions": {
         "type": "object",
         "properties": {
           "variables": {
             "type": "object",
             "properties": {},
-            "additionalProperties": false
+            "additionalProperties": true
           },
           "businessKey": {
             "type": "string"
@@ -1460,7 +1115,7 @@
           "output": {
             "type": "object",
             "properties": {},
-            "additionalProperties": false,
+            "additionalProperties": true,
             "description": "Engine environment output"
           }
         },
@@ -1481,13 +1136,16 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Element id"
                 },
                 "type": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Element type"
                 },
                 "executionId": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Element execution id"
                 },
                 "parent": {
                   "type": "object",
@@ -1504,7 +1162,24 @@
                     "path": {
                       "type": "array",
                       "items": {
-                        "type": "object"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "executionId": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "type",
+                          "executionId"
+                        ]
                       }
                     }
                   },
@@ -1512,23 +1187,25 @@
                   "required": [
                     "id",
                     "type",
-                    "executionId",
-                    "path"
+                    "executionId"
                   ]
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": true
             },
             "description": "Activity executions, e.g. executing multi-instance tasks or event definitions"
           },
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Element id"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "description": "Element type"
           },
           "executionId": {
-            "type": "string"
+            "type": "string",
+            "description": "Element execution id"
           },
           "parent": {
             "type": "object",
@@ -1545,7 +1222,24 @@
               "path": {
                 "type": "array",
                 "items": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "executionId": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "type",
+                    "executionId"
+                  ]
                 }
               }
             },
@@ -1553,12 +1247,11 @@
             "required": [
               "id",
               "type",
-              "executionId",
-              "path"
+              "executionId"
             ]
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": [
           "token"
         ]
@@ -1583,13 +1276,7 @@
             ]
           },
           "activityStatus": {
-            "type": "string",
-            "enum": [
-              "idle",
-              "executing",
-              "timer",
-              "wait"
-            ]
+            "$ref": "#/components/schemas/ActivityStatus"
           },
           "sequenceNumber": {
             "type": "number"
@@ -1610,11 +1297,11 @@
           "result": {
             "type": "object",
             "properties": {},
-            "additionalProperties": false,
+            "additionalProperties": true,
             "description": "Output from process"
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": [
           "token",
           "name"
@@ -1630,7 +1317,7 @@
             }
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": [
           "engines"
         ]
@@ -1654,7 +1341,7 @@
             "description": "Resumed by engine token"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": true
       },
       "StartDeploymentResult": {
         "type": "object",
@@ -1680,13 +1367,7 @@
             ]
           },
           "activityStatus": {
-            "type": "string",
-            "enum": [
-              "idle",
-              "executing",
-              "timer",
-              "wait"
-            ]
+            "$ref": "#/components/schemas/ActivityStatus"
           },
           "sequenceNumber": {
             "type": "number"
@@ -1707,11 +1388,11 @@
           "result": {
             "type": "object",
             "properties": {},
-            "additionalProperties": false,
+            "additionalProperties": true,
             "description": "Output from process"
           }
         },
-        "additionalProperties": false,
+        "additionalProperties": true,
         "required": [
           "id"
         ]

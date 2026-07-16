@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## v0.20.0 - 2026-06-16
+
+- expects `bpmn-engine@26` and `bpmn-elements@18` that doesn't discard sequence flows
+- example app evaluates Business Rules tasks against a [DMN 1.3 elements](https://github.com/zerodep/dmn-elements) service
+
 ## v0.19.0 - 2026-05-07
 
 - ship a pre-built OpenAPI 3 document for the example app via `@aller/express-swagger`

@@ -4,6 +4,7 @@ declare module 'bpmn-middleware' {
 	import type { Timer as ContextTimer } from 'moddle-context-serializer';
 	import type { LRUCache } from 'lru-cache';
 	import type { Broker } from 'smqp';
+	export { ActivityStatus as  } from 'bpmn-elements';
 	/**
 	 * BPMN 2 Engine middleware
 	 * */
@@ -202,31 +203,22 @@ declare module 'bpmn-middleware' {
 			source?: string;
 			sourceContext?: import("moddle-context-serializer").SerializableContext;
 			elements?: Record<string, any>;
-			typeResolver?: typeof import("moddle-context-serializer").TypeResolver;
-			extendFn?: import("moddle-context-serializer").extendFn;
+			typeResolver?: import("moddle-context-serializer").ResolverFn;
+			extendFn?: import("moddle-context-serializer").ExtendFn;
 			moddleOptions?: any;
 			moddleContext?: import("bpmn-moddle").Definitions;
+			Logger?: (scope: string) => import("bpmn-elements").ILogger;
+			scripts?: import("bpmn-elements").IScripts;
+			disableDummyScript?: boolean;
 			listener?: import("node:events") | import("bpmn-engine").IListenerEmitter;
 			settings?: import("bpmn-elements").EnvironmentSettings;
 			variables?: Record<string, any>;
 			services?: Record<string, CallableFunction>;
-			Logger?: import("bpmn-elements").LoggerFactory;
 			timers?: import("bpmn-elements").ITimers;
-			scripts?: import("bpmn-elements").IScripts;
 			extensions?: Record<string, import("bpmn-elements").Extension>;
 			expressions?: import("bpmn-elements").IExpressions;
 		};
-		/**
-		 * Bound init
-		 * */
-		_init: import("connect").NextHandleFunction;
-		/**
-		 * Bound addEngineLocals
-		 * */
-		_addEngineLocals: import("connect").NextHandleFunction;
 		init(req: import("connect").IncomingMessage, res: import("node:http").ServerResponse, next: import("connect").NextFunction): void;
-		
-		_bpmnEngineListener: BpmnPrefixListener;
 		/**
 		 * Start deployment request pipeline
 		 * @param fn start request handler
@@ -505,10 +497,8 @@ declare module 'bpmn-middleware' {
 		autosaveEngineState: boolean;
 		Scripts: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
 		Services: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
-		/** @internal Bound state message handler */
-		__onStateMessage: (routingKey: string, message: import("smqp").Message, engine: MiddlewareEngine) => Promise<void>;
 		get name(): string;
-		get broker(): import("smqp").default;
+		get broker(): import("smqp").Broker;
 		get adapter(): IStorageAdapter;
 		get running(): MiddlewareEngine[];
 		/**
@@ -629,7 +619,7 @@ declare module 'bpmn-middleware' {
 			basePath?: string;
 			adapter?: IStorageAdapter;
 			engineOptions?: import("bpmn-engine").BpmnEngineOptions;
-			broker?: import("smqp").default;
+			broker?: import("smqp").Broker;
 			autosaveEngineState?: boolean;
 			Scripts?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
 			Services?: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
@@ -709,8 +699,6 @@ declare module 'bpmn-middleware' {
 	export class MiddlewareEngine extends Engine {
 		
 		constructor(token: string, options?: MiddlewareEngineOptions);
-		
-		options: MiddlewareEngineOptions;
 		/**
 		 * Execution idle timer
 		 * */
@@ -730,7 +718,7 @@ declare module 'bpmn-middleware' {
 		 */
 		startIdleTimer(customHandler?: (engine: MiddlewareEngine, delay: number) => void, delay?: number): void;
 		
-		_idleTimeoutHandler(delay: number): any;
+		_idleTimeoutHandler(delay: number): number | Promise<void>;
 		
 		_getCurrentStatus(): {
 			expireAt: Date;

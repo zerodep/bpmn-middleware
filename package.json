@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "mocha",
-    "posttest": "npm run lint && npm run dist && npm run test:md",
+    "posttest": "npm run lint && npm run dist && npm run test:md && npm run build:swagger --workspace=example",
     "lint": "eslint . --cache && prettier . --check --cache",
     "prepack": "npm run dist",
     "cov:html": "c8 -r html -r text mocha",
@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/zerodep/bpmn-middleware#readme",
   "devDependencies": {
-    "@aller/express-swagger": "^0.0.9",
+    "@aller/express-swagger": "^0.3.1",
     "@eslint/js": "^10.0.1",
     "@onify/flow-extensions": "^9.0.0",
     "@rollup/plugin-commonjs": "^29.0.0",
@@ -53,11 +53,12 @@
     "@types/express": "^5.0.1",
     "@types/multer": "^2.0.0",
     "@types/supertest": "^7.2.0",
+    "bpmn-moddle": "^9.0.4",
     "c8": "^11.0.0",
     "camunda-bpmn-moddle": "^7.0.1",
     "chai": "^6.0.1",
     "chronokinesis": "^8.0.0",
-    "dts-buddy": "^0.7.0",
+    "dts-buddy": "^0.8.0",
     "eslint": "^10.3.0",
     "express": "^5.1.0",
     "express-4": "npm:express@^4.21.2",
@@ -77,11 +78,11 @@
   },
   "peerDependencies": {
     "@0dep/piso": ">=2",
-    "bpmn-elements": ">=17",
-    "bpmn-engine": ">=15",
+    "bpmn-elements": ">=18",
+    "bpmn-engine": ">=26",
     "debug": "4.x",
     "express": ">=4",
-    "smqp": ">=9"
+    "smqp": ">=13"
   },
   "overrides": {
     "c8": {

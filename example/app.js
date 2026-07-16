@@ -9,6 +9,7 @@ import * as bpmnElements from 'bpmn-elements';
 import { factory as ScriptsFactory } from './middleware-scripts.js';
 import { basicAuth, authorize, addUser } from './middleware/auth.js';
 import { runToEnd, signal } from './middleware/custom.js';
+import { decisionRoute, dmnServiceExtension } from './middleware/dmn.js';
 import { errorHandler } from './middleware/error-handler.js';
 import camunda from 'camunda-bpmn-moddle/resources/camunda.json' with { type: 'json' };
 
@@ -30,7 +31,7 @@ const middleware = bpmnEngineMiddleware({
   engineOptions: {
     moddleOptions: { camunda },
     elements,
-    extensions: { onify: extensions },
+    extensions: { onify: extensions, dmn: dmnServiceExtension(adapter) },
     extendFn,
   },
 });
@@ -40,6 +41,7 @@ app.post('/rest/auth/process-definition/:deploymentName/start', middleware.middl
 app.use('/rest', basicAuth(adapter, true), middleware);
 app.post('/start/sync/:deploymentName', basicAuth(adapter, true), middleware.middleware.start(runToEnd));
 app.post('/signal/:token', basicAuth(adapter, true), middleware.middleware.resume(signal));
+app.post('/decision/:deploymentName/:decisionId', basicAuth(adapter, true), express.json(), decisionRoute(adapter));
 
 app.get(
   '/swagger.json',

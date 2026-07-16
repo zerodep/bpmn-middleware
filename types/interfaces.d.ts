@@ -16,6 +16,8 @@ declare global {
   }
 }
 
+export type { ActivityStatus } from 'bpmn-elements';
+
 export enum StorageType {
   State = 'state',
   Deployment = 'deployment',
@@ -120,9 +122,7 @@ export interface Caller {
 }
 
 export type getOptionsAndCallback<TOptions, TReturn> =
-  | [TOptions]
-  | [(err: Error, result: TReturn) => void]
-  | [TOptions, (err: Error, result: TReturn) => void];
+  [TOptions] | [(err: Error, result: TReturn) => void] | [TOptions, (err: Error, result: TReturn) => void];
 
 export type postponed = { id: string; type: string };
 

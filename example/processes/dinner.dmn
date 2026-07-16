@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="dinnerDefinitions" name="Dinner" namespace="https://example.com/dmn/dinner">
+  <inputData id="seasonInput" name="Season">
+    <variable id="seasonVariable" name="Season" typeRef="string" />
+  </inputData>
+  <decision id="dish" name="Dish">
+    <variable id="dishVariable" name="Dish" typeRef="string" />
+    <informationRequirement id="dishRequiresSeason">
+      <requiredInput href="#seasonInput" />
+    </informationRequirement>
+    <decisionTable id="dishTable" hitPolicy="FIRST">
+      <input id="seasonTableInput" label="Season">
+        <inputExpression id="seasonInputExpression" typeRef="string"><text>Season</text></inputExpression>
+      </input>
+      <output id="dishOutput" name="dish" typeRef="string" />
+      <rule id="winterRule">
+        <inputEntry id="winterEntry"><text>"Winter"</text></inputEntry>
+        <outputEntry id="winterDish"><text>"Roast beef"</text></outputEntry>
+      </rule>
+      <rule id="anySeasonRule">
+        <inputEntry id="anySeasonEntry"><text>-</text></inputEntry>
+        <outputEntry id="anySeasonDish"><text>"Light salad"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="dinnerDiagram">
+      <dmndi:DMNShape id="dishShape" dmnElementRef="dish">
+        <dc:Bounds height="80" width="180" x="160" y="80" />
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="seasonInputShape" dmnElementRef="seasonInput">
+        <dc:Bounds height="45" width="125" x="187" y="240" />
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="dishRequiresSeasonEdge" dmnElementRef="dishRequiresSeason">
+        <di:waypoint x="250" y="240" />
+        <di:waypoint x="250" y="160" />
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

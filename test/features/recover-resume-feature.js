@@ -341,7 +341,7 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is set', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 4);
+      expect(running[0]).to.have.property('sequenceNumber', 7);
       expect(running[0]).to.have.property('activityStatus', 'wait');
     });
 
@@ -360,7 +360,7 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is updated', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 19);
+      expect(running[0]).to.have.property('sequenceNumber', 23);
       expect(running[0]).to.have.property('activityStatus', 'timer');
       expect(running[0]).to.have.property('expireAt').that.is.ok;
     });
@@ -399,7 +399,7 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is updated', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 23);
+      expect(running[0]).to.have.property('sequenceNumber', 27);
     });
 
     And('process activity status is wait', () => {
