@@ -887,9 +887,9 @@
                 "type": "string",
                 "enum": [
                   "idle",
+                  "error",
                   "running",
-                  "stopped",
-                  "error"
+                  "stopped"
                 ]
               },
               "stopped": {
@@ -982,9 +982,9 @@
             "type": "string",
             "enum": [
               "idle",
+              "error",
               "running",
-              "stopped",
-              "error"
+              "stopped"
             ]
           },
           "activityStatus": {
@@ -1072,7 +1072,6 @@
         "type": "string",
         "enum": [
           "idle",
-          "error",
           "entered",
           "started",
           "executing",
@@ -1080,6 +1079,7 @@
           "end",
           "discard",
           "discarded",
+          "error",
           "formatting",
           "timer",
           "wait"
@@ -1270,9 +1270,9 @@
             "type": "string",
             "enum": [
               "idle",
+              "error",
               "running",
-              "stopped",
-              "error"
+              "stopped"
             ]
           },
           "activityStatus": {
@@ -1361,9 +1361,9 @@
             "type": "string",
             "enum": [
               "idle",
+              "error",
               "running",
-              "stopped",
-              "error"
+              "stopped"
             ]
           },
           "activityStatus": {

@@ -1,5 +1,5 @@
 import { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus } from 'bpmn-engine';
-import { ActivityStatus, ElementMessageContent, IScripts, Environment } from 'bpmn-elements';
+import { ElementMessageContent, IScripts, Environment } from 'bpmn-elements';
 import { Timer as ContextTimer } from 'moddle-context-serializer';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
@@ -16,7 +16,7 @@ declare global {
   }
 }
 
-export type { ActivityStatus } from 'bpmn-elements';
+export type ActivityStatus = import('bpmn-elements').ActivityStatus;
 
 export enum StorageType {
   State = 'state',

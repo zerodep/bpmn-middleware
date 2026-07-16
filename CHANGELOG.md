@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## v0.20.1 - 2026-07-16
+
+- export `ActivityStatus` from `bpmn-elements` so the example OpenAPI document renders one shared `#/components/schemas/ActivityStatus` enum instead of inlining it per schema; declared as a type alias since dts-buddy@0.8.2 mangles `export type { X } from 'pkg'` re-exports into invalid syntax
+- regenerate the example OpenAPI document with `@aller/express-swagger@0.3.1`, which deduplicates enum values from `Enum | ${Enum}` union types
+
 ## v0.20.0 - 2026-06-16
 
 - expects `bpmn-engine@26` and `bpmn-elements@18` that doesn't discard sequence flows

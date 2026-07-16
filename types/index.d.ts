@@ -1,10 +1,9 @@
 declare module 'bpmn-middleware' {
 	import type { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus, Engine } from 'bpmn-engine';
-	import type { ActivityStatus, ElementMessageContent, IScripts, Environment } from 'bpmn-elements';
+	import type { ElementMessageContent, IScripts, Environment } from 'bpmn-elements';
 	import type { Timer as ContextTimer } from 'moddle-context-serializer';
 	import type { LRUCache } from 'lru-cache';
 	import type { Broker } from 'smqp';
-	export { ActivityStatus as  } from 'bpmn-elements';
 	/**
 	 * BPMN 2 Engine middleware
 	 * */
@@ -12,6 +11,8 @@ declare module 'bpmn-middleware' {
 		engines: Engines;
 		middleware: BpmnEngineMiddleware;
 	};
+  type ActivityStatus = import('bpmn-elements').ActivityStatus;
+
   enum StorageType {
 	State = 'state',
 	Deployment = 'deployment',
