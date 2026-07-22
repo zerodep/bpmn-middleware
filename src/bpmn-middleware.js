@@ -49,6 +49,7 @@ export function BpmnEngineMiddleware(options) {
   broker.subscribeTmp(name, 'definition.end', (_, msg) => this._postProcessDefinitionRun(msg), { noAck: true });
   broker.subscribeTmp(name, 'definition.error', (_, msg) => this._postProcessDefinitionRun(msg), { noAck: true });
 
+  /** @internal */
   this[kInitilialized] = false;
 
   /**
@@ -507,10 +508,10 @@ BpmnEngineMiddleware.prototype.deleteStateByToken = async function deleteStateBy
 /**
  * Stop all running engines
  * @internal
- * @param {import('express').Request} _
+ * @param {import('express').Request} _req
  * @param {import('express').Response<import('@aller/express-swagger').NoContentResponse>} res
  */
-BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_, res) {
+BpmnEngineMiddleware.prototype.internalStopAll = function internalStopAll(_req, res) {
   this.engines.stopAll();
   res.sendStatus(204);
 };
@@ -904,33 +905,33 @@ function syncExecutionCallback() {}
 /**
  * Middleware response locals
  * @typedef {Object} BpmnMiddlewareResponseLocals
- * @property {string} middlewareName - Middleware name
- * @property {Engines} engines - Engine factory
- * @property {import('types').IStorageAdapter} adapter - Storage adapter
- * @property {Broker} broker - Middleware broker
- * @property {BpmnPrefixListener} listener - BPMN engine listener
- * @property {string} [token] - BPMN engine execution token
- * @property {MiddlewareEngine} [engine] - BPMN engine instance
- * @property {import('types').ExecuteOptions} [executeOptions] - BPMN engine execution options
+ * @property {string} middlewareName Middleware name
+ * @property {Engines} engines Engine factory
+ * @property {import('types').IStorageAdapter} adapter Storage adapter
+ * @property {Broker} broker Middleware broker
+ * @property {BpmnPrefixListener} listener BPMN engine listener
+ * @property {string} [token] BPMN engine execution token
+ * @property {MiddlewareEngine} [engine] BPMN engine instance
+ * @property {import('types').ExecuteOptions} [executeOptions] BPMN engine execution options
  */
 
 /**
  * Start deployment params
  * @typedef {Object} StartDeployment
- * @property {string} deploymentName - Deployment name
+ * @property {string} deploymentName Deployment name
  */
 
 /**
  * Start deployment result
  * @typedef {Object} StartDeploymentResult
- * @property {string} id - engine run token
- * @property {any} [result] - engine.environment.output as result
+ * @property {string} id engine run token
+ * @property {any} [result] engine.environment.output as result
  */
 
 /**
  * Token params
  * @typedef {Object} TokenParameter
- * @property {string} token - BPMN engine execution token
+ * @property {string} token BPMN engine execution token
  */
 
 /**

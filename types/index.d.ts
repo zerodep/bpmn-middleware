@@ -326,7 +326,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Stop all running engines
 		 * */
-		internalStopAll(_: import("express").Request, res: import("express").Response<import("@aller/express-swagger").NoContentResponse>): void;
+		internalStopAll(_req: import("express").Request, res: import("express").Response<import("@aller/express-swagger").NoContentResponse>): void;
 		/**
 		 * Stop engine by token
 		 * */
@@ -367,42 +367,41 @@ declare module 'bpmn-middleware' {
 		 * Post process engine definition run
 		 * */
 		_postProcessDefinitionRun(definitionEndMessage: import("smqp").Message): Promise<void>;
-		[kInitilialized]: boolean;
 	}
 	/**
 	 * Middleware response locals
 	 */
 	type BpmnMiddlewareResponseLocals = {
 		/**
-		 * - Middleware name
+		 * Middleware name
 		 */
 		middlewareName: string;
 		/**
-		 * - Engine factory
+		 * Engine factory
 		 */
 		engines: Engines;
 		/**
-		 * - Storage adapter
+		 * Storage adapter
 		 */
 		adapter: IStorageAdapter;
 		/**
-		 * - Middleware broker
+		 * Middleware broker
 		 */
 		broker: Broker;
 		/**
-		 * - BPMN engine listener
+		 * BPMN engine listener
 		 */
 		listener: BpmnPrefixListener;
 		/**
-		 * - BPMN engine execution token
+		 * BPMN engine execution token
 		 */
 		token?: string;
 		/**
-		 * - BPMN engine instance
+		 * BPMN engine instance
 		 */
 		engine?: MiddlewareEngine;
 		/**
-		 * - BPMN engine execution options
+		 * BPMN engine execution options
 		 */
 		executeOptions?: ExecuteOptions;
 	};
@@ -411,7 +410,7 @@ declare module 'bpmn-middleware' {
 	 */
 	type StartDeployment = {
 		/**
-		 * - Deployment name
+		 * Deployment name
 		 */
 		deploymentName: string;
 	};
@@ -420,11 +419,11 @@ declare module 'bpmn-middleware' {
 	 */
 	type StartDeploymentResult_1 = {
 		/**
-		 * - engine run token
+		 * engine run token
 		 */
 		id: string;
 		/**
-		 * - engine.environment.output as result
+		 * engine.environment.output as result
 		 */
 		result?: any;
 	};
@@ -433,7 +432,7 @@ declare module 'bpmn-middleware' {
 	 */
 	type TokenParameter = {
 		/**
-		 * - BPMN engine execution token
+		 * BPMN engine execution token
 		 */
 		token: string;
 	};
@@ -471,7 +470,6 @@ declare module 'bpmn-middleware' {
 		 * */
 		emit(eventName: string, ...args: any[]): boolean;
 	}
-	const kInitilialized: unique symbol;
 	export const STORAGE_TYPE_DEPLOYMENT: "deployment";
 	export const STORAGE_TYPE_STATE: "state";
 	export const STORAGE_TYPE_FILE: "file";
@@ -613,21 +611,7 @@ declare module 'bpmn-middleware' {
 		 * Internal teardown engine, remove listeners and stuff
 		 * */
 		_teardownEngine(engine: MiddlewareEngine): void;
-		[kOptions]: {
-			idleTimeout: number;
-			engineCache: LRUCache<string, MiddlewareEngine, unknown> | LRUCache<string, import("bpmn-engine").Engine, unknown>;
-			name?: string;
-			basePath?: string;
-			adapter?: IStorageAdapter;
-			engineOptions?: import("bpmn-engine").BpmnEngineOptions;
-			broker?: import("smqp").Broker;
-			autosaveEngineState?: boolean;
-			Scripts?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
-			Services?: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, CallableFunction>;
-			maxRunning?: number;
-		};
 	}
-	const kOptions: unique symbol;
 	/**
 	 * Memory adapter
 	 * 
@@ -727,12 +711,7 @@ declare module 'bpmn-middleware' {
 			token: string;
 			activityStatus: import("bpmn-elements").ActivityStatus;
 		};
-		/**
-		 * Engine execution token
-		 * */
-		[kToken]: string;
 	}
-	const kToken: unique symbol;
 
 	export {};
 }

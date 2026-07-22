@@ -14,6 +14,7 @@ export class MiddlewareEngine extends Engine {
     this.options = options;
     /**
      * Engine execution token
+     * @internal
      * @type {string}
      */
     this[kToken] = token;

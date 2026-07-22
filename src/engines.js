@@ -25,7 +25,7 @@ export function Engines(options) {
   if (!options.adapter) throw new TypeError('options.adapter is mandatory');
   if (!options.broker) throw new TypeError('options.broker is mandatory');
 
-  const passedOptions = (this[kOptions] = {
+  const passedOptions = {
     ...options,
     idleTimeout: options.idleTimeout || DEFAULT_IDLE_TIMER,
     engineCache:
@@ -34,7 +34,9 @@ export function Engines(options) {
         max: options.maxRunning || 1000,
         disposeAfter: onEvictEngine,
       }),
-  });
+  };
+  /** @internal */
+  this[kOptions] = passedOptions;
 
   this.engineOptions = passedOptions.engineOptions;
   this.idleTimeout = passedOptions.idleTimeout;
@@ -51,7 +53,6 @@ export function Engines(options) {
   this.__onStateMessage = this._onStateMessage.bind(this);
 }
 
-/** @name module:bpmn-middleware.Engines#name */
 Object.defineProperty(Engines.prototype, 'name', {
   /** @returns {string} */
   get() {
@@ -59,7 +60,6 @@ Object.defineProperty(Engines.prototype, 'name', {
   },
 });
 
-/** @name module:bpmn-middleware.Engines#broker */
 Object.defineProperty(Engines.prototype, 'broker', {
   /** @returns {import('smqp').Broker} */
   get() {
@@ -67,7 +67,6 @@ Object.defineProperty(Engines.prototype, 'broker', {
   },
 });
 
-/** @name module:bpmn-middleware.Engines#adapter */
 Object.defineProperty(Engines.prototype, 'adapter', {
   /** @returns {import('types').IStorageAdapter} */
   get() {
@@ -75,7 +74,6 @@ Object.defineProperty(Engines.prototype, 'adapter', {
   },
 });
 
-/** @name module:bpmn-middleware.Engines#running */
 Object.defineProperty(Engines.prototype, 'running', {
   /** @returns {MiddlewareEngine[]} */
   get() {

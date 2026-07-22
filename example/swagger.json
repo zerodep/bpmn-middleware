@@ -27,7 +27,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- Deployment name"
+              "description": "Deployment name"
             }
           },
           {
@@ -176,7 +176,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- Deployment name"
+              "description": "Deployment name"
             }
           },
           {
@@ -247,7 +247,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           },
           {
@@ -318,7 +318,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           },
           {
@@ -389,7 +389,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           },
           {
@@ -460,7 +460,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           },
           {
@@ -532,7 +532,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- Deployment name"
+              "description": "Deployment name"
             }
           }
         ]
@@ -570,7 +570,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- Deployment name"
+              "description": "Deployment name"
             }
           }
         ]
@@ -615,7 +615,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           }
         ]
@@ -678,7 +678,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           }
         ]
@@ -697,7 +697,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- BPMN engine execution token"
+              "description": "BPMN engine execution token"
             }
           }
         ]
@@ -725,7 +725,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "- Deployment name"
+              "description": "Deployment name"
             }
           },
           {

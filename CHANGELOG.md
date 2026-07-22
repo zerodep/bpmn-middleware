@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.20.2 - 2026-07-22
+
+- [`dts-buddy@0.8.3`](https://www.npmjs.com/package/dts-buddy) now strips internal properties, only prototyped methods remaining
+
 ## v0.20.1 - 2026-07-16
 
 - export `ActivityStatus` from `bpmn-elements` so the example OpenAPI document renders one shared `#/components/schemas/ActivityStatus` enum instead of inlining it per schema; declared as a type alias since dts-buddy@0.8.2 mangles `export type { X } from 'pkg'` re-exports into invalid syntax
