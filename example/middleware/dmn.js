@@ -1,5 +1,7 @@
+import Debug from 'debug';
 import { DmnModdle } from 'dmn-moddle';
 import { Context, Definition, Environment } from 'dmn-elements';
+import { dmn, alignDmnNamespaces } from 'dmn-elements/dmn-moddle';
 import { HttpError, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE } from 'bpmn-middleware';
 
 /**
@@ -21,16 +23,28 @@ export async function evaluateDecision(adapter, deploymentName, decisionId, inpu
     throw new HttpError(`deployment ${deploymentName} has no deployed decisions`, 404);
   }
 
-  const moddle = new DmnModdle();
+  const moddle = new DmnModdle({ dmn });
   for (const file of decisionFiles) {
     const decisionSource = await adapter.fetch(STORAGE_TYPE_FILE, file.path);
-    const { rootElement } = await moddle.fromXML(decisionSource.content);
-    const context = new Context(rootElement, new Environment());
+    const { rootElement } = await moddle.fromXML(alignDmnNamespaces(decisionSource.content));
+    const context = new Context(rootElement, new Environment({ Logger }));
     if (!context.getDecisionById(decisionId)) continue;
     return new Definition(context).trace(decisionId, input);
   }
 
   throw new HttpError(`no decision with id ${decisionId} is deployed in ${deploymentName}`, 404);
+}
+
+/**
+ * Scoped debug logger for decision evaluation, enable with DEBUG=dmn-elements:*
+ * @param {string} scope element scope, e.g. dmn:decisiontable
+ */
+function Logger(scope) {
+  return {
+    debug: Debug(`dmn-elements:${scope}`),
+    error: Debug(`dmn-elements:error:${scope}`),
+    warn: Debug(`dmn-elements:warn:${scope}`),
+  };
 }
 
 /**
