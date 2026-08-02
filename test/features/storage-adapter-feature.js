@@ -7,6 +7,9 @@ import { MemoryAdapter, STORAGE_TYPE_STATE, STORAGE_TYPE_FILE, STORAGE_TYPE_DEPL
 import { createDeployment, waitForProcess, horizontallyScaled } from '../helpers/test-helpers.js';
 
 class StorageAdapter {
+  /**
+   * @param {{ storeSerialized?: boolean }} [options]
+   */
   constructor({ storeSerialized } = {}) {
     this.storeSerialized = storeSerialized;
     this[STORAGE_TYPE_STATE] = new Map();
@@ -22,11 +25,16 @@ class StorageAdapter {
       })
     );
   }
+  update(type, key, value /* options */) {
+    if (!this[type].has(key)) return Promise.reject(new TypeError(`${type}:${key} not found`));
+    return this.upsert(type, key, value);
+  }
   delete(type, key, options) {
-    if (!this[type]) throw TypeError('unknown storage type');
-    if (!options?.mandatory) throw new TypeError('adapter requires mandatory prop');
+    if (!this[type]) return Promise.reject(TypeError('unknown storage type'));
+    if (!options?.mandatory) return Promise.reject(new TypeError('adapter requires mandatory prop'));
 
     this[type].delete(key);
+    return Promise.resolve();
   }
   fetch(type, key /*  options */) {
     return new Promise((resolve) =>
@@ -36,8 +44,9 @@ class StorageAdapter {
       })
     );
   }
+  /** @returns {Promise<{records: any[]}>} */
   query(/* type, qs */) {
-    throw new Error('not implemented');
+    return Promise.reject(new Error('not implemented'));
   }
 }
 
@@ -346,7 +355,7 @@ Feature('storage adapter', () => {
     });
 
     Given('a faulty storage adapter', () => {
-      storage = new LRUCache({ max: 1000 });
+      storage = /** @type {LRUCache<string, any>} */ (new LRUCache({ max: 1000 }));
       class VolatileAdapter extends MemoryAdapter {
         upsert(type, key, value) {
           if (type === STORAGE_TYPE_DEPLOYMENT) {
@@ -388,7 +397,7 @@ Feature('storage adapter', () => {
     });
 
     Given('a faulty storage adapter', () => {
-      storage = new LRUCache({ max: 1000 });
+      storage = /** @type {LRUCache<string, any>} */ (new LRUCache({ max: 1000 }));
       class VolatileAdapter extends MemoryAdapter {
         upsert(type, key, value) {
           if (type === STORAGE_TYPE_STATE && value.sequenceNumber > 12) {
@@ -463,7 +472,7 @@ Feature('storage adapter', () => {
     });
 
     Given('a faulty storage adapter', () => {
-      storage = new LRUCache({ max: 1000 });
+      storage = /** @type {LRUCache<string, any>} */ (new LRUCache({ max: 1000 }));
       class VolatileAdapter extends MemoryAdapter {
         fetch(type, key, options) {
           if (type === STORAGE_TYPE_STATE) {
@@ -552,7 +561,7 @@ Feature('storage adapter', () => {
     });
 
     Given('a faulty storage adapter', () => {
-      storage = new LRUCache({ max: 1000 });
+      storage = /** @type {LRUCache<string, any>} */ (new LRUCache({ max: 1000 }));
       class VolatileAdapter extends MemoryAdapter {
         upsert(type, key, value) {
           if (type === STORAGE_TYPE_FILE) {

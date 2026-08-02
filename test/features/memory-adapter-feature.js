@@ -15,7 +15,7 @@ Feature('memory adapter', () => {
     });
 
     Given('two parallel app instances with a shared adapter storage', () => {
-      storage = new LRUCache({ max: 100 });
+      storage = /** @type {LRUCache<string, any>} */ (new LRUCache({ max: 100 }));
       const adapter1 = new MemoryAdapter(storage);
       const adapter2 = new MemoryAdapter(storage);
 

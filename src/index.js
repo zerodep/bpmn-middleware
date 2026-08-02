@@ -13,9 +13,20 @@ export { BpmnEngineMiddleware } from './bpmn-middleware.js';
 export { Engines, MemoryAdapter, HttpError, StorageError, MiddlewareEngine };
 export * from './constants.js';
 
+/** @typedef {import('types').BpmnMiddlewareOptions} BpmnMiddlewareOptions */
+/** @typedef {import('types').ExecuteOptions} ExecuteOptions */
+/** @typedef {import('types').StartDeploymentOptions} StartDeploymentOptions */
+/** @typedef {import('types').StartDeploymentResult} StartDeploymentResult */
+/** @typedef {import('types').MiddlewareEngineStatus} MiddlewareEngineStatus */
+/** @typedef {import('types').MiddlewareEngineState} MiddlewareEngineState */
+/** @typedef {import('types').SignalBody} SignalBody */
+/** @typedef {import('./bpmn-middleware.js').StartDeployment} StartDeployment */
+/** @typedef {import('./bpmn-middleware.js').TokenParameter} TokenParameter */
+/** @typedef {import('./bpmn-middleware.js').BpmnMiddlewareResponseLocals} BpmnMiddlewareResponseLocals */
+
 /**
  * BPMN 2 Engine middleware
- * @param {import('types').BpmnMiddlewareOptions} options
+ * @param {import('types').BpmnMiddlewareOptions} [options]
  * @returns {import('express').Router & { engines: Engines, middleware: BpmnEngineMiddleware }}
  */
 export function bpmnEngineMiddleware(options) {

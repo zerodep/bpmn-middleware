@@ -7,7 +7,10 @@ import { factory as ScriptsFactory } from '../../example/middleware-scripts.js';
 const externalScriptSource = getResource('script-resource.bpmn');
 
 Feature('scripts', () => {
-  let apps, adapter;
+  /** @type {ReturnType<horizontallyScaled>} */
+  let apps;
+  /** @type {import('bpmn-middleware').MemoryAdapter} */
+  let adapter;
   before(() => {
     adapter = new MemoryAdapter();
     apps = horizontallyScaled(2, { adapter });
@@ -103,6 +106,7 @@ Feature('scripts', () => {
         adapter,
         Scripts(...args) {
           scriptsArgs = args;
+          // @ts-ignore
           return ScriptsFactory(...args);
         },
       });

@@ -15,6 +15,7 @@ const { bpmnEngineMiddleware } = middleware;
 describe('express-middleware', () => {
   let app;
   const getServiceCalls = [];
+  /** @type {LRUCache<string, import('bpmn-middleware').MiddlewareEngine>} */
   const engineCache = new LRUCache({ max: 100 });
   before(() => {
     app = getAppWithExtensions({
@@ -79,6 +80,7 @@ describe('express-middleware', () => {
     });
 
     it('middleware name not a string throws TypeError', () => {
+      // @ts-expect-error intentionally called with non-string name
       expect(() => middleware.bpmnEngineMiddleware({ name: {} })).to.throw(TypeError);
     });
   });
@@ -106,7 +108,7 @@ describe('express-middleware', () => {
 
       const myApp = express();
       myApp.use('/rest', engineMiddleware.init.bind(engineMiddleware));
-      myApp.get('/rest/locals', engineMiddleware.addResponseLocals(), (req, res) => {
+      myApp.get('/rest/locals', engineMiddleware.addResponseLocals(), (_req, res) => {
         res.send({
           engines: !!res.locals.engines,
           adapter: !!res.locals.adapter,
@@ -136,7 +138,7 @@ describe('express-middleware', () => {
       const engineMiddleware = new middleware.BpmnEngineMiddleware({ adapter });
 
       const myApp = express();
-      myApp.use('/rest/locals', engineMiddleware.addResponseLocals(), (req, res) => {
+      myApp.use('/rest/locals', engineMiddleware.addResponseLocals(), (_req, res) => {
         res.send({
           engines: !!res.locals.engines,
           adapter: !!res.locals.adapter,

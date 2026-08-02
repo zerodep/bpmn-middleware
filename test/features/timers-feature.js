@@ -23,6 +23,7 @@ Feature('timers', () => {
       await testHelpers.createDeployment(apps.balance(), deploymentName, timersResource);
     });
 
+    /** @type {import('supertest').Response} */
     let response;
     When('timers are fetched', async () => {
       response = await apps.request().get(`/rest/timers/${deploymentName}`).expect(200);

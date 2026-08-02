@@ -72,7 +72,7 @@ async function authenticate(adapter, username, password) {
  * Slot types mirror the start-deployment chain (`/rest/auth/process-definition/:deploymentName/start`)
  * since express-swagger picks this handler as the operation's terminal annotation source.
  * @param {import('express').Request<import('bpmn-middleware').StartDeployment, import('bpmn-middleware').StartDeploymentResult, import('bpmn-middleware').StartDeploymentOptions, import('bpmn-middleware').ExecuteOptions>} _req
- * @param {import('express').Response<import('bpmn-middleware').StartDeploymentResult, {user:import('./auth.js').User}>} res
+ * @param {import('express').Response<import('bpmn-middleware').StartDeploymentResult, import('bpmn-middleware').BpmnMiddlewareResponseLocals & {user:import('./auth.js').User}>} res
  * @param {import('express').NextFunction} next
  */
 export async function authorize(_req, res, next) {
@@ -84,12 +84,14 @@ export async function authorize(_req, res, next) {
     const [definition] = await engine.getDefinitions();
     const [process] = definition.context.getExecutableProcesses();
 
-    if (process.behaviour.candidateStarterGroups) {
+    /** @type {string | undefined} */
+    const candidateStarterGroups = /** @type {any} */ (process.behaviour).candidateStarterGroups;
+    if (candidateStarterGroups) {
       if (!user?.role?.length) {
         throw new HttpError('Forbidden', 403);
       }
 
-      const roles = new Set(process.behaviour.candidateStarterGroups.split(',').filter(Boolean));
+      const roles = new Set(candidateStarterGroups.split(',').filter(Boolean));
       if (!user.role.some((r) => roles.has(r))) {
         throw new HttpError('Forbidden', 403);
       }
@@ -138,7 +140,7 @@ function hashPassword(salt, password) {
  * User
  * @typedef {Object} User
  * @property {string} username
- * @property {string} name
+ * @property {string} [name]
  * @property {string[]} [role]
  * @property {string} [salt]
  * @property {string} [password]

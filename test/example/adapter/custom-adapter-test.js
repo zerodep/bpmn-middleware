@@ -9,7 +9,7 @@ describe('custom adapter', () => {
       await adapter.fetch(STORAGE_TYPE_FILE, 'fs:nothere');
     } catch (err) {
       // eslint-disable-next-line no-var
-      var error = err;
+      var error = /** @type {import('bpmn-middleware').HttpError} */ (err);
     }
 
     expect(error.statusCode).to.equal(404);

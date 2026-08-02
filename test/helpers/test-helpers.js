@@ -64,6 +64,7 @@ export function horizontallyScaled(instances = 2, options) {
     },
   };
 
+  /** @returns {ReturnType<getAppWithExtensions>} */
   function balance() {
     const app = apps.shift();
     apps.push(app);
@@ -98,7 +99,7 @@ export function getAppWithExtensions(options = {}) {
 /**
  * Get engine options
  * @param {import('../../types/interfaces.js').MiddlewareEngineOptions} [engineOptions]
- * @returns {import('bpmn-engine').MiddlewareEngineOptions}
+ * @returns {import('../../types/interfaces.js').MiddlewareEngineOptions}
  */
 export function getBpmnEngineOptions(engineOptions) {
   return {
@@ -183,7 +184,7 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
   }
 
   /**
-   * @param {string} activityId
+   * @param {string} [activityId]
    */
   function wait(activityId) {
     if (!activityId) return event('activity.wait');
@@ -193,7 +194,7 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
   }
 
   /**
-   * @param {string} activityId
+   * @param {string} [activityId]
    */
   function call(activityId) {
     if (!activityId) return event('activity.call');
@@ -203,7 +204,7 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
   }
 
   /**
-   * @param {string} activityId
+   * @param {string} [activityId]
    */
   function timer(activityId) {
     if (!activityId) return event('activity.timer');
@@ -237,7 +238,7 @@ export function waitForProcess(app, nameOrToken, exchangeName = MIDDLEWARE_DEFAU
 
   /**
    * Start acitivity event
-   * @param {string} activityId
+   * @param {string} [activityId]
    */
   function startActivity(activityId) {
     if (!activityId) return event('activity.start');

@@ -1,5 +1,5 @@
 import { BpmnEngineOptions, BpmnEngineExecutionState, BpmnEngineRunningStatus } from 'bpmn-engine';
-import { ElementMessageContent, IScripts, Environment } from 'bpmn-elements';
+import { ElementMessageContent, IScripts, Environment, ServiceFunction } from 'bpmn-elements';
 import { Timer as ContextTimer } from 'moddle-context-serializer';
 import { LRUCache } from 'lru-cache';
 import { Broker } from 'smqp';
@@ -48,7 +48,7 @@ export interface BpmnMiddlewareOptions {
     adapter: IStorageAdapter,
     deploymentName: string,
     businessKey?: string
-  ) => Record<string, CallableFunction>;
+  ) => Record<string, ServiceFunction> | void;
   /** Max running engines per instance */
   maxRunning?: number;
 }

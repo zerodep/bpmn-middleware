@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["**/*"],
+  "exclude": ["resources"],
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "rootDir": "..",
+    "checkJs": true,
+    "noImplicitAny": false,
+    "declaration": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "types": ["node", "mocha", "chai"]
+  }
+}

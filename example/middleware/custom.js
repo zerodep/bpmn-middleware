@@ -69,5 +69,5 @@ export function signal(req, res, next) {
   /** @type {import('bpmn-middleware').MiddlewareEngine} */
   const engine = res.locals.engine;
   engine.execution.signal(req.body);
-  return runToEnd(req, res, next);
+  return runToEnd(/** @type {any} */ (req), /** @type {any} */ (res), next);
 }

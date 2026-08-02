@@ -7,13 +7,17 @@ const servicesSource = getResource('services.bpmn');
 
 Feature('services', () => {
   Scenario('pass Services factory option', () => {
-    let apps, adapter;
+    /** @type {ReturnType<horizontallyScaled>} */
+    let apps;
+    /** @type {import('bpmn-middleware').MemoryAdapter} */
+    let adapter;
     before(() => {
       adapter = new MemoryAdapter();
     });
     after(() => apps?.stop());
 
     const deploymentName = 'services-process';
+    /** @type {any} */
     let servicesArgs;
     Given('apps are started with Service factory option', () => {
       apps = horizontallyScaled(2, {
@@ -21,11 +25,13 @@ Feature('services', () => {
         Services(_adapter, _deploymentName, businessKey) {
           servicesArgs = [_adapter, deploymentName, businessKey];
 
-          if (businessKey !== 'foo') return;
+          if (businessKey !== 'foo') return {};
 
           this.addService('myService', function myService(...args) {
             args.pop()();
           });
+
+          return {};
         },
       });
     });
@@ -34,8 +40,11 @@ Feature('services', () => {
       return createDeployment(apps.balance(), deploymentName, servicesSource);
     });
 
+    /** @type {import('express').Express} */
     let app;
+    /** @type {Promise<any>} */
     let wait;
+    /** @type {string} */
     let token;
     When('process is started with business key', async () => {
       app = apps.balance();
@@ -45,6 +54,7 @@ Feature('services', () => {
       token = response.body.id;
     });
 
+    /** @type {any} */
     let waitMsg;
     Then('run waits for task', async () => {
       waitMsg = await wait;
@@ -54,6 +64,7 @@ Feature('services', () => {
       expect(servicesArgs).to.deep.equal([adapter, deploymentName, 'foo']);
     });
 
+    /** @type {any} */
     let end;
     When('waiting task is signalled from same api instance', async () => {
       end = waitForProcess(app, deploymentName).end();

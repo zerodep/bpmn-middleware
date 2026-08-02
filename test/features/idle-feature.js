@@ -10,7 +10,9 @@ Feature('idle engine', () => {
   before(ck.travel);
 
   Scenario('engine execution stops when idle timeout occur', () => {
-    let app1, app2, storage;
+    let app1, app2;
+    /** @type {LRUCache} */
+    let storage;
     after(() => {
       return Promise.all([
         request(app1).delete('/rest/internal/stop').expect(204),
@@ -86,7 +88,7 @@ Feature('idle engine', () => {
     });
 
     When('process is resumed close to timer timeout', () => {
-      ck.travel(new Date(expireAt) - 2 * DEFAULT_IDLE_TIMER + 1000);
+      ck.travel(new Date(expireAt).getTime() - 2 * DEFAULT_IDLE_TIMER + 1000);
 
       return request(app2).post(`/rest/resume/${token}`).expect(200);
     });

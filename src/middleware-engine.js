@@ -20,7 +20,7 @@ export class MiddlewareEngine extends Engine {
     this[kToken] = token;
     /**
      * Execution idle timer
-     * @type {import('bpmn-elements').Timer | null | void}
+     * @type {import('bpmn-elements').Timer | null}
      */
     this.idleTimer = null;
 
@@ -53,7 +53,10 @@ export class MiddlewareEngine extends Engine {
   startIdleTimer(customHandler, delay) {
     const engineTimers = this.engineTimers;
     const current = this.idleTimer;
-    if (current) this.idleTimer = engineTimers.clearTimeout(current);
+    if (current) {
+      engineTimers.clearTimeout(current);
+      this.idleTimer = null;
+    }
     if (this.state !== 'running') return;
 
     const delayMs = delay ?? this.environment.settings.idleTimeout ?? DEFAULT_IDLE_TIMER;

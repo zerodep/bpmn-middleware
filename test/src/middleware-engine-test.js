@@ -59,16 +59,18 @@ describe('MiddlewareEngine', () => {
       await engine.execute();
       engine.startIdleTimer();
 
+      /** @type {any} */
       let message;
       engine.broker.subscribeOnce('event', 'engine.idle.timer', (_, msg) => {
         message = msg;
       });
 
+      // @ts-ignore
       engine.idleTimer.callback();
 
-      expect(message.content).to.have.property('name', 'take 5');
-      expect(message.content).to.have.property('token', 'token');
-      expect(message.content).to.have.property('activityStatus', 'timer');
+      expect(message?.content).to.have.property('name', 'take 5');
+      expect(message?.content).to.have.property('token', 'token');
+      expect(message?.content).to.have.property('activityStatus', 'timer');
     });
 
     it('ignores start if idle', () => {
@@ -115,7 +117,7 @@ describe('MiddlewareEngine', () => {
 
       const errored = engine.waitFor('error');
 
-      engine.execution.getActivityById('task').getApi().fail();
+      /** @type {any} */ (engine.execution.getActivityById('task')).getApi().fail();
 
       await errored;
 
@@ -134,11 +136,13 @@ describe('MiddlewareEngine', () => {
 
       await engine.execute();
 
+      /** @type {any[]} */
       let customArgs;
       engine.startIdleTimer((...args) => {
         customArgs = args;
       });
 
+      // @ts-ignore
       engine.idleTimer.callback();
 
       expect(customArgs).to.have.length(2);

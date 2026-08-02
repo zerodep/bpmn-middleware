@@ -9,7 +9,7 @@ describe('BpmnEngineMiddleware', () => {
       const eventEmitter = new EventEmitter();
       const warn = new Promise((resolve) => eventEmitter.once('bpmn/warn', resolve));
 
-      middleware.init({ app: eventEmitter }, {}, () => {});
+      middleware.init(/** @type {any} */ ({ app: eventEmitter }), /** @type {any} */ ({}), () => {});
 
       middleware.broker.publish('test', 'activity.call', { calledElement: 'deployment:called' }, { token: 'token' });
 
@@ -29,7 +29,7 @@ describe('BpmnEngineMiddleware', () => {
       const eventEmitter = new EventEmitter();
       const warn = new Promise((resolve) => eventEmitter.once('bpmn/warn', resolve));
 
-      middleware.init({ app: eventEmitter }, {}, () => {});
+      middleware.init(/** @type {any} */ ({ app: eventEmitter }), /** @type {any} */ ({}), () => {});
 
       middleware.broker.publish(
         'test',

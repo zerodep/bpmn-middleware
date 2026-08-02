@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v0.20.3 - 2026-08-02
+
+- `bpmnEngineMiddleware(options)` argument is now optional in the declared types, matching runtime behavior
+- export middleware types from package root: `BpmnMiddlewareOptions`, `ExecuteOptions`, `StartDeployment`, `StartDeploymentOptions`, `StartDeploymentResult`, `MiddlewareEngineStatus`, `MiddlewareEngineState`, `SignalBody`, `TokenParameter`, and `BpmnMiddlewareResponseLocals`
+- `start(fn)` and `resume(fn)` type their custom handler's request params as `StartDeployment` respectively `TokenParameter`
+- `Services` factory may return void when only adding services via `this.addService()`
+- `MemoryAdapter.prototype.delete` and `query` declare the optional trailing `options` argument from `IStorageAdapter`
+- `MiddlewareEngine.prototype.idleTimer` is typed `Timer | null`
+- test and example sources type-check with `tsc -p test/tsconfig.json`
+- bump `@types/bpmn-moddle` to `^10` to match named type imports in `bpmn-engine` and `moddle-context-serializer` declarations; runtime `bpmn-moddle` stays on `^9`
+
 ## v0.20.2 - 2026-07-22
 
 - [`dts-buddy@0.8.3`](https://www.npmjs.com/package/dts-buddy) now strips internal properties, only prototyped methods remaining

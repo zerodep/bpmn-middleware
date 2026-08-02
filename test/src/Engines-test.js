@@ -6,11 +6,13 @@ import { MemoryAdapter, Engines, STORAGE_TYPE_STATE } from 'bpmn-middleware';
 describe('Engines', () => {
   describe('ctor', () => {
     it('throws if no options', () => {
+      // @ts-expect-error intentionally called without options
       expect(() => new Engines()).to.throw(TypeError);
     });
 
     it('throws if no options.name', () => {
       expect(() => new Engines({})).to.throw(TypeError, /\.name/i);
+      // @ts-expect-error intentionally called with non-string name
       expect(() => new Engines({ name: {} })).to.throw(TypeError, /\.name/i);
     });
 
@@ -334,7 +336,6 @@ describe('Engines', () => {
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker,
-        source,
         engineOptions: {
           services: {
             foo(...args) {
@@ -365,7 +366,6 @@ describe('Engines', () => {
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker: new Broker(),
-        source,
         engineOptions: {
           services: {
             foo() {},
@@ -406,7 +406,6 @@ describe('Engines', () => {
         idleTimeout: 1000,
         adapter: new MemoryAdapter(),
         broker: new Broker(),
-        source,
         Services: function serviceFactory() {
           this.addService('foo', () => {});
         },
@@ -505,7 +504,7 @@ describe('Engines', () => {
         },
       });
 
-      const clone = engines.clone({ adapter: new MemoryAdapter(engines.adapter.storage) });
+      const clone = engines.clone({ adapter: new MemoryAdapter(/** @type {MemoryAdapter} */ (engines.adapter).storage) });
 
       expect(clone).to.not.equal(engines);
       expect(clone.name).to.equal(engines.name);

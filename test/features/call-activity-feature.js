@@ -330,6 +330,7 @@ Feature('call activity', () => {
       adapter = new MemoryAdapter();
       apps = horizontallyScaled(2, {
         adapter,
+        // @ts-ignore
         Scripts(adapter, deploymentName) {
           return new MiddlewareScripts(adapter, deploymentName, '.', { console }, { timeout: 120000 });
         },

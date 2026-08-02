@@ -86,7 +86,7 @@ BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
 
 /**
  * Start deployment request pipeline
- * @param {import('express').RequestHandler} [fn] start request handler
+ * @param {import('express').RequestHandler<StartDeployment, any, any, any>} [fn] start request handler
  * @returns {import('express').RequestHandler<StartDeployment, import('types').StartDeploymentResult, import('types').StartDeploymentOptions, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.start = function start(fn) {
@@ -96,7 +96,7 @@ BpmnEngineMiddleware.prototype.start = function start(fn) {
 
 /**
  * Resume engine request pipeline
- * @param {import('express').RequestHandler} [fn] resume request handler
+ * @param {import('express').RequestHandler<TokenParameter, any, any, any>} [fn] resume request handler
  * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').ExecuteOptions, import('types').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.resume = function resume(fn) {

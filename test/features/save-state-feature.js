@@ -9,6 +9,7 @@ const waitResource = testHelpers.getResource('wait.bpmn');
 
 class MisbehavingAdapter extends MemoryAdapter {
   update(type, key, value, options) {
+    // @ts-expect-error intentionally references non-existing _data to trigger a builtin TypeError
     if (!this._data.has(`${type}:${key}`)) return Promise.reject(new StorageError(`${type}:key not found`, 'MY_OWN_CODE'));
     return this.upsert(type, key, value, options);
   }

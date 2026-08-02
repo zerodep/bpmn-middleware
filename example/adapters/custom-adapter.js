@@ -44,7 +44,7 @@ function readFileContent(file) {
     let size = 0;
     fs.createReadStream(file)
       .on('data', (chunk) => {
-        size += chunk.byteLength;
+        size += Buffer.byteLength(chunk);
         content += chunk;
       })
       .on('end', () => {

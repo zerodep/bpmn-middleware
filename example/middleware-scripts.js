@@ -6,11 +6,12 @@ const allowedMimesPattern = /^(application|text)\/(node|javascript|octet-stream)
 
 export class JavaScriptAdapterResource extends JavaScriptResource {
   /**
-   * @param {JavaScriptAdapterResource} fromScript
+   * @param {JavaScriptResource} fromScript
    * @param {import('../types/interfaces.js').IStorageAdapter} adapter
    */
   constructor(fromScript, adapter) {
-    super(fromScript.flowName, fromScript.resource, fromScript.resourceBase, fromScript.runContext, fromScript.options);
+    const { resource, resourceBase } = /** @type {any} */ (fromScript);
+    super(fromScript.flowName, resource, resourceBase, fromScript.runContext, fromScript.options);
     this.adapter = adapter;
   }
   async getResourceContent(resourceBase, resource) {
@@ -42,12 +43,14 @@ export class MiddlewareScripts extends FlowScripts {
    * @param {import('@onify/flow-extensions/FlowScripts').registerArgument} element
    */
   register(element) {
-    super.register(element);
+    let script = super.register(element);
 
-    let script;
-    if ((script = this.scripts.get(element.id)) instanceof JavaScriptResource) {
-      this.scripts.set(element.id, new JavaScriptAdapterResource(script, this.adapter));
+    const registered = this.scripts.get(element.id);
+    if (registered instanceof JavaScriptResource) {
+      script = new JavaScriptAdapterResource(registered, this.adapter);
+      this.scripts.set(element.id, script);
     }
+    return script;
   }
 }
 
@@ -55,6 +58,7 @@ export class MiddlewareScripts extends FlowScripts {
  * Middleware script factory
  * @param {import('../types/interfaces.js').IStorageAdapter} adapter
  * @param {string} deploymentName
+ * @returns {import('bpmn-elements').IScripts}
  */
 export function factory(adapter, deploymentName) {
   return new MiddlewareScripts(adapter, deploymentName, '.');
