@@ -961,15 +961,7 @@
                 }
               }
             },
-            "additionalProperties": false,
-            "required": [
-              "name",
-              "engineVersion",
-              "state",
-              "stopped",
-              "environment",
-              "definitions"
-            ]
+            "additionalProperties": false
           },
           "token": {
             "type": "string"
@@ -1174,20 +1166,14 @@
                             "type": "string"
                           }
                         },
-                        "additionalProperties": false,
-                        "required": [
-                          "id",
-                          "type",
-                          "executionId"
-                        ]
+                        "additionalProperties": false
                       }
                     }
                   },
                   "additionalProperties": false,
                   "required": [
                     "id",
-                    "type",
-                    "executionId"
+                    "type"
                   ]
                 }
               },
@@ -1234,20 +1220,14 @@
                       "type": "string"
                     }
                   },
-                  "additionalProperties": false,
-                  "required": [
-                    "id",
-                    "type",
-                    "executionId"
-                  ]
+                  "additionalProperties": false
                 }
               }
             },
             "additionalProperties": false,
             "required": [
               "id",
-              "type",
-              "executionId"
+              "type"
             ]
           }
         },

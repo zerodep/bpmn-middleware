@@ -211,10 +211,10 @@ declare module 'bpmn-middleware' {
 		engineOptions: {
 			[x: string]: any;
 			name?: string;
-			source?: string;
+			source?: string | Buffer;
 			sourceContext?: import("moddle-context-serializer").SerializableContext;
 			elements?: Record<string, any>;
-			typeResolver?: import("moddle-context-serializer").ResolverFn;
+			typeResolver?: import("moddle-context-serializer").TypeResolverExtender;
 			extendFn?: import("moddle-context-serializer").ExtendFn;
 			moddleOptions?: any;
 			moddleContext?: import("bpmn-moddle").Definitions;
