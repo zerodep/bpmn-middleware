@@ -84,6 +84,7 @@ export function dmnServiceExtension(adapter) {
 
 /**
  * Business rule task DMN service, evaluates the decision addressed by camunda:decisionRef="deploymentName/decisionId"
+ * or, for Camunda 8 diagrams, zeebe:calledDecision decisionId="deploymentName/decisionId"
  * @param {import('types').IStorageAdapter} adapter storage adapter
  * @param {import('bpmn-elements').Activity} activity business rule task
  */
@@ -99,10 +100,16 @@ function DmnService(adapter, activity) {
  */
 DmnService.prototype.execute = function execute(executionMessage, callback) {
   const activity = this.activity;
-  const decisionRef = activity.behaviour.decisionRef;
+  const behaviour = activity.behaviour;
+  const decisionRef =
+    behaviour.decisionRef ?? behaviour.extensionElements?.values?.find((ext) => ext.$type === 'zeebe:CalledDecision')?.decisionId;
   const [deploymentName, decisionId] = decisionRef ? decisionRef.split('/') : [];
   if (!deploymentName || !decisionId) {
-    return callback(new Error(`<${activity.id}> camunda:decisionRef with format "deploymentName/decisionId" is required`));
+    return callback(
+      new Error(
+        `<${activity.id}> camunda:decisionRef or zeebe:calledDecision decisionId with format "deploymentName/decisionId" is required`
+      )
+    );
   }
 
   const input = { ...activity.environment.variables, ...executionMessage.content.input };

@@ -113,6 +113,28 @@ Feature('example app decisions', () => {
     });
   });
 
+  Scenario('Camunda 8 business rule task evaluates deployed decision', () => {
+    Given('a DMN decision table is deployed', async () => {
+      await createDecisionDeployment(app, 'dinner-decisions', 'dinner.dmn', decisionsSource);
+    });
+
+    And('a Camunda 8 process with a business rule task pointing to the deployed decision is deployed', () => {
+      return createDeployment(app, 'camunda8-dinner', getExampleResource('camunda8-dinner.bpmn'));
+    });
+
+    let response;
+    When('process is started with season Winter', async () => {
+      response = await request(app)
+        .post('/start/sync/camunda8-dinner')
+        .send({ variables: { Season: 'Winter' } });
+    });
+
+    Then('run completes with decision result in output', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('output').that.deep.equal({ dish: 'Roast beef' });
+    });
+  });
+
   Scenario('business rule task referencing a non-deployed decision table', () => {
     let deploymentName;
     Given('a process with a business rule task pointing to a non-deployed decision is deployed', () => {

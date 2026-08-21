@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.20.4",
+  "version": "0.20.5",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -20,7 +20,7 @@
     "prepack": "npm run dist",
     "cov:html": "c8 -r html -r text mocha",
     "test:lcov": "c8 -r lcov mocha && npm run lint",
-    "test:md": "texample ./README.md,./docs/API.md,./example/README.md",
+    "test:md": "texample ./README.md,./docs/API.md,./docs/multiple-extensions.md,./example/README.md",
     "dist": "dts-buddy && rollup -c"
   },
   "repository": {
@@ -44,6 +44,7 @@
   },
   "homepage": "https://github.com/zerodep/bpmn-middleware#readme",
   "devDependencies": {
+    "@0dep/bpmn-extensions": "^0.0.4",
     "@aller/express-swagger": "^0.3.1",
     "@eslint/js": "^10.0.1",
     "@onify/flow-extensions": "^9.0.0",
@@ -72,7 +73,8 @@
     "prettier": "^3.3.3",
     "rollup": "^4.17.2",
     "supertest": "^7.0.0",
-    "texample": "^1.0.2"
+    "texample": "^1.0.2",
+    "zeebe-bpmn-moddle": "^1.18.0"
   },
   "dependencies": {
     "lru-cache": "^11.2.6",
@@ -94,7 +96,8 @@
   "files": [
     "src/",
     "dist/",
-    "types/"
+    "types/index.d.ts*",
+    "CHANGELOG.md"
   ],
   "workspaces": [
     "example"

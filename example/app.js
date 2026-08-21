@@ -4,6 +4,7 @@ import express from 'express';
 import { bpmnEngineMiddleware, MemoryAdapter } from 'bpmn-middleware';
 import { Broker } from 'smqp';
 import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
+import { extensions as zeebeExtensions, extendFn as zeebeExtendFn } from '@0dep/bpmn-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
 import { factory as ScriptsFactory } from './middleware-scripts.js';
@@ -11,7 +12,9 @@ import { basicAuth, authorize, addUser } from './middleware/auth.js';
 import { runToEnd, signal } from './middleware/custom.js';
 import { decisionRoute, dmnServiceExtension } from './middleware/dmn.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { stripCollidingModdleProperties } from './middleware/moddle.js';
 import camunda from 'camunda-bpmn-moddle/resources/camunda.json' with { type: 'json' };
+import zeebe from 'zeebe-bpmn-moddle/resources/zeebe.json' with { type: 'json' };
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 
@@ -19,6 +22,29 @@ const elements = {
   ...bpmnElements,
   SequenceFlow: OnifySequenceFlow,
 };
+
+/**
+ * Compose the onify and zeebe extend functions, the engine takes only one
+ * @param {any} behaviour
+ * @param {any} element
+ */
+function combinedExtendFn(behaviour, element) {
+  extendFn(behaviour, element);
+  zeebeExtendFn(behaviour);
+}
+
+/**
+ * Activate the zeebe extension only for elements that carry zeebe extension elements.
+ * Unscoped it applies Camunda 8 semantics to every element, e.g. merging a user task
+ * signal payload into the process variables, which surprises pure Camunda 7 diagrams.
+ * @param {import('bpmn-elements').Activity} element
+ * @param {import('bpmn-elements').ContextInstance} context
+ */
+function scopedZeebeExtensions(element, context) {
+  const values = element.behaviour.extensionElements?.values;
+  if (!values?.some((ext) => ext.$type?.startsWith('zeebe:'))) return;
+  return zeebeExtensions(element, context);
+}
 
 const app = express();
 const adapter = new MemoryAdapter();
@@ -29,10 +55,11 @@ const middleware = bpmnEngineMiddleware({
   broker,
   Scripts: ScriptsFactory,
   engineOptions: {
-    moddleOptions: { camunda },
+    moddleOptions: { camunda, zeebe: stripCollidingModdleProperties(zeebe) },
     elements,
-    extensions: { onify: extensions, dmn: dmnServiceExtension(adapter) },
-    extendFn,
+    // dmn extension is added last to claim the business rule task Service from the zeebe extension
+    extensions: { onify: extensions, zeebe: scopedZeebeExtensions, dmn: dmnServiceExtension(adapter) },
+    extendFn: combinedExtendFn,
   },
 });
 

@@ -9,7 +9,9 @@ Under construction so breaking changes will occur until v1.
 - [Api documentation](./docs/API.md)
 - [Example app](./example/README.md)
 - [Call activity](./docs/call-activity.md)
+- [Multiple extensions](./docs/multiple-extensions.md)
 - [Debug](#debug)
+- [Ecosystem](#ecosystem)
 
 ## Usage
 
@@ -78,3 +80,15 @@ function errorHandler(err, req, res, next) {
 ## Debug
 
 Debug by `DEBUG=bpmn-middleware`, or on windows `$env:DEBUG='bpmn-middleware'`. To be more verbose use `DEBUG=bpmn*`, that will display the whole shebang.
+
+## Ecosystem
+
+- [bpmn-engine](https://npmjs.com/package/bpmn-engine) - BPMN 2.0 execution engine wrapped by this middleware
+- [bpmn-elements](https://npmjs.com/package/bpmn-elements) - BPMN 2.0 elements executed by the engine
+- [moddle-context-serializer](https://npmjs.com/package/moddle-context-serializer) - serializes a bpmn-moddle context for bpmn-elements
+- [@0dep/bpmn-extensions](https://npmjs.com/package/@0dep/bpmn-extensions) - Camunda 8 `zeebe:` extension elements and FEEL expressions
+- [@onify/flow-extensions](https://npmjs.com/package/@onify/flow-extensions) - Camunda 7 `camunda:` extension elements
+- [dmn-elements](https://npmjs.com/package/dmn-elements) - DMN decision evaluation, used by the [example app](./example/README.md) business rule tasks
+- [@0dep/piso](https://npmjs.com/package/@0dep/piso) - ISO 8601 date, duration, and interval parser used for BPMN timers
+- [smqp](https://npmjs.com/package/smqp) - in-memory message broker carrying engine and middleware events
+- [0dep.se](https://0dep.se) - zerodep project site with try it live pages for BPMN and DMN
