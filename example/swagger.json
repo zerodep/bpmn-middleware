@@ -1175,6 +1175,13 @@
                     "id",
                     "type"
                   ]
+                },
+                "accepts": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Api message types the element acts on while postponed, e.g. signal, cancel"
                 }
               },
               "additionalProperties": true
@@ -1229,6 +1236,13 @@
               "id",
               "type"
             ]
+          },
+          "accepts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Api message types the element acts on while postponed, e.g. signal, cancel"
           }
         },
         "additionalProperties": true,
