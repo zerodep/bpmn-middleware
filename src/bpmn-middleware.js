@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { basename, extname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -6,7 +6,14 @@ import { json } from 'express';
 import { Broker } from 'smqp';
 import { ISODuration } from '@0dep/piso';
 
-import { MIDDLEWARE_DEFAULT_EXCHANGE, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE, STORAGE_TYPE_STATE } from './constants.js';
+import {
+  DEFAULT_TENANT_ID,
+  MIDDLEWARE_DEFAULT_EXCHANGE,
+  STORAGE_TYPE_DEPLOYMENT,
+  STORAGE_TYPE_FILE,
+  STORAGE_TYPE_PROCESS_DEFINITION,
+  STORAGE_TYPE_STATE,
+} from './constants.js';
 import { Engines } from './engines.js';
 import { MemoryAdapter } from './memory-adapter.js';
 import { HttpError, StorageError } from './errors.js';
@@ -24,6 +31,9 @@ export { Engines, MemoryAdapter, HttpError, StorageError, MiddlewareEngine };
 export * from './constants.js';
 
 const snakeReplacePattern = /\W/g;
+
+/** Camunda 8 REST API version mimicked by the /v2 routes, reported by the topology route */
+const CAMUNDA8_GATEWAY_VERSION = '8.8.0';
 
 /**
  * Bpmn Engine Middleware
@@ -132,6 +142,16 @@ BpmnEngineMiddleware.prototype.fail = function fail() {
 };
 
 /**
+ * Camunda 8 start process instance request pipeline
+ * @param {import('express').RequestHandler<StartDeployment, any, any, any>} [fn] start request handler
+ * @returns {import('express').RequestHandler<StartDeployment, import('types').Camunda8ProcessInstance, import('types').Camunda8CreateProcessInstanceBody, import('types').ExecuteOptions>[]}
+ */
+BpmnEngineMiddleware.prototype.startProcessInstance = function startProcessInstance(fn) {
+  // @ts-ignore
+  return [json(), this._resolveProcessDefinition.bind(this)].concat(this.start(fn ?? this.createdProcessInstance.bind(this)));
+};
+
+/**
  * Pre start BPMN engine execution middleware
  * @returns {import('connect').NextHandleFunction}
  */
@@ -227,6 +247,132 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
   } catch (err) {
     next(err);
   }
+};
+
+/**
+ * Get Camunda 8 REST API topology, doubles as Camunda Modeler connection check and protocol probe
+ * @param {import('express').Request} _req
+ * @param {import('express').Response<import('types').Camunda8Topology>} res
+ */
+BpmnEngineMiddleware.prototype.getTopology = function getTopology(_req, res) {
+  res.send({ gatewayVersion: CAMUNDA8_GATEWAY_VERSION, clusterSize: 1, partitionsCount: 1, replicationFactor: 1, brokers: [] });
+};
+
+/**
+ * Create deployment from Camunda 8 modeler multipart resources, deployment is named after the first resource file name
+ * @param {import('express').Request<any, import('types').Camunda8DeploymentsResponse, import('@aller/express-swagger').MultipartBody<import('types').Camunda8DeploymentsForm>>} req
+ * @param {import('express').Response<import('types').Camunda8DeploymentsResponse, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').NextFunction} next
+ */
+BpmnEngineMiddleware.prototype.createDeployments = async function createDeployments(req, res, next) {
+  try {
+    const files = /** @type {any[]} */ (req.files);
+    if (!files?.length) throw new HttpError('at least one resources file is required', 400);
+
+    const tenantId = req.body?.tenantId || DEFAULT_TENANT_ID;
+    const deploymentName = basename(files[0].originalname, extname(files[0].originalname));
+
+    await this.adapter.upsert(STORAGE_TYPE_DEPLOYMENT, deploymentName, files);
+
+    const deployments = [];
+    for (const file of files) {
+      if (extname(file.originalname) !== '.bpmn') continue;
+      deployments.push(...(await this._addProcessDefinitions(deploymentName, file.originalname, tenantId)));
+    }
+
+    res.send({ deploymentKey: deploymentName, tenantId, deployments });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Internal register executable processes so instances can be started by process definition id
+ * @internal
+ * @param {string} deploymentName deployment name
+ * @param {string} resourceName deployed BPMN file name
+ * @param {string} tenantId tenant id
+ * @returns {Promise<{processDefinition: import('types').Camunda8ProcessDefinition}[]>}
+ */
+BpmnEngineMiddleware.prototype._addProcessDefinitions = async function addProcessDefinitions(deploymentName, resourceName, tenantId) {
+  const file = await this.adapter.fetch(STORAGE_TYPE_FILE, resourceName);
+
+  let definitions;
+  try {
+    const engine = new MiddlewareEngine(deploymentName, { ...this.engineOptions, name: deploymentName, source: file.content });
+    definitions = await engine.getDefinitions();
+  } catch (err) {
+    throw new HttpError(err instanceof Error ? err.message : `failed to parse ${resourceName}`, 400);
+  }
+
+  const deployments = [];
+  for (const definition of definitions) {
+    for (const bpmnProcess of definition.context.getExecutableProcesses()) {
+      await this.adapter.upsert(STORAGE_TYPE_PROCESS_DEFINITION, bpmnProcess.id, { deploymentName });
+      deployments.push({
+        processDefinition: {
+          processDefinitionId: bpmnProcess.id,
+          processDefinitionKey: deploymentName,
+          processDefinitionVersion: 1,
+          resourceName,
+          tenantId,
+        },
+      });
+    }
+  }
+
+  return deployments;
+};
+
+/**
+ * Internal map Camunda 8 start process instance body to the start deployment pipeline
+ * @internal
+ * @param {import('express').Request<StartDeployment, import('types').Camunda8ProcessInstance, import('types').Camunda8CreateProcessInstanceBody>} req
+ * @param {import('express').Response<import('types').Camunda8ProcessInstance, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').NextFunction} next
+ */
+BpmnEngineMiddleware.prototype._resolveProcessDefinition = async function resolveProcessDefinition(req, res, next) {
+  try {
+    const { processDefinitionId, processDefinitionKey, variables, businessId } = req.body ?? {};
+    const definitionId = processDefinitionId ?? processDefinitionKey;
+    if (!definitionId) throw new HttpError('processDefinitionId or processDefinitionKey is required', 400);
+
+    const processDefinition = await this.adapter.fetch(STORAGE_TYPE_PROCESS_DEFINITION, definitionId);
+
+    res.locals.processDefinitionId = definitionId;
+    req.params.deploymentName = processDefinition?.deploymentName ?? definitionId;
+    req.body = { variables, ...(businessId && { businessKey: businessId }) };
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Started Camunda 8 process instance response, the engine token doubles as process instance key
+ * @param {import('express').Request<StartDeployment>} _req
+ * @param {import('express').Response<import('types').Camunda8ProcessInstance, BpmnMiddlewareResponseLocals>} res
+ */
+BpmnEngineMiddleware.prototype.createdProcessInstance = function createdProcessInstance(_req, res) {
+  const engine = res.locals.engine;
+  res.send({
+    processInstanceKey: engine.token,
+    processDefinitionId: res.locals.processDefinitionId,
+    processDefinitionKey: engine.name,
+    processDefinitionVersion: 1,
+    tenantId: DEFAULT_TENANT_ID,
+  });
+};
+
+/**
+ * Redirect Camunda Operate process instance link to engine status, lets Camunda Modeler "Open in Operate" point to the middleware
+ * @param {import('express').Request<{processInstanceKey: string}>} req
+ * @param {import('express').Response} res
+ */
+BpmnEngineMiddleware.prototype.redirectProcessInstance = function redirectProcessInstance(req, res) {
+  const path = req.originalUrl.split('?')[0];
+  res.redirect(path.replace(/\/processes\/[^/]+\/?$/, `/status/${encodeURIComponent(req.params.processInstanceKey)}`));
 };
 
 /**
@@ -913,6 +1059,7 @@ function syncExecutionCallback() {}
  * @property {string} [token] BPMN engine execution token
  * @property {MiddlewareEngine} [engine] BPMN engine instance
  * @property {import('types').ExecuteOptions} [executeOptions] BPMN engine execution options
+ * @property {string} [processDefinitionId] Camunda 8 process definition id, set by the start process instance pipeline
  */
 
 /**

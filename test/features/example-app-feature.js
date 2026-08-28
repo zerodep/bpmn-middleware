@@ -357,7 +357,7 @@ Feature('example app', () => {
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body)
         .to.have.property('output')
-        .that.deep.equal({ signal: { id: waitingTask.content.id, foo: 'bar' } });
+        .that.deep.equal({ signal: { foo: 'bar' } });
     });
 
     When('same manual task is signalled again via custom route', async () => {
@@ -388,7 +388,7 @@ Feature('example app', () => {
     And('run output is returned', () => {
       expect(response.body)
         .to.have.property('output')
-        .that.deep.equal({ signal: { id: waitingTask.content.id, foo: 'bar' } });
+        .that.deep.equal({ signal: { foo: 'bar' } });
     });
 
     And('state is deleted', async () => {

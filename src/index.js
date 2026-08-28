@@ -49,6 +49,10 @@ export function bpmnEngineMiddleware(options) {
   router.get(basePath + '/deployment', middleware.getDeployment.bind(middleware));
   router.post(basePath + '/deployment/create', multer({ storage }).any(), middleware.create.bind(middleware));
   router.post(basePath + '/process-definition/:deploymentName/start', middleware.start());
+  router.get(basePath + '/v2/topology', middleware.getTopology.bind(middleware));
+  router.post(basePath + '/v2/deployments', multer({ storage }).array('resources'), middleware.createDeployments.bind(middleware));
+  router.post(basePath + '/v2/process-instances', middleware.startProcessInstance());
+  router.get(basePath + '/processes/:processInstanceKey', middleware.redirectProcessInstance.bind(middleware));
   router.post(basePath + '/resume/:token', middleware.resume());
   router.post(basePath + '/signal/:token', middleware.signal());
   router.post(basePath + '/cancel/:token', middleware.cancel());

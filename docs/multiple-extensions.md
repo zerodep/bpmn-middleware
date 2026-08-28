@@ -32,6 +32,19 @@ function scopedZeebeExtensions(element, context) {
 
 See [example/app.js](../example/app.js) for the guard in use.
 
+## Elements without extensions
+
+Both extension factories return `undefined` for elements carrying nothing they act on, e.g. a user task without `camunda:inputOutput` or `zeebe:` extension elements (`@onify/flow-extensions@>=10.0.1`). bpmn-elements then runs the element untouched, so its output, e.g. the user task signal body, never reaches `environment.output`. Set the engine setting `assignOutput` (`bpmn-elements@>=18.0.22`) to have bpmn-elements attach its built-in output extension to those elements: `'auto'` merges object output into `environment.output` and keys other output by activity id, `'id'` always keys by activity id. The middleware signal body, less the routing `id` and `executionId`, is the output, so `{ "id": "task", "message": { "approved": true } }` ends up as `{ "message": { "approved": true } }`.
+
+```js
+const middleware = bpmnEngineMiddleware({
+  engineOptions: {
+    settings: { assignOutput: 'auto' },
+    extensions: { onify: onifyExtensions, zeebe: scopedZeebeExtensions },
+  },
+});
+```
+
 ## Example
 
 ```javascript

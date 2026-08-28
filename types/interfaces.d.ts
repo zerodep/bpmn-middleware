@@ -22,6 +22,8 @@ export enum StorageType {
   State = 'state',
   Deployment = 'deployment',
   File = 'file',
+  /** Camunda 8 process definition id mapped to deployment name */
+  ProcessDefinition = 'process-definition',
 }
 
 export interface BpmnMiddlewareOptions {
@@ -192,4 +194,69 @@ export interface CreateDeploymentForm {
   'deployment-name': string;
   'deployment-source'?: string;
   file?: import('@aller/express-swagger').Binary;
+}
+
+/**
+ * Camunda 8 REST API v2 topology response, doubles as Camunda Modeler connection check and protocol probe
+ */
+export interface Camunda8Topology {
+  gatewayVersion: string;
+  clusterSize: number;
+  partitionsCount: number;
+  replicationFactor: number;
+  brokers: any[];
+}
+
+/**
+ * Multipart form payload accepted by `POST /<basePath>/v2/deployments`,
+ * BPMN, DMN, and form resources are passed as repeated `resources` file parts
+ */
+export interface Camunda8DeploymentsForm {
+  resources: import('@aller/express-swagger').Binary;
+  tenantId?: string;
+}
+
+/**
+ * Deployed Camunda 8 process definition, process definition key is the middleware deployment name
+ */
+export interface Camunda8ProcessDefinition {
+  processDefinitionId: string;
+  processDefinitionKey: string;
+  processDefinitionVersion: number;
+  resourceName: string;
+  tenantId: string;
+}
+
+/**
+ * Response body of `POST /<basePath>/v2/deployments`, deployment key is the middleware deployment name
+ */
+export interface Camunda8DeploymentsResponse {
+  deploymentKey: string;
+  tenantId: string;
+  deployments: { processDefinition: Camunda8ProcessDefinition }[];
+}
+
+/**
+ * Request body of `POST /<basePath>/v2/process-instances`
+ */
+export interface Camunda8CreateProcessInstanceBody {
+  /** BPMN process id of a deployed executable process */
+  processDefinitionId?: string;
+  /** Alternatively the process definition key, i.e. the middleware deployment name */
+  processDefinitionKey?: string;
+  variables?: Record<string, any>;
+  /** Mapped to engine business key */
+  businessId?: string;
+  [x: string]: any;
+}
+
+/**
+ * Response body of `POST /<basePath>/v2/process-instances`, process instance key is the middleware engine token
+ */
+export interface Camunda8ProcessInstance {
+  processInstanceKey: string;
+  processDefinitionId: string;
+  processDefinitionKey: string;
+  processDefinitionVersion: number;
+  tenantId: string;
 }

@@ -4,7 +4,7 @@ import express from 'express';
 import { bpmnEngineMiddleware, MemoryAdapter } from 'bpmn-middleware';
 import { Broker } from 'smqp';
 import { extensions, OnifySequenceFlow, extendFn } from '@onify/flow-extensions';
-import { extensions as zeebeExtensions, extendFn as zeebeExtendFn } from '@0dep/bpmn-extensions';
+import { extensions as zeebeExtensions, extendFn as zeebeExtendFn, TimerEventDefinition } from '@0dep/bpmn-extensions';
 import * as bpmnElements from 'bpmn-elements';
 
 import { factory as ScriptsFactory } from './middleware-scripts.js';
@@ -21,6 +21,8 @@ const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 const elements = {
   ...bpmnElements,
   SequenceFlow: OnifySequenceFlow,
+  // parses cron timeCycle, e.g. Camunda 8 timer start events, besides ISO 8601
+  TimerEventDefinition,
 };
 
 /**
@@ -55,6 +57,8 @@ const middleware = bpmnEngineMiddleware({
   broker,
   Scripts: ScriptsFactory,
   engineOptions: {
+    // assign output of elements without extensions, e.g. a plain user task signal body
+    settings: { assignOutput: 'auto' },
     moddleOptions: { camunda, zeebe: stripCollidingModdleProperties(zeebe) },
     elements,
     // dmn extension is added last to claim the business rule task Service from the zeebe extension

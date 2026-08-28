@@ -590,9 +590,16 @@ Engines.prototype._setupEngine = function setupEngine(engine) {
 
   engineBroker.assertExchange('state', 'topic', { durable: false, autoDelete: true });
 
-  engineBroker.bindExchange('event', 'state', SAVE_STATE_ROUTINGKEY);
-  engineBroker.bindExchange('event', 'state', ENABLE_SAVE_STATE_ROUTINGKEY);
-  engineBroker.bindExchange('event', 'state', DISABLE_SAVE_STATE_ROUTINGKEY);
+  engineBroker.assertExchange('state-control', 'topic', { durable: false, autoDelete: true });
+
+  engineBroker.bindExchange('event', 'state-control', SAVE_STATE_ROUTINGKEY);
+  engineBroker.bindExchange('event', 'state-control', ENABLE_SAVE_STATE_ROUTINGKEY);
+  engineBroker.bindExchange('event', 'state-control', DISABLE_SAVE_STATE_ROUTINGKEY);
+
+  engineBroker.assertQueue('state-control-q', { durable: false, autoDelete: true });
+  engineBroker.bindQueue('state-control-q', 'state-control', '#');
+  engineBroker.consume('state-control-q', this.__onStateMessage, { consumerTag: 'state-control-listener' });
+
   engineBroker.bindExchange('event', 'state', 'activity.end');
   engineBroker.bindExchange('event', 'state', 'activity.wait');
   engineBroker.bindExchange('event', 'state', 'activity.timer');
@@ -682,6 +689,7 @@ Engines.prototype._onStateMessage = async function onStateMessage(routingKey, me
     }
   } catch (err) {
     engine.broker.cancel('state-listener');
+    engine.broker.cancel('state-control-listener');
     engine.broker.publish('event', 'engine.error', err, { type: 'error' });
     this._teardownEngine(engine);
     engine.stop();
@@ -702,6 +710,7 @@ Engines.prototype._teardownEngine = function teardownEngine(engine) {
   this.engineCache.delete(engine.token);
   broker.cancel('sequence-listener');
   broker.cancel('state-listener');
+  broker.cancel('state-control-listener');
   broker.closeShovel('app-shovel');
 };
 

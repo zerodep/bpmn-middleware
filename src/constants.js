@@ -1,6 +1,8 @@
 export const STORAGE_TYPE_DEPLOYMENT = 'deployment';
 export const STORAGE_TYPE_STATE = 'state';
 export const STORAGE_TYPE_FILE = 'file';
+export const STORAGE_TYPE_PROCESS_DEFINITION = 'process-definition';
+export const DEFAULT_TENANT_ID = '<default>';
 export const DEFAULT_IDLE_TIMER = 120000;
 export const SAVE_STATE_ROUTINGKEY = 'activity.state.save';
 export const ENABLE_SAVE_STATE_ROUTINGKEY = 'activity.state.save.enable';

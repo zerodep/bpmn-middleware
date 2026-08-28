@@ -13,6 +13,7 @@ Options:
 - `engineOptions`: Optional BPMN Engine [options](https://github.com/paed01/bpmn-engine/blob/master/docs/API.md) with some optional properties
   - `settings`: optional engine settings
     - `saveEngineStateOptions`: optional object passed to adapter options
+    - `assignOutput`: optional `'auto'` or `'id'`, requires `bpmn-elements@>=18.0.22`. Assigns the output of elements without extensions to `engine.environment.output`, e.g. the signal body of a user task without `camunda:inputOutput` or `zeebe:` extension elements. Requires extension factories that return `undefined` for elements they have nothing to do with, e.g. `@onify/flow-extensions@>=10.0.1` and `@0dep/bpmn-extensions`
 - `maxRunning`: Optional number declaring number of max running engines per instance, passed to engines LRU Cache as max, defaults to 1000
 - `engineCache`: Optional engine [LRU](https://www.npmjs.com/package/lru-cache) in-memory cache, defaults to `new LRUCache({ max: 1000, disposeAfter(engine) })`
 - `broker`: Optional [smqp](https://npmjs.com/package/smqp) broker, used for forwarding events from executing engines, events are shoveled on middleware name topic exchange
@@ -104,6 +105,10 @@ const middleware = bpmnEngineMiddleware({
 - [`GET {*splat}/deployment`](#get-splatdeployment)
 - [`POST {*splat}/deployment/create`](#post-splatdeploymentcreate)
 - [`POST {*splat}/process-definition/:deploymentName/start`](#post-splatprocess-definitiondeploymentnamestart)
+- [`GET {*splat}/v2/topology`](#get-splatv2topology)
+- [`POST {*splat}/v2/deployments`](#post-splatv2deployments)
+- [`POST {*splat}/v2/process-instances`](#post-splatv2process-instances)
+- [`GET {*splat}/processes/:processInstanceKey`](#get-splatprocessesprocessinstancekey)
 - [`GET {*splat}/script/:deploymentName`](#get-splatscriptdeploymentname)
 - [`GET {*splat}/timers/:deploymentName`](#get-splattimersdeploymentname)
 - [`GET {*splat}/running`](#get-splatrunning)
@@ -178,6 +183,66 @@ All query parameters will be passed to `engine.environment.settings`.
 Response body:
 
 - `id`: string, unique execution token
+
+### `GET {*splat}/v2/topology`
+
+Camunda 8 REST API v2 topology. Doubles as Camunda Modeler (>= 5.39) connection check and protocol probe — when it answers, the modeler deploys and starts Camunda 8 diagrams through the `/v2` routes below. Point the modeler's self-managed cluster URL to `{server}{*splat}/v2`.
+
+Response body:
+
+- `gatewayVersion`: string, mimicked Camunda 8 REST API version
+- `clusterSize`, `partitionsCount`, `replicationFactor`: number, static `1`
+- `brokers`: empty array
+
+### `POST {*splat}/v2/deployments`
+
+Create deployment the Camunda 8 way. The deployment is named after the first resource file name without extension.
+
+Content-type: `multipart/form-data`
+
+Form fields:
+
+- `resources`: repeated file parts with BPMN, DMN, or form resources
+- `tenantId`: optional string, echoed in the response, defaults to `<default>`
+
+Executable processes in deployed BPMN resources are registered as process definitions, keyed by BPMN process id, so instances can be started by `processDefinitionId`. Non-BPMN resources are stored with the deployment but not enumerated in the response.
+
+Response body:
+
+- `deploymentKey`: string, deployment name
+- `tenantId`: string
+- `deployments`: list of deployed process definitions
+  - `processDefinition`: object
+    - `processDefinitionId`: string, BPMN process id
+    - `processDefinitionKey`: string, deployment name
+    - `processDefinitionVersion`: number, always `1`
+    - `resourceName`: string, deployed file name
+    - `tenantId`: string
+
+### `POST {*splat}/v2/process-instances`
+
+Start deployed process the Camunda 8 way.
+
+**Request body:**
+
+- `processDefinitionId`: string, BPMN process id of a deployed executable process
+- `processDefinitionKey`: alternative string, process definition key, i.e. the middleware deployment name
+- `variables`: optional object with variables to pass to engine
+- `businessId`: optional string, mapped to engine business key
+
+Start instructions and runtime instructions are ignored.
+
+Response body:
+
+- `processInstanceKey`: string, unique execution token, works with all token routes, e.g. [`GET {*splat}/status/:token`](#get-splatstatustoken)
+- `processDefinitionId`: string
+- `processDefinitionKey`: string, deployment name
+- `processDefinitionVersion`: number, always `1`
+- `tenantId`: string, always `<default>`
+
+### `GET {*splat}/processes/:processInstanceKey`
+
+Redirect (302) to [`GET {*splat}/status/:token`](#get-splatstatustoken). Mirrors the Camunda Operate process instance path that Camunda Modeler links to after an instance is started, so pointing the modeler's Operate URL to `{server}{*splat}` makes "Open in Operate" show the engine status.
 
 ### `GET {*splat}/script/:deploymentName`
 
@@ -359,7 +424,7 @@ Three types will be saved to adapter:
 
 Upsert entry with key.
 
-- `type`: string, storage type, `deployment`, `file`, or `state`
+- `type`: string, storage type, `deployment`, `file`, `state`, or `process-definition`
 - `key`: string, storage key
 - `value`: object, value
 - `options`: optional object with options
@@ -368,7 +433,7 @@ Upsert entry with key.
 
 Update entry with key.
 
-- `type`: string, storage type, `deployment`, `file`, or `state`
+- `type`: string, storage type, `deployment`, `file`, `state`, or `process-definition`
 - `key`: string, storage key
 - `value`: object, value
 - `options`: optional object with options
@@ -379,7 +444,7 @@ If the key was not found throw an [error with code](#storage-key-not-found) `ERR
 
 Fetch entry by key.
 
-- `type`: string, storage type, `deployment`, `file`, or `state`
+- `type`: string, storage type, `deployment`, `file`, `state`, or `process-definition`
 - `key`: string, storage key
 - `options`: optional object with options
   - `exclude`: optional list of fields to exclude
@@ -388,7 +453,7 @@ Fetch entry by key.
 
 Delete entry by key.
 
-- `type`: string, storage type, `deployment`, `file`, or `state`
+- `type`: string, storage type, `deployment`, `file`, `state`, or `process-definition`
 - `key`: string, storage key
 - `options`: optional object with options
 
@@ -396,7 +461,7 @@ Delete entry by key.
 
 Query entries.
 
-- `type`: string, storage type, `deployment`, `file`, or `state`
+- `type`: string, storage type, `deployment`, `file`, `state`, or `process-definition`
 - `qs`: object, storage query
   - `exclude`: optional list of fields to exclude
   - `state`: optional string, get engine states by state of engine, `idle`, `running`, etc

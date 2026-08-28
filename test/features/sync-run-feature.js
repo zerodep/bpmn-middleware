@@ -74,7 +74,7 @@ Feature('sync run', () => {
       const response = await pendinResponse;
       expect(response.statusCode, response.text).to.equal(200);
       expect(response.body).to.have.property('id').that.is.a('string');
-      expect(response.body).to.have.property('result').with.property('signal').that.deep.equal({ id: waitingMsg.content.id, foo: 'bar' });
+      expect(response.body).to.have.property('result').with.property('signal').that.deep.equal({ foo: 'bar' });
     });
 
     And('status is idle', async () => {
@@ -174,9 +174,9 @@ Feature('sync run', () => {
       );
     });
 
-    let startActivity;
+    let engineStarted;
     When('starting long running script task process', () => {
-      startActivity = waitForProcess(app, deploymentName).startActivity();
+      engineStarted = waitForProcess(app, deploymentName).event('engine.start');
 
       pendinResponse = request(app)
         .post(`/rest/process-definition/${deploymentName}/start`)
@@ -185,7 +185,7 @@ Feature('sync run', () => {
     });
 
     Then('idle timer is started', async () => {
-      await startActivity;
+      await engineStarted;
 
       const [engine] = app.locals.engines.running;
 
@@ -223,9 +223,8 @@ Feature('sync run', () => {
       );
     });
 
-    let startTimer;
     When('starting long running start timer process', () => {
-      startTimer = waitForProcess(app, deploymentName).timer();
+      engineStarted = waitForProcess(app, deploymentName).event('engine.start');
 
       pendinResponse = request(app)
         .post(`/rest/process-definition/${deploymentName}/start`)
@@ -234,7 +233,7 @@ Feature('sync run', () => {
     });
 
     Then('idle timer is started', async () => {
-      await startTimer;
+      await engineStarted;
       const [engine] = app.locals.engines.running;
 
       idleTimer = engine.idleTimer;
@@ -298,7 +297,7 @@ Feature('sync run', () => {
       expect(response.body).to.have.property('token', token);
       expect(response.body)
         .to.have.property('result')
-        .that.deep.equal({ signal: { id: waitingMsg.content.id, foo: 'bar' } });
+        .that.deep.equal({ signal: { foo: 'bar' } });
     });
 
     When('attempting to signal run again', async () => {
@@ -383,7 +382,7 @@ Feature('sync run', () => {
       expect(response.body).to.have.property('token', token);
       expect(response.body)
         .to.have.property('result')
-        .that.deep.equal({ signal: { id: waitingMsg.content.id, foo: 'bar' } });
+        .that.deep.equal({ signal: { foo: 'bar' } });
     });
 
     When('attempting to signal run again', async () => {

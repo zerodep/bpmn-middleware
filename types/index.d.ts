@@ -27,6 +27,8 @@ declare module 'bpmn-middleware' {
 	State = 'state',
 	Deployment = 'deployment',
 	File = 'file',
+	/** Camunda 8 process definition id mapped to deployment name */
+	ProcessDefinition = 'process-definition',
   }
 
   interface BpmnMiddlewareOptions_1 {
@@ -195,6 +197,71 @@ declare module 'bpmn-middleware' {
 	'deployment-source'?: string;
 	file?: import('@aller/express-swagger').Binary;
   }
+
+  /**
+   * Camunda 8 REST API v2 topology response, doubles as Camunda Modeler connection check and protocol probe
+   */
+  interface Camunda8Topology {
+	gatewayVersion: string;
+	clusterSize: number;
+	partitionsCount: number;
+	replicationFactor: number;
+	brokers: any[];
+  }
+
+  /**
+   * Multipart form payload accepted by `POST /<basePath>/v2/deployments`,
+   * BPMN, DMN, and form resources are passed as repeated `resources` file parts
+   */
+  interface Camunda8DeploymentsForm {
+	resources: import('@aller/express-swagger').Binary;
+	tenantId?: string;
+  }
+
+  /**
+   * Deployed Camunda 8 process definition, process definition key is the middleware deployment name
+   */
+  interface Camunda8ProcessDefinition {
+	processDefinitionId: string;
+	processDefinitionKey: string;
+	processDefinitionVersion: number;
+	resourceName: string;
+	tenantId: string;
+  }
+
+  /**
+   * Response body of `POST /<basePath>/v2/deployments`, deployment key is the middleware deployment name
+   */
+  interface Camunda8DeploymentsResponse {
+	deploymentKey: string;
+	tenantId: string;
+	deployments: { processDefinition: Camunda8ProcessDefinition }[];
+  }
+
+  /**
+   * Request body of `POST /<basePath>/v2/process-instances`
+   */
+  interface Camunda8CreateProcessInstanceBody {
+	/** BPMN process id of a deployed executable process */
+	processDefinitionId?: string;
+	/** Alternatively the process definition key, i.e. the middleware deployment name */
+	processDefinitionKey?: string;
+	variables?: Record<string, any>;
+	/** Mapped to engine business key */
+	businessId?: string;
+	[x: string]: any;
+  }
+
+  /**
+   * Response body of `POST /<basePath>/v2/process-instances`, process instance key is the middleware engine token
+   */
+  interface Camunda8ProcessInstance {
+	processInstanceKey: string;
+	processDefinitionId: string;
+	processDefinitionKey: string;
+	processDefinitionVersion: number;
+	tenantId: string;
+  }
 	/**
 	 * Bpmn Engine Middleware
 	 * */
@@ -253,6 +320,11 @@ declare module 'bpmn-middleware' {
 		 * */
 		fail(): import("express").RequestHandler<TokenParameter_1, MiddlewareEngineStatus_1, SignalBody_1, ExecuteOptions_1>[];
 		/**
+		 * Camunda 8 start process instance request pipeline
+		 * @param fn start request handler
+		 * */
+		startProcessInstance(fn?: import("express").RequestHandler<StartDeployment_1, any, any, any>): import("express").RequestHandler<StartDeployment_1, Camunda8ProcessInstance, Camunda8CreateProcessInstanceBody, ExecuteOptions_1>[];
+		/**
 		 * Pre start BPMN engine execution middleware
 		 * */
 		preStart(): import("connect").NextHandleFunction;
@@ -280,6 +352,37 @@ declare module 'bpmn-middleware' {
 		 * Create deployment
 		 * */
 		create(req: import("express").Request<any, CreateDeploymentResponseBody, import("@aller/express-swagger").MultipartBody<CreateDeploymentForm>>, res: import("express").Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals_1>, next: import("express").NextFunction): Promise<void>;
+		/**
+		 * Get Camunda 8 REST API topology, doubles as Camunda Modeler connection check and protocol probe
+		 * */
+		getTopology(_req: import("express").Request, res: import("express").Response<Camunda8Topology>): void;
+		/**
+		 * Create deployment from Camunda 8 modeler multipart resources, deployment is named after the first resource file name
+		 * */
+		createDeployments(req: import("express").Request<any, Camunda8DeploymentsResponse, import("@aller/express-swagger").MultipartBody<Camunda8DeploymentsForm>>, res: import("express").Response<Camunda8DeploymentsResponse, BpmnMiddlewareResponseLocals_1>, next: import("express").NextFunction): Promise<void>;
+		/**
+		 * Internal register executable processes so instances can be started by process definition id
+		 * @param deploymentName deployment name
+		 * @param resourceName deployed BPMN file name
+		 * @param tenantId tenant id
+		 * */
+		_addProcessDefinitions(deploymentName: string, resourceName: string, tenantId: string): Promise<{
+			processDefinition: Camunda8ProcessDefinition;
+		}[]>;
+		/**
+		 * Internal map Camunda 8 start process instance body to the start deployment pipeline
+		 * */
+		_resolveProcessDefinition(req: import("express").Request<StartDeployment_1, Camunda8ProcessInstance, Camunda8CreateProcessInstanceBody>, res: import("express").Response<Camunda8ProcessInstance, BpmnMiddlewareResponseLocals_1>, next: import("express").NextFunction): Promise<void>;
+		/**
+		 * Started Camunda 8 process instance response, the engine token doubles as process instance key
+		 * */
+		createdProcessInstance(_req: import("express").Request<StartDeployment_1>, res: import("express").Response<Camunda8ProcessInstance, BpmnMiddlewareResponseLocals_1>): void;
+		/**
+		 * Redirect Camunda Operate process instance link to engine status, lets Camunda Modeler "Open in Operate" point to the middleware
+		 * */
+		redirectProcessInstance(req: import("express").Request<{
+			processInstanceKey: string;
+		}>, res: import("express").Response): void;
 		/**
 		 * Run deployment
 		 * */
@@ -414,6 +517,10 @@ declare module 'bpmn-middleware' {
 		 * BPMN engine execution options
 		 */
 		executeOptions?: ExecuteOptions_1;
+		/**
+		 * Camunda 8 process definition id, set by the start process instance pipeline
+		 */
+		processDefinitionId?: string;
 	};
 	/**
 	 * Start deployment params
@@ -483,6 +590,8 @@ declare module 'bpmn-middleware' {
 	export const STORAGE_TYPE_DEPLOYMENT: "deployment";
 	export const STORAGE_TYPE_STATE: "state";
 	export const STORAGE_TYPE_FILE: "file";
+	export const STORAGE_TYPE_PROCESS_DEFINITION: "process-definition";
+	export const DEFAULT_TENANT_ID: "<default>";
 	export const DEFAULT_IDLE_TIMER: 120000;
 	export const SAVE_STATE_ROUTINGKEY: "activity.state.save";
 	export const ENABLE_SAVE_STATE_ROUTINGKEY: "activity.state.save.enable";

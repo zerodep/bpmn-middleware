@@ -217,9 +217,10 @@ Feature('signal activity', () => {
     Then('process status has postponed activities', async () => {
       const response = await apps.request().get(`/rest/status/${token}`).expect(200);
 
-      expect(response.body).to.have.property('postponed').with.length(2);
+      expect(response.body).to.have.property('postponed').with.length(3);
       expect(response.body.postponed[0]).to.have.property('id', 'usr');
-      expect(response.body.postponed[1]).to.have.property('id', 'end');
+      expect(response.body.postponed[1]).to.have.property('id', 'msg');
+      expect(response.body.postponed[2]).to.have.property('id', 'end');
     });
 
     When('idle timer has passed and process is stopped', () => {

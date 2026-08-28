@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+## v0.21.0 - 2026-08-30
+
+- Camunda 8 REST endpoints so Camunda Modeler can deploy and start directly against the middleware: `GET /v2/topology`, `POST /v2/deployments` (multipart `resources`, deployment named after the first resource file name), and `POST /v2/process-instances` (by `processDefinitionId` or `processDefinitionKey`)
+- `GET /processes/:processInstanceKey` redirects to `/status/:token` so Camunda Modeler "Open in Operate" can point to the middleware
+- fix save state control messages (`saveState`, `enableSaveState`, `disableSaveState`) being dropped from the bounded state queue when the engine runs synchronously; they now flow through a dedicated unbounded queue
+- bump peer dependency `bpmn-elements` to `>=18.0.22`
+
 ## v0.20.5 - 2026-08-21
 
 - document how to combine [`@onify/flow-extensions`](https://npmjs.com/package/@onify/flow-extensions) with [`@0dep/bpmn-extensions`](https://npmjs.com/package/@0dep/bpmn-extensions) in [docs/multiple-extensions.md](/docs/multiple-extensions.md): `camunda-bpmn-moddle` and `zeebe-bpmn-moddle` schemas collide on modeler metadata properties (`modelerTemplate`, `modelerTemplateVersion`, `versionTag`), making every process unparsable until they are stripped from one schema; the two `extendFn`s compose into one wrapper; the zeebe extension is best scoped to elements carrying `zeebe:` extension elements
 - example app runs Camunda 8 diagrams: both extension packages active with the patched zeebe moddle schema, business rule tasks resolve decisions from `zeebe:calledDecision` `decisionId="deploymentName/decisionId"` in addition to `camunda:decisionRef`, verified by the modeler-viable `example/processes/camunda8-dinner.bpmn`
-- README ecosystem section linking related packages and [0dep.se](https://0dep.se)
 
 ## v0.20.4 - 2026-08-15
 

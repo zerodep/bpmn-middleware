@@ -226,6 +226,138 @@
         }
       }
     },
+    "/rest/v2/topology": {
+      "get": {
+        "description": "Get Camunda 8 REST API topology, doubles as Camunda Modeler connection check and protocol probe",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Camunda8Topology"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/v2/deployments": {
+      "post": {
+        "description": "Create deployment from Camunda 8 modeler multipart resources, deployment is named after the first resource file name",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Camunda8DeploymentsResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Camunda8DeploymentsForm"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/v2/process-instances": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Camunda8ProcessInstance"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "autosaveEngineState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sync",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Run until end"
+            }
+          },
+          {
+            "name": "idleTimeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Idle timeout delay"
+            }
+          },
+          {
+            "name": "resumedBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Resumed by engine token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Camunda8CreateProcessInstanceBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/processes/{processInstanceKey}": {
+      "get": {
+        "description": "Redirect Camunda Operate process instance link to engine status, lets Camunda Modeler \"Open in Operate\" point to the middleware",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "processInstanceKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
     "/rest/resume/{token}": {
       "post": {
         "responses": {
@@ -920,6 +1052,15 @@
                       "disableTrackState": {
                         "type": "boolean",
                         "description": "disable tracking state between recover and resume\ntrue will only return state for elements that are actually running\nDefaults to falsy"
+                      },
+                      "assignOutput": {
+                        "type": "string",
+                        "enum": [
+                          "id",
+                          "off",
+                          "auto"
+                        ],
+                        "description": "assign activity end output to environment.output for activities that no\nuser extension attached to. Defaults to `off`"
                       }
                     },
                     "additionalProperties": true
@@ -1336,6 +1477,162 @@
           }
         },
         "additionalProperties": true
+      },
+      "Camunda8CreateProcessInstanceBody": {
+        "type": "object",
+        "properties": {
+          "processDefinitionId": {
+            "type": "string",
+            "description": "BPMN process id of a deployed executable process"
+          },
+          "processDefinitionKey": {
+            "type": "string",
+            "description": "Alternatively the process definition key, i.e. the middleware deployment name"
+          },
+          "variables": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          },
+          "businessId": {
+            "type": "string",
+            "description": "Mapped to engine business key"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Camunda8ProcessInstance": {
+        "type": "object",
+        "properties": {
+          "processInstanceKey": {
+            "type": "string"
+          },
+          "processDefinitionId": {
+            "type": "string"
+          },
+          "processDefinitionKey": {
+            "type": "string"
+          },
+          "processDefinitionVersion": {
+            "type": "number"
+          },
+          "tenantId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "processInstanceKey",
+          "processDefinitionId",
+          "processDefinitionKey",
+          "processDefinitionVersion",
+          "tenantId"
+        ]
+      },
+      "Camunda8DeploymentsForm": {
+        "type": "object",
+        "properties": {
+          "resources": {
+            "type": "string",
+            "format": "binary"
+          },
+          "tenantId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "resources"
+        ]
+      },
+      "Camunda8DeploymentsResponse": {
+        "type": "object",
+        "properties": {
+          "deploymentKey": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          },
+          "deployments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "processDefinition": {
+                  "$ref": "#/components/schemas/Camunda8ProcessDefinition"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "processDefinition"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "deploymentKey",
+          "tenantId",
+          "deployments"
+        ]
+      },
+      "Camunda8ProcessDefinition": {
+        "type": "object",
+        "properties": {
+          "processDefinitionId": {
+            "type": "string"
+          },
+          "processDefinitionKey": {
+            "type": "string"
+          },
+          "processDefinitionVersion": {
+            "type": "number"
+          },
+          "resourceName": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "processDefinitionId",
+          "processDefinitionKey",
+          "processDefinitionVersion",
+          "resourceName",
+          "tenantId"
+        ]
+      },
+      "Camunda8Topology": {
+        "type": "object",
+        "properties": {
+          "gatewayVersion": {
+            "type": "string"
+          },
+          "clusterSize": {
+            "type": "number"
+          },
+          "partitionsCount": {
+            "type": "number"
+          },
+          "replicationFactor": {
+            "type": "number"
+          },
+          "brokers": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "gatewayVersion",
+          "clusterSize",
+          "partitionsCount",
+          "replicationFactor",
+          "brokers"
+        ]
       },
       "StartDeploymentResult": {
         "type": "object",
