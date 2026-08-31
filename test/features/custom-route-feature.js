@@ -696,6 +696,47 @@ Feature('custom routes', () => {
       expect(response.body).to.have.property('state', 'idle');
     });
 
+    describe('called process completes and signals caller with custom save options', () => {
+      When('custom route starts call activity process again', async () => {
+        app = apps.balance();
+        wait = testHelpers.waitForProcess(app, 'fs:wait').wait();
+
+        const response = await request(app).post('/api/v1/se/process-definition/call-process/start');
+        expect(response.statusCode, response.text).to.equal(201);
+
+        token = response.body.id;
+      });
+
+      And('called process is waiting', async () => {
+        const waitMsg = await wait;
+        waitToken = waitMsg.properties.token;
+      });
+
+      When('called process is signalled to completion from another app instance', async () => {
+        app = apps.balance();
+        end = testHelpers.waitForProcess(app, token).end();
+
+        const response = await request(app).post(`/api/v1/se/signal/${waitToken}`).send({ id: 'wait' });
+        expect(response.statusCode, response.text).to.equal(200);
+      });
+
+      Then('caller process is completed and saved with custom save options', async () => {
+        await end;
+
+        const response = await apps.request().get(`/api/v1/se/status/${token}`).expect(200);
+
+        expect(response.body).to.have.property('country', 'se');
+        expect(response.body).to.have.property('state', 'idle');
+      });
+
+      And('called process is completed', async () => {
+        const response = await apps.request().get(`/api/v1/se/status/${waitToken}`).expect(200);
+
+        expect(response.body).to.have.property('country', 'se');
+        expect(response.body).to.have.property('state', 'idle');
+      });
+    });
+
     describe('custom adapter', () => {
       let response;
       When('attempting to start process via custom route that doesnt exist', async () => {

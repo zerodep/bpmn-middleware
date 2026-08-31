@@ -58,6 +58,67 @@ describe('Engines', () => {
     });
   });
 
+  describe('sequence number', () => {
+    it('ignores recovered activity events', () => {
+      const engines = new Engines({
+        name: 'event',
+        adapter: new MemoryAdapter(),
+        broker: new Broker(),
+      });
+
+      const engine = engines.createEngine({
+        name: 'foo',
+        source: `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+          <process id="bp" isExecutable="true">
+            <task id="task" />
+          </process>
+        </definitions>`,
+      });
+
+      engines._setupEngine(engine);
+      expect(engine.options.sequenceNumber).to.equal(0);
+
+      engine.broker.publish('event', 'activity.start', { id: 'task', isRecovered: true });
+      expect(engine.options.sequenceNumber).to.equal(0);
+
+      engine.broker.publish('event', 'activity.stop', { id: 'task' });
+      expect(engine.options.sequenceNumber).to.equal(0);
+
+      engine.broker.publish('event', 'activity.start', { id: 'task' });
+      expect(engine.options.sequenceNumber).to.equal(1);
+    });
+
+    it('ignores redelivered activity events', () => {
+      const engines = new Engines({
+        name: 'event',
+        adapter: new MemoryAdapter(),
+        broker: new Broker(),
+      });
+
+      const engine = engines.createEngine({
+        name: 'foo',
+        source: `<?xml version="1.0" encoding="UTF-8"?>
+        <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+          <process id="bp" isExecutable="true">
+            <task id="task" />
+          </process>
+        </definitions>`,
+      });
+
+      engines._setupEngine(engine);
+
+      const consumer = engine.broker.getConsumer('sequence-listener');
+      consumer.queue.queueMessage({ routingKey: 'activity.start', redelivered: true }, { id: 'task' });
+
+      expect(engine.options.sequenceNumber).to.equal(0);
+
+      consumer.queue.queueMessage({ routingKey: 'activity.start' }, { id: 'task' });
+
+      expect(engine.options.sequenceNumber).to.equal(1);
+    });
+  });
+
   describe('run', () => {
     it('run with callback that times out clears all timers and clears engine broker consumers', async () => {
       const broker = new Broker();

@@ -1,7 +1,9 @@
 import request from 'supertest';
 import FormData from 'form-data';
 
-import { horizontallyScaled, waitForProcess } from '../helpers/test-helpers.js';
+import { STORAGE_TYPE_PROCESS_DEFINITION } from 'bpmn-middleware';
+
+import { createDeployment, horizontallyScaled, waitForProcess } from '../helpers/test-helpers.js';
 
 const modelerSource = `<?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_modeler_shopping" targetNamespace="http://bpmn.io/schema/bpmn">
@@ -133,6 +135,14 @@ Feature('camunda 8 modeler routes', () => {
       expect(response.statusCode, response.text).to.equal(400);
     });
 
+    When('an instance is started without a body', async () => {
+      response = await apps.request().post('/rest/v2/process-instances');
+    });
+
+    Then('bad request is returned', () => {
+      expect(response.statusCode, response.text).to.equal(400);
+    });
+
     When('modeler deploys without resources', async () => {
       const form = new FormData();
       form.append('tenantId', '<default>');
@@ -151,6 +161,51 @@ Feature('camunda 8 modeler routes', () => {
 
     Then('bad request is returned', () => {
       expect(response.statusCode, response.text).to.equal(400);
+    });
+  });
+
+  Scenario('modeler starts an instance with business id', () => {
+    let response;
+    When('modeler starts an instance with a business id', async () => {
+      response = await apps
+        .request()
+        .post('/rest/v2/process-instances')
+        .send({ processDefinitionId: 'modeler-shopping-process', businessId: 'order-1', variables: { foo: 'bar' } });
+    });
+
+    Then('the instance is started', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('processInstanceKey').that.is.ok;
+    });
+
+    And('the business id is kept as business key on the running instance', async () => {
+      const status = await apps.request().get(`/rest/status/${response.body.processInstanceKey}`).expect(200);
+      expect(status.body).to.have.property('businessKey', 'order-1');
+    });
+  });
+
+  Scenario('process definition record lacks deployment name', () => {
+    Given('a diagram is deployed the classic way', () => {
+      return createDeployment(apps.balance(), 'legacy-shopping', modelerSource);
+    });
+
+    And('a process definition record without deployment name is stored under the deployment name', () => {
+      return apps.balance().locals.engines.adapter.upsert(STORAGE_TYPE_PROCESS_DEFINITION, 'legacy-shopping', {});
+    });
+
+    let response;
+    When('modeler starts an instance by process definition id', async () => {
+      response = await apps.request().post('/rest/v2/process-instances').send({ processDefinitionId: 'legacy-shopping' });
+    });
+
+    Then('the deployment name falls back to the process definition id and the instance is started', () => {
+      expect(response.statusCode, response.text).to.equal(200);
+      expect(response.body).to.have.property('processDefinitionId', 'legacy-shopping');
+      expect(response.body).to.have.property('processInstanceKey').that.is.ok;
+    });
+
+    And('the instance is running', () => {
+      expect(apps.getRunningByToken(response.body.processInstanceKey)).to.have.length(1);
     });
   });
 });
