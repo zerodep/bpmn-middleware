@@ -15,7 +15,7 @@
     "bpmn-middleware": "file:..",
     "camunda-bpmn-moddle": "^8.0.1",
     "debug": "4.x",
-    "dmn-elements": "^0.1.0",
+    "dmn-elements": "^0.2.0",
     "dmn-moddle": "^12.0.1",
     "express": "^5.1.0",
     "feelin": "^7.0.1",
