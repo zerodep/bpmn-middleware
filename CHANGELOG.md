@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## v0.21.2 - 2026-09-12
+
+- generate README and API table of contents with `@0dep/toc`
 
 ## v0.21.0 - 2026-08-30
 

@@ -1,6 +1,6 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.21.0",
+  "version": "0.21.2",
   "description": "BPMN engine express middleware",
   "type": "module",
   "main": "./dist/main.cjs",
@@ -16,12 +16,15 @@
   "scripts": {
     "test": "mocha",
     "posttest": "npm run lint && npm run dist && npm run test:md && npm run build:swagger --workspace=example",
-    "lint": "eslint . --cache && prettier . --check --cache",
+    "lint": "eslint . --cache && npm run toc && prettier . --check --cache",
     "prepack": "npm run dist",
     "cov:html": "c8 -r html -r text mocha",
-    "test:lcov": "c8 -r lcov mocha && npm run lint",
+    "test:lcov": "c8 -r lcov mocha",
+    "posttest:lcov": "npm run lint",
     "test:md": "texample ./README.md,./docs/API.md,./docs/multiple-extensions.md,./example/README.md",
-    "dist": "dts-buddy && rollup -c"
+    "dist": "dts-buddy && rollup -c",
+    "toc": "toc README.md docs/API.md",
+    "posttoc": "prettier --write README.md docs/API.md"
   },
   "repository": {
     "type": "git",
@@ -42,9 +45,9 @@
   "bugs": {
     "url": "https://github.com/zerodep/bpmn-middleware/issues"
   },
-  "homepage": "https://github.com/zerodep/bpmn-middleware#readme",
+  "homepage": "https://0dep.se",
   "devDependencies": {
-    "@aller/express-swagger": "^0.3.1",
+    "@0dep/toc": "^1.0.0",
     "@eslint/js": "^10.0.1",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@types/bpmn-moddle": "^10.0.0",

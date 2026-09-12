@@ -1,7 +1,47 @@
 # API
 
-- [Middleware](#bpmnenginemiddlewareoptions)
+<!-- toc -->
+
+- [`bpmnEngineMiddleware([options])`](#bpmnenginemiddlewareoptions)
+  - [Services factory](#services-factory)
+  - [Scripts factory](#scripts-factory)
 - [Routes](#routes)
+  - [`GET {*splat}/version`](#get-splatversion)
+  - [`GET {*splat}/deployment`](#get-splatdeployment)
+  - [`POST {*splat}/deployment/create`](#post-splatdeploymentcreate)
+  - [`POST {*splat}/process-definition/:deploymentName/start`](#post-splatprocess-definitiondeploymentnamestart)
+  - [`GET {*splat}/v2/topology`](#get-splatv2topology)
+  - [`POST {*splat}/v2/deployments`](#post-splatv2deployments)
+  - [`POST {*splat}/v2/process-instances`](#post-splatv2process-instances)
+  - [`GET {*splat}/processes/:processInstanceKey`](#get-splatprocessesprocessinstancekey)
+  - [`GET {*splat}/script/:deploymentName`](#get-splatscriptdeploymentname)
+  - [`GET {*splat}/timers/:deploymentName`](#get-splattimersdeploymentname)
+  - [`GET {*splat}/running`](#get-splatrunning)
+  - [`GET {*splat}/status/:token`](#get-splatstatustoken)
+  - [`GET {*splat}/status/:token/:activityId`](#get-splatstatustokenactivityid)
+  - [`POST {*splat}/resume/:token`](#post-splatresumetoken)
+  - [`POST {*splat}/signal/:token`](#post-splatsignaltoken)
+  - [`POST {*splat}/cancel/:token`](#post-splatcanceltoken)
+  - [`POST {*splat}/fail/:token`](#post-splatfailtoken)
+  - [`GET {*splat}/state/:token`](#get-splatstatetoken)
+  - [`DELETE {*splat}/state/:token`](#delete-splatstatetoken)
+  - [`DELETE {*splat}/internal/stop`](#delete-splatinternalstop)
+  - [`DELETE {*splat}/internal/stop/:token`](#delete-splatinternalstoptoken)
+- [Events](#events)
+  - [Event `bpmn/end`](#event-bpmnend)
+  - [Event `bpmn/stop`](#event-bpmnstop)
+  - [Event `bpmn/error`](#event-bpmnerror)
+  - [Event `bpmn/warn`](#event-bpmnwarn)
+- [Storage adapter](#storage-adapter)
+  - [`async upsert(type, key, value[, options])`](#async-upserttype-key-value-options)
+  - [`async update(type, key, value[, options])`](#async-updatetype-key-value-options)
+  - [`async fetch(type, key[, options])`](#async-fetchtype-key-options)
+  - [`async delete(type, key[, options])`](#async-deletetype-key-options)
+  - [`async query(type, qs[, options])`](#async-querytype-qs-options)
+  - [Storage adapter examples](#storage-adapter-examples)
+    - [Storage key not found](#storage-key-not-found)
+
+<!-- /toc -->
 
 ## `bpmnEngineMiddleware([options])`
 
@@ -100,28 +140,6 @@ const middleware = bpmnEngineMiddleware({
 ```
 
 ## Routes
-
-- [`GET {*splat}/version`](#get-splatversion)
-- [`GET {*splat}/deployment`](#get-splatdeployment)
-- [`POST {*splat}/deployment/create`](#post-splatdeploymentcreate)
-- [`POST {*splat}/process-definition/:deploymentName/start`](#post-splatprocess-definitiondeploymentnamestart)
-- [`GET {*splat}/v2/topology`](#get-splatv2topology)
-- [`POST {*splat}/v2/deployments`](#post-splatv2deployments)
-- [`POST {*splat}/v2/process-instances`](#post-splatv2process-instances)
-- [`GET {*splat}/processes/:processInstanceKey`](#get-splatprocessesprocessinstancekey)
-- [`GET {*splat}/script/:deploymentName`](#get-splatscriptdeploymentname)
-- [`GET {*splat}/timers/:deploymentName`](#get-splattimersdeploymentname)
-- [`GET {*splat}/running`](#get-splatrunning)
-- [`GET {*splat}/status/:token`](#get-splatstatustoken)
-- [`GET {*splat}/status/:token/:activityId`](#get-splatstatustokenactivityid)
-- [`POST {*splat}/resume/:token`](#post-splatresumetoken)
-- [`POST {*splat}/signal/:token`](#post-splatsignaltoken)
-- [`POST {*splat}/cancel/:token`](#post-splatcanceltoken)
-- [`POST {*splat}/fail/:token`](#post-splatfailtoken)
-- [`GET {*splat}/state/:token`](#get-splatstatetoken)
-- [`DELETE {*splat}/state/:token`](#delete-splatstatetoken)
-- [`DELETE {*splat}/internal/stop`](#delete-splatinternalstop)
-- [`DELETE {*splat}/internal/stop/:token`](#delete-splatinternalstoptoken)
 
 ### `GET {*splat}/version`
 

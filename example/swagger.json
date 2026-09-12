@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "BPMN 2.0 middleware example",
-    "version": "0.0.0"
+    "version": "1.0.0"
   },
   "paths": {
     "/rest/auth/process-definition/{deploymentName}/start": {

@@ -84,12 +84,11 @@ BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
   if (this[kInitilialized]) return next();
   this[kInitilialized] = true;
 
-  const app = req.app;
   /** @internal */
-  this._bpmnEngineListener = new BpmnPrefixListener(app);
+  this._bpmnEngineListener = new BpmnPrefixListener(req.app);
 
   // @ts-ignore
-  app.on('bpmn/stop-all', () => this.engines.stopAll());
+  req.app.on('bpmn/stop-all', () => this.engines.stopAll());
 
   return next();
 };

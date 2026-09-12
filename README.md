@@ -10,8 +10,14 @@ Under construction so breaking changes will occur until v1.
 - [Example app](./example/README.md)
 - [Call activity](./docs/call-activity.md)
 - [Multiple extensions](./docs/multiple-extensions.md)
+
+<!-- toc -->
+
+- [Usage](#usage)
 - [Debug](#debug)
 - [Ecosystem](#ecosystem)
+
+<!-- /toc -->
 
 ## Usage
 
