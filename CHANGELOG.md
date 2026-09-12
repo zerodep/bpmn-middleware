@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.21.2 - 2026-09-12
+## v0.21.1 - 2026-09-12
 
 - generate README and API table of contents with `@0dep/toc`
 
