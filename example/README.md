@@ -30,3 +30,21 @@ Deployed DMN decisions are evaluated with [dmn-elements](https://npmjs.com/packa
 The response carries the decision result and the evaluation trace — evaluated elements in completion order with requirement bindings, and hit policy resolution for decision tables — `{ result, trace }`.
 
 Business rule tasks are wired to the same decision evaluation. Address the deployed decision with `camunda:decisionRef="deploymentName/decisionId"`; the engine environment variables are passed as decision input and `camunda:resultVariable` captures the result, see [dinner.bpmn](processes/dinner.bpmn) and [dinner.dmn](processes/dinner.dmn). Evaluating a decision that is not deployed renders an error.
+
+## AMQP workers
+
+A command and query variant of the app, in [amqp](amqp), where the http api never runs an engine. Start and signal are commands on an AMQP work queue, two workers consume them and run the engines, and every engine event is published on a topic exchange that feeds a read model answering status queries. Call activities are brokered the same way: the `activity.call` event is queued for any free worker, and the called process `definition.end` event signals the calling activity, on whichever worker picks it up.
+
+Engines are stopped as soon as they wait for input, so a signal resumes the engine from the state in the shared adapter, on either worker. Swap the shared `MemoryAdapter` for a database backed adapter and the workers can run as separate processes.
+
+The api and the workers connect to the broker at `AMQP_URL`, `amqp://localhost` by default, e.g. a RabbitMQ container. The feature test runs the same modules against [amqp-emulator](https://npmjs.com/package/amqp-emulator) instead, so no broker is needed for `npm test`.
+
+```sh
+docker run --rm -p 5672:5672 rabbitmq
+npm run start:amqp --workspace=example
+```
+
+- `POST http://localhost:3001/rest/deployment/create` deploys a diagram as usual, [amqp-order.bpmn](processes/amqp-order.bpmn) and [amqp-fulfilment.bpmn](processes/amqp-fulfilment.bpmn) are deployed at start
+- `POST http://localhost:3001/start/amqp-order` publishes a start command and responds with the token as `{ id }`
+- `GET http://localhost:3001/status/:token` answers from the read model: state, waiting activities, the worker that ran it, caller and output
+- `POST http://localhost:3001/signal/:token` with `{ "id": "approve" }` publishes a signal command, the order is fulfilled by a call activity and completes

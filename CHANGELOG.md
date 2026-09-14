@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- example: command and query app where AMQP workers run the engines, `npm run start:amqp --workspace=example`, tested against [amqp-emulator](https://npmjs.com/package/amqp-emulator)
+
 ## v0.21.1 - 2026-09-12
 
 - generate README and API table of contents with `@0dep/toc`
