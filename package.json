@@ -46,6 +46,7 @@
   },
   "homepage": "https://0dep.se",
   "devDependencies": {
+    "@0dep/bpmn-extensions": "^1.0.0",
     "@0dep/toc": "^2.1.0",
     "@eslint/js": "^10.0.1",
     "@rollup/plugin-commonjs": "^29.0.0",
