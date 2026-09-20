@@ -2,6 +2,15 @@
 
 Start your Camunda Modeler and hit play. REST endpoint is `http://localhost:3000/rest`.
 
+<!-- toc -->
+
+- [Camunda 8 diagrams from Camunda Modeler](#camunda-8-diagrams-from-camunda-modeler)
+- [Authenticated example](#authenticated-example)
+- [DMN decisions](#dmn-decisions)
+- [AMQP workers](#amqp-workers)
+
+<!-- /toc -->
+
 ## Camunda 8 diagrams from Camunda Modeler
 
 The middleware ships Camunda 8 REST API v2 routes so Camunda Modeler (>= 5.39) can deploy and start Camunda 8 diagrams directly. Configure a connection in the modeler:

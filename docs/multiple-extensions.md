@@ -4,6 +4,16 @@ The middleware engine options accept any number of [bpmn-elements](https://npmjs
 
 The extension runtimes coexist, and extension activation order makes no difference. Three things need attention when combining them:
 
+<!-- toc -->
+
+- [Moddle schemas collide](#moddle-schemas-collide)
+- [One extend function](#one-extend-function)
+- [Scope the zeebe extension](#scope-the-zeebe-extension)
+- [Elements without extensions](#elements-without-extensions)
+- [Example](#example)
+
+<!-- /toc -->
+
 ## Moddle schemas collide
 
 [camunda-bpmn-moddle](https://npmjs.com/package/camunda-bpmn-moddle) and [zeebe-bpmn-moddle](https://npmjs.com/package/zeebe-bpmn-moddle) both extend the same bpmn base types with the modeler metadata properties `modelerTemplate`, `modelerTemplateVersion`, and `versionTag`. Moddle refuses the double property definition. The `<process>` element then becomes unparsable and every start request fails with:
