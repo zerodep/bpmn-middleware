@@ -68,8 +68,8 @@
     "express-4": "npm:express@^4.21.2",
     "form-data": "^4.0.0",
     "globals": "^17.0.0",
-    "mocha": "^11.0.1",
-    "mocha-cakes-2": "^3.3.0",
+    "mocha": "^12.0.3",
+    "mocha-scenarios": "^1.0.1",
     "nock": "^14.0.0",
     "prettier": "^3.3.3",
     "rollup": "^4.17.2",
@@ -82,16 +82,11 @@
   },
   "peerDependencies": {
     "@0dep/piso": ">=2",
-    "bpmn-elements": ">=18.0.22",
+    "bpmn-elements": ">=18",
     "bpmn-engine": ">=26",
     "debug": "4.x",
     "express": ">=4",
     "smqp": ">=13"
-  },
-  "overrides": {
-    "mocha": {
-      "yargs": "^18.0.0"
-    }
   },
   "files": [
     "src/",

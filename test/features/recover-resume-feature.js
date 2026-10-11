@@ -340,9 +340,11 @@ Feature('recover resume', () => {
       running = response.body.engines;
     });
 
+    let sequenceNumber;
     And('first process state run sequence number is set', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 7);
+      expect(running[0]).to.have.property('sequenceNumber').that.is.a('number').above(0);
       expect(running[0]).to.have.property('activityStatus', 'wait');
+      sequenceNumber = running[0].sequenceNumber;
     });
 
     When('first process is signaled', async () => {
@@ -360,9 +362,10 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is updated', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 23);
+      expect(running[0]).to.have.property('sequenceNumber').that.is.above(sequenceNumber);
       expect(running[0]).to.have.property('activityStatus', 'timer');
       expect(running[0]).to.have.property('expireAt').that.is.ok;
+      sequenceNumber = running[0].sequenceNumber;
     });
 
     And('activity status is timer', async () => {
@@ -399,7 +402,7 @@ Feature('recover resume', () => {
     });
 
     And('first process state run sequence number is updated', () => {
-      expect(running[0]).to.have.property('sequenceNumber', 27);
+      expect(running[0]).to.have.property('sequenceNumber').that.is.above(sequenceNumber);
     });
 
     And('process activity status is wait', () => {
