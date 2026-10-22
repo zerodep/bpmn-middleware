@@ -3,6 +3,7 @@
 ## Unreleased
 
 - example: command and query app where AMQP workers run the engines, `npm run start:amqp --workspace=example`, tested against [amqp-emulator](https://npmjs.com/package/amqp-emulator)
+- example: upgrade [dmn-elements](https://npmjs.com/package/dmn-elements)
 
 ## v0.21.1 - 2026-09-12
 
