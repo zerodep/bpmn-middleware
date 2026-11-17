@@ -683,7 +683,9 @@
                   "properties": {
                     "timers": {
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "$ref": "#/components/schemas/ParsedTimerResult"
+                      }
                     }
                   },
                   "additionalProperties": false,
@@ -1455,6 +1457,78 @@
         "additionalProperties": true,
         "required": [
           "engines"
+        ]
+      },
+      "ParsedTimerResult": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "expireAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delay": {
+            "type": "number"
+          },
+          "repeat": {
+            "type": "number"
+          },
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          },
+          "timer": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "timerType": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "parent": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "success",
+          "name",
+          "timer"
         ]
       },
       "ExecuteOptions": {

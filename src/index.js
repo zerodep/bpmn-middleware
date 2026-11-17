@@ -15,7 +15,7 @@ export * from './constants.js';
 
 /**
  * BPMN 2 Engine middleware
- * @param {import('types').BpmnMiddlewareOptions} [options]
+ * @param {import('./interfaces.js').BpmnMiddlewareOptions} [options]
  * @returns {import('express').Router & { engines: Engines, middleware: BpmnEngineMiddleware }}
  */
 export function bpmnEngineMiddleware(options) {
@@ -71,14 +71,14 @@ export function bpmnEngineMiddleware(options) {
   return /** @type {import('express').Router & { engines: Engines, middleware: BpmnEngineMiddleware }} */ (router);
 }
 
-/** @typedef {import('types').BpmnMiddlewareOptions} BpmnMiddlewareOptions */
-/** @typedef {import('types').ExecuteOptions} ExecuteOptions */
-/** @typedef {import('types').StartDeploymentOptions} StartDeploymentOptions */
-/** @typedef {import('types').StartDeploymentResult} StartDeploymentResult */
-/** @typedef {import('types').MiddlewareEngineStatus} MiddlewareEngineStatus */
-/** @typedef {import('types').MiddlewareEngineState} MiddlewareEngineState */
-/** @typedef {import('types').SignalBody} SignalBody */
-/** @typedef {import('types').IStorageAdapter} IStorageAdapter */
+/** @typedef {import('./interfaces.js').BpmnMiddlewareOptions} BpmnMiddlewareOptions */
+/** @typedef {import('./interfaces.js').ExecuteOptions} ExecuteOptions */
+/** @typedef {import('./interfaces.js').StartDeploymentOptions} StartDeploymentOptions */
+/** @typedef {import('./interfaces.js').StartDeploymentResult} StartDeploymentResult */
+/** @typedef {import('./interfaces.js').MiddlewareEngineStatus} MiddlewareEngineStatus */
+/** @typedef {import('./interfaces.js').MiddlewareEngineState} MiddlewareEngineState */
+/** @typedef {import('./interfaces.js').SignalBody} SignalBody */
+/** @typedef {import('./interfaces.js').IStorageAdapter} IStorageAdapter */
 /** @typedef {import('./bpmn-middleware.js').StartDeployment} StartDeployment */
 /** @typedef {import('./bpmn-middleware.js').TokenParameter} TokenParameter */
 /** @typedef {import('./bpmn-middleware.js').BpmnMiddlewareResponseLocals} BpmnMiddlewareResponseLocals */

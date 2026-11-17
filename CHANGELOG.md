@@ -10,8 +10,10 @@
 ### Changes
 
 - export the `IStorageAdapter` type, a custom storage adapter can be typed with `import('bpmn-middleware').IStorageAdapter`
+- type declarations are built with `tsc`, one file per source file under `types/`, instead of a single `dts-buddy` bundle. Properties marked `@internal` are no longer stripped from the declarations
 - example: command and query app where AMQP workers run the engines, `npm run start:amqp --workspace=example`, tested against [amqp-emulator](https://npmjs.com/package/amqp-emulator)
 - example: upgrade [dmn-elements](https://npmjs.com/package/dmn-elements)
+- example: OpenAPI document describes the timers of `GET /timers/:deploymentName` with a `ParsedTimerResult` schema
 
 ## v0.21.1 - 2026-09-12
 

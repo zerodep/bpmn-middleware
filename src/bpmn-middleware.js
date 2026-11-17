@@ -34,13 +34,13 @@ const CAMUNDA8_GATEWAY_VERSION = '8.8.0';
 
 /**
  * Bpmn Engine Middleware
- * @param {import('types').BpmnMiddlewareOptions} options
+ * @param {import('./interfaces.js').BpmnMiddlewareOptions} options
  */
 export function BpmnEngineMiddleware(options) {
   /** @type {string} BPMN Middleware name */
   const name = (this.name = options.name || MIDDLEWARE_DEFAULT_EXCHANGE);
 
-  /** @type {import('types').IStorageAdapter} */
+  /** @type {import('./interfaces.js').IStorageAdapter} */
   const adapter = (this.adapter = options.adapter || new MemoryAdapter());
 
   /** @type {Broker} */
@@ -93,7 +93,7 @@ BpmnEngineMiddleware.prototype.init = function init(req, _res, next) {
 /**
  * Start deployment request pipeline
  * @param {import('express').RequestHandler<StartDeployment, any, any, any>} [fn] start request handler
- * @returns {import('express').RequestHandler<StartDeployment, import('types').StartDeploymentResult, import('types').StartDeploymentOptions, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<StartDeployment, import('./interfaces.js').StartDeploymentResult, import('./interfaces.js').StartDeploymentOptions, import('./interfaces.js').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.start = function start(fn) {
   // @ts-ignore
@@ -103,7 +103,7 @@ BpmnEngineMiddleware.prototype.start = function start(fn) {
 /**
  * Resume engine request pipeline
  * @param {import('express').RequestHandler<TokenParameter, any, any, any>} [fn] resume request handler
- * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').ExecuteOptions, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('./interfaces.js').MiddlewareEngineStatus, import('./interfaces.js').ExecuteOptions, import('./interfaces.js').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.resume = function resume(fn) {
   // @ts-ignore
@@ -112,7 +112,7 @@ BpmnEngineMiddleware.prototype.resume = function resume(fn) {
 
 /**
  * Signal activity request pipeline
- * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').SignalBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('./interfaces.js').MiddlewareEngineStatus, import('./interfaces.js').SignalBody, import('./interfaces.js').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.signal = function signal() {
   // @ts-ignore
@@ -121,7 +121,7 @@ BpmnEngineMiddleware.prototype.signal = function signal() {
 
 /**
  * Cancel activity request pipeline
- * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').SignalBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('./interfaces.js').MiddlewareEngineStatus, import('./interfaces.js').SignalBody, import('./interfaces.js').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.cancel = function cancel() {
   // @ts-ignore
@@ -130,7 +130,7 @@ BpmnEngineMiddleware.prototype.cancel = function cancel() {
 
 /**
  * Fail activity request pipeline
- * @returns {import('express').RequestHandler<TokenParameter, import('types').MiddlewareEngineStatus, import('types').SignalBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<TokenParameter, import('./interfaces.js').MiddlewareEngineStatus, import('./interfaces.js').SignalBody, import('./interfaces.js').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.fail = function fail() {
   // @ts-ignore
@@ -140,7 +140,7 @@ BpmnEngineMiddleware.prototype.fail = function fail() {
 /**
  * Camunda 8 start process instance request pipeline
  * @param {import('express').RequestHandler<StartDeployment, any, any, any>} [fn] start request handler
- * @returns {import('express').RequestHandler<StartDeployment, import('types').Camunda8ProcessInstance, import('types').Camunda8CreateProcessInstanceBody, import('types').ExecuteOptions>[]}
+ * @returns {import('express').RequestHandler<StartDeployment, import('./interfaces.js').Camunda8ProcessInstance, import('./interfaces.js').Camunda8CreateProcessInstanceBody, import('./interfaces.js').ExecuteOptions>[]}
  */
 BpmnEngineMiddleware.prototype.startProcessInstance = function startProcessInstance(fn) {
   // @ts-ignore
@@ -222,7 +222,7 @@ BpmnEngineMiddleware.prototype.getDeployment = function getDeployment(_req, res)
 
 /**
  * Create deployment
- * @param {import('express').Request<any, CreateDeploymentResponseBody, import('@aller/express-swagger').MultipartBody<import('types').CreateDeploymentForm>>} req
+ * @param {import('express').Request<any, CreateDeploymentResponseBody, import('@aller/express-swagger').MultipartBody<import('./interfaces.js').CreateDeploymentForm>>} req
  * @param {import('express').Response<CreateDeploymentResponseBody, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -248,7 +248,7 @@ BpmnEngineMiddleware.prototype.create = async function create(req, res, next) {
 /**
  * Get Camunda 8 REST API topology, doubles as Camunda Modeler connection check and protocol probe
  * @param {import('express').Request} _req
- * @param {import('express').Response<import('types').Camunda8Topology>} res
+ * @param {import('express').Response<import('./interfaces.js').Camunda8Topology>} res
  */
 BpmnEngineMiddleware.prototype.getTopology = function getTopology(_req, res) {
   res.send({ gatewayVersion: CAMUNDA8_GATEWAY_VERSION, clusterSize: 1, partitionsCount: 1, replicationFactor: 1, brokers: [] });
@@ -256,8 +256,8 @@ BpmnEngineMiddleware.prototype.getTopology = function getTopology(_req, res) {
 
 /**
  * Create deployment from Camunda 8 modeler multipart resources, deployment is named after the first resource file name
- * @param {import('express').Request<any, import('types').Camunda8DeploymentsResponse, import('@aller/express-swagger').MultipartBody<import('types').Camunda8DeploymentsForm>>} req
- * @param {import('express').Response<import('types').Camunda8DeploymentsResponse, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Request<any, import('./interfaces.js').Camunda8DeploymentsResponse, import('@aller/express-swagger').MultipartBody<import('./interfaces.js').Camunda8DeploymentsForm>>} req
+ * @param {import('express').Response<import('./interfaces.js').Camunda8DeploymentsResponse, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.createDeployments = async function createDeployments(req, res, next) {
@@ -288,7 +288,7 @@ BpmnEngineMiddleware.prototype.createDeployments = async function createDeployme
  * @param {string} deploymentName deployment name
  * @param {string} resourceName deployed BPMN file name
  * @param {string} tenantId tenant id
- * @returns {Promise<{processDefinition: import('types').Camunda8ProcessDefinition}[]>}
+ * @returns {Promise<{processDefinition: import('./interfaces.js').Camunda8ProcessDefinition}[]>}
  */
 BpmnEngineMiddleware.prototype._addProcessDefinitions = async function addProcessDefinitions(deploymentName, resourceName, tenantId) {
   const file = await this.adapter.fetch(STORAGE_TYPE_FILE, resourceName);
@@ -323,8 +323,8 @@ BpmnEngineMiddleware.prototype._addProcessDefinitions = async function addProces
 /**
  * Internal map Camunda 8 start process instance body to the start deployment pipeline
  * @internal
- * @param {import('express').Request<StartDeployment, import('types').Camunda8ProcessInstance, import('types').Camunda8CreateProcessInstanceBody>} req
- * @param {import('express').Response<import('types').Camunda8ProcessInstance, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Request<StartDeployment, import('./interfaces.js').Camunda8ProcessInstance, import('./interfaces.js').Camunda8CreateProcessInstanceBody>} req
+ * @param {import('express').Response<import('./interfaces.js').Camunda8ProcessInstance, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype._resolveProcessDefinition = async function resolveProcessDefinition(req, res, next) {
@@ -348,7 +348,7 @@ BpmnEngineMiddleware.prototype._resolveProcessDefinition = async function resolv
 /**
  * Started Camunda 8 process instance response, the engine token doubles as process instance key
  * @param {import('express').Request<StartDeployment>} _req
- * @param {import('express').Response<import('types').Camunda8ProcessInstance, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('./interfaces.js').Camunda8ProcessInstance, BpmnMiddlewareResponseLocals>} res
  */
 BpmnEngineMiddleware.prototype.createdProcessInstance = function createdProcessInstance(_req, res) {
   const engine = res.locals.engine;
@@ -373,7 +373,7 @@ BpmnEngineMiddleware.prototype.redirectProcessInstance = function redirectProces
 
 /**
  * Run deployment
- * @param {import('express').Request<StartDeployment, StartDeploymentResult, any, import('types').ExecuteOptions>} _req
+ * @param {import('express').Request<StartDeployment, StartDeploymentResult, any, import('./interfaces.js').ExecuteOptions>} _req
  * @param {import('express').Response<StartDeploymentResult, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -427,7 +427,7 @@ export function ${slugify(engine.name, script.name)}(excutionContext, next) {
 /**
  * Get deployment timers
  * @param {import('express').Request<StartDeployment>} _req
- * @param {import('express').Response<{timers:import('types').ParsedTimerResult[]}>} res
+ * @param {import('express').Response<{timers:import('./interfaces.js').ParsedTimerResult[]}>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymentTimers(_req, res, next) {
@@ -439,7 +439,7 @@ BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymen
     /** @type {typeof import('bpmn-elements').TimerEventDefinition} */
     const TimerEventDefinition = engine.options.elements.TimerEventDefinition;
 
-    /** @type {import('types').ParsedTimerResult[]} */
+    /** @type {import('./interfaces.js').ParsedTimerResult[]} */
     const result = [];
 
     for (const timer of contextTimers) {
@@ -473,8 +473,8 @@ BpmnEngineMiddleware.prototype.getDeploymentTimers = async function getDeploymen
 
 /**
  * Get running engines
- * @param {import('express').Request<import('types').StorageQuery>} req
- * @param {import('express').Response<import('types').RunningEngines, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Request<import('./interfaces.js').StorageQuery>} req
+ * @param {import('express').Response<import('./interfaces.js').RunningEngines, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, next) {
@@ -489,7 +489,7 @@ BpmnEngineMiddleware.prototype.getRunning = async function getRunning(req, res, 
 /**
  * Get engine status by token
  * @param {import('express').Request<TokenParameter>} req
- * @param {import('express').Response<import('types').MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('./interfaces.js').MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToken(req, res, next) {
@@ -506,7 +506,7 @@ BpmnEngineMiddleware.prototype.getStatusByToken = async function getStatusByToke
 /**
  * Get engine activity status
  * @param {import('express').Request<{token:string;activityId:string}>} req
- * @param {import('express').Response<import('types').PostponedElement, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('./interfaces.js').PostponedElement, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivityStatus(req, res, next) {
@@ -525,7 +525,7 @@ BpmnEngineMiddleware.prototype.getActivityStatus = async function getActivitySta
 
 /**
  * Signal activity
- * @param {import('express').Request<TokenParameter, import('types').SignalBody, import('types').ExecuteOptions>} req
+ * @param {import('express').Request<TokenParameter, import('./interfaces.js').SignalBody, import('./interfaces.js').ExecuteOptions>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -549,7 +549,7 @@ BpmnEngineMiddleware.prototype.signalActivity = async function signalActivity(re
 
 /**
  * Cancel activity
- * @param {import('express').Request<TokenParameter, import('types').SignalBody>} req
+ * @param {import('express').Request<TokenParameter, import('./interfaces.js').SignalBody>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -573,7 +573,7 @@ BpmnEngineMiddleware.prototype.cancelActivity = async function cancelActivity(re
 
 /**
  * Fail activity
- * @param {import('express').Request<TokenParameter, import('types').SignalBody>} req
+ * @param {import('express').Request<TokenParameter, import('./interfaces.js').SignalBody>} req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -589,7 +589,7 @@ BpmnEngineMiddleware.prototype.failActivity = async function failActivity(req, r
 
 /**
  * Resume engine by token
- * @param {import('express').Request<TokenParameter, any, import('types').ExecuteOptions>} _req
+ * @param {import('express').Request<TokenParameter, any, import('./interfaces.js').ExecuteOptions>} _req
  * @param {import('express').Response<ReturnType<Engines['getEngineStatusByToken']>, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -617,7 +617,7 @@ BpmnEngineMiddleware.prototype.resumeByToken = async function resumeByToken(_req
 /**
  * Get engine state by token
  * @param {import('express').Request<TokenParameter>} req
- * @param {import('express').Response<import('types').MiddlewareEngineState, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Response<import('./interfaces.js').MiddlewareEngineState, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype.getStateByToken = async function getStateByToken(req, res, next) {
@@ -673,7 +673,7 @@ BpmnEngineMiddleware.prototype.internalStopByToken = function internalStopByToke
 /**
  * Internal create engine middleware
  * @internal
- * @param {import('express').Request<StartDeployment, void, import('types').StartDeploymentOptions>} req
+ * @param {import('express').Request<StartDeployment, void, import('./interfaces.js').StartDeploymentOptions>} req
  * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
@@ -728,7 +728,7 @@ BpmnEngineMiddleware.prototype.startAndTrackEngine = function startAndTrackEngin
   /**
    * Internal start engine middleware
    * @internal
-   * @param {import('express').Request<StartDeployment, void, import('types').StartDeploymentOptions>} req
+   * @param {import('express').Request<StartDeployment, void, import('./interfaces.js').StartDeploymentOptions>} req
    * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
    * @param {import('express').NextFunction} next
    */
@@ -751,7 +751,7 @@ BpmnEngineMiddleware.prototype.resumeAndTrackEngine = function resumeAndTrackEng
   /**
    * Internal resume engine middleware
    * @internal
-   * @param {import('express').Request<StartDeployment, void, import('types').ExecuteOptions>} req
+   * @param {import('express').Request<StartDeployment, void, import('./interfaces.js').ExecuteOptions>} req
    * @param {import('express').Response<void, BpmnMiddlewareResponseLocals>} res
    * @param {import('express').NextFunction} next
    */
@@ -794,12 +794,12 @@ BpmnEngineMiddleware.prototype._validateLocals = function validateLocals(_req, r
 /**
  * Internal get engine run options from query
  * @internal
- * @param {import('express').Request<any, any, import('types').ExecuteOptions>} req
- * @param {import('express').Response<import('types').MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>} res
+ * @param {import('express').Request<any, any, import('./interfaces.js').ExecuteOptions>} req
+ * @param {import('express').Response<import('./interfaces.js').MiddlewareEngineStatus, BpmnMiddlewareResponseLocals>} res
  * @param {import('express').NextFunction} next
  */
 BpmnEngineMiddleware.prototype._parseQueryToEngineOptions = function parseQueryToEngineOptions(req, res, next) {
-  /** @type {import('types').ExecuteOptions} */
+  /** @type {import('./interfaces.js').ExecuteOptions} */
   const options = (res.locals.executeOptions = {});
 
   let current;
@@ -1049,12 +1049,12 @@ function syncExecutionCallback() {}
  * @typedef {Object} BpmnMiddlewareResponseLocals
  * @property {string} middlewareName Middleware name
  * @property {Engines} engines Engine factory
- * @property {import('types').IStorageAdapter} adapter Storage adapter
+ * @property {import('./interfaces.js').IStorageAdapter} adapter Storage adapter
  * @property {Broker} broker Middleware broker
  * @property {BpmnPrefixListener} listener BPMN engine listener
  * @property {string} [token] BPMN engine execution token
  * @property {MiddlewareEngine} [engine] BPMN engine instance
- * @property {import('types').ExecuteOptions} [executeOptions] BPMN engine execution options
+ * @property {import('./interfaces.js').ExecuteOptions} [executeOptions] BPMN engine execution options
  * @property {string} [processDefinitionId] Camunda 8 process definition id, set by the start process instance pipeline
  */
 

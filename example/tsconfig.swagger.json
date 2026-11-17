@@ -1,16 +1,4 @@
 {
-  "include": ["./**/*.js", "../src/**/*.js", "../types/interfaces.d.ts"],
-  "compilerOptions": {
-    "noEmit": true,
-    "lib": ["es2017"],
-    "target": "es2017",
-    "allowJs": true,
-    "checkJs": false,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": false,
-    "skipLibCheck": true
-  }
+  "extends": "./tsconfig.json",
+  "include": ["./**/*.js", "../node_modules/bpmn-middleware/src/**/*.js"]
 }

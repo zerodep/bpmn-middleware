@@ -2,7 +2,7 @@ import { STORAGE_TYPE_FILE } from './constants.js';
 
 /**
  * Multer adapter storage
- * @param {import('types').IStorageAdapter} adapter
+ * @param {import('./interfaces.js').IStorageAdapter} adapter
  */
 export function MulterAdapterStorage(adapter) {
   this.adapter = adapter;

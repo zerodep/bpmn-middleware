@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `npm test` — run mocha; `posttest` chains `lint`, `dist`, `tsc`, and `test:md`.
 - `npm run lint` — `eslint . --cache && prettier . --check --cache`.
-- `npm run dist` — generate `types/index.d.ts` via `dts-buddy` (from JSDoc).
+- `npm run dist` — generate the declarations in `types/` with `tsc`, one per source file, from JSDoc and the hand-written `src/interfaces.ts`. Everything in `types/` is generated; don't edit it.
 - `npm run tsc` — typecheck `src/`, the tests (`test/tsconfig.json`), and the example app (`example/tsconfig.json`). Tests and example import `bpmn-middleware` by name and are checked against the generated `types/index.d.ts`, as a consumer would be, so run `npm run dist` first after changing types.
-- `npm run build:swagger --workspace=example` — regenerate `example/swagger.json` from `example/tsconfig.swagger.json`. Schemas come from the `.d.ts` files in that program, so its `include` must keep `../src` and `../types/interfaces.d.ts`; `example/tsconfig.json` is for typechecking only.
+- `npm run build:swagger --workspace=example` — regenerate `example/swagger.json` from `example/tsconfig.swagger.json`. Route annotations are read from source, so that config extends `example/tsconfig.json` and adds the middleware source the way a consumer would, through `../node_modules/bpmn-middleware/src`. Don't typecheck with it: source and published types in one program declare the `Express.Response.locals` augmentation twice.
 - `npm run cov:html` / `npm run test:lcov` — coverage with `c8` (covers `src/` and `example/`).
 - `npm run test:md` — runs `texample` against `README.md`, `docs/API.md`, and `example/README.md`. Code blocks in those files are executed; keep them runnable when editing.
 - Single test: `npx mocha test/features/resume-feature.js` (or any single file). Add `--grep "<scenario name>"` to target a single Scenario in a `mocha-cakes-2` file. The repo's `.mocharc.json` already wires `chai/register-expect.js` and `test/helpers/setup.js` and uses the `mocha-cakes-2` UI, so don't pass `--ui bdd`.
@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is an Express middleware wrapping [`bpmn-engine`](https://npmjs.com/package/bpmn-engine). It exposes a REST surface for deploying BPMN diagrams, starting/resuming engine executions, and brokering BPMN call-activity calls between deployments. The package is ESM only: it ships the source as is (`src/index.js`) and generated `.d.ts` (`types/index.d.ts`), and requires Node.js `>=22`.
+This is an Express middleware wrapping [`bpmn-engine`](https://npmjs.com/package/bpmn-engine). It exposes a REST surface for deploying BPMN diagrams, starting/resuming engine executions, and brokering BPMN call-activity calls between deployments. The package is ESM only: it ships the source as is (`src/index.js`) and generated `.d.ts` (`types/`), and requires Node.js `>=22`.
 
 ### Request pipeline
 
@@ -40,7 +40,7 @@ Sync runs (`?sync=true`, default `idleTimeout` 60000ms) wait for completion via 
 
 ### Storage adapter
 
-State, deployments, and uploaded files all flow through `IStorageAdapter` (see `types/interfaces.d.ts`). Storage types are the constants `STORAGE_TYPE_DEPLOYMENT | STORAGE_TYPE_STATE | STORAGE_TYPE_FILE` (`src/constants.js`). `MemoryAdapter` (`src/memory-adapter.js`) is the in-process LRU implementation and is what tests share across instances to simulate horizontal scaling. `MulterAdapterStorage` plugs the adapter into `multer` so `POST /deployment/create` writes uploaded BPMN files via `adapter.upsert(STORAGE_TYPE_FILE, ...)`.
+State, deployments, and uploaded files all flow through `IStorageAdapter` (see `src/interfaces.ts`). Storage types are the constants `STORAGE_TYPE_DEPLOYMENT | STORAGE_TYPE_STATE | STORAGE_TYPE_FILE` (`src/constants.js`). `MemoryAdapter` (`src/memory-adapter.js`) is the in-process LRU implementation and is what tests share across instances to simulate horizontal scaling. `MulterAdapterStorage` plugs the adapter into `multer` so `POST /deployment/create` writes uploaded BPMN files via `adapter.upsert(STORAGE_TYPE_FILE, ...)`.
 
 When `autosaveEngineState` is true (default), the engine broker's `activity.state.save` events trigger `adapter.upsert(STORAGE_TYPE_STATE, token, state)` from `Engines._onStateMessage`. Custom adapters must implement `upsert/update/fetch/query/delete`; use `StorageError` with `ERR_STORAGE_KEY_NOT_FOUND` for missing keys.
 
@@ -61,7 +61,7 @@ The `Caller` record (`src/caller.js`) ties a called execution back to `{ token, 
 ## Conventions
 
 - **Use TDD.** Write a failing `mocha-cakes-2` Scenario in `test/features/` (or `test/src/` for unit-level) first, watch it fail with a meaningful message, then implement in `src/` until it passes. Refactor with the suite green. Don't write production code without a failing test driving it.
-- Source is JSDoc-annotated JavaScript with `checkJs: true` (see `tsconfig.json`); public types live in `types/interfaces.d.ts` and the generated `types/index.d.ts`. Update interfaces alongside code changes — `npm run dist` will fail otherwise.
+- Source is JSDoc-annotated JavaScript with `checkJs: true` (see `tsconfig.json`); public types live in the hand-written `src/interfaces.ts`, referenced from JSDoc as `import('./interfaces.js')` (a relative import, no tsconfig alias, so the source resolves for consumers too). Update interfaces alongside code changes — `npm run dist` will fail otherwise.
 - Prettier: 140 col, single quotes, ES5 trailing commas; ESLint enforces `no-var`, `prefer-const`, `eqeqeq`, `require-await`, etc.
 - Tests use `mocha-cakes-2` (`Feature/Scenario/Given/When/Then`); `test/helpers/test-helpers.js` exposes `getAppWithExtensions`, `horizontallyScaled`, and `createDeployment`. New features should reuse these rather than building Express apps from scratch.
 - README and `docs/API.md` examples are executed by `texample` in CI. If you change the public API, update those snippets so `npm run test:md` keeps passing.

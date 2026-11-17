@@ -24,7 +24,7 @@
     "test:lcov": "c8 -r lcov mocha",
     "posttest:lcov": "npm run lint",
     "test:md": "texample ./README.md ./docs/*.md",
-    "dist": "dts-buddy",
+    "dist": "tsc",
     "tsc": "tsc --noEmit && tsc -p test && tsc -p example",
     "toc": "toc -c README.md docs/*.md example/README.md"
   },
@@ -41,13 +41,13 @@
   ],
   "author": {
     "name": "Zerodep AB",
-    "url": "https://github.com/zerodep"
+    "url": "https://0dep.se"
   },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/zerodep/bpmn-middleware/issues"
   },
-  "homepage": "https://0dep.se",
+  "homepage": "https://0dep.se/run/",
   "devDependencies": {
     "@0dep/bpmn-extensions": "^1.0.0",
     "@0dep/toc": "^2.1.0",
@@ -64,7 +64,6 @@
     "c8": "^12.0.0",
     "chai": "^6.0.1",
     "chronokinesis": "^8.0.0",
-    "dts-buddy": "^0.8.3",
     "eslint": "^10.3.0",
     "express": "^5.1.0",
     "express-4": "npm:express@^4.21.2",
@@ -92,7 +91,7 @@
   },
   "files": [
     "src/",
-    "types/index.d.ts*",
+    "types/",
     "CHANGELOG.md"
   ],
   "workspaces": [

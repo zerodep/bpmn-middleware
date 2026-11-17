@@ -1,8 +1,15 @@
 # bpmn-middleware
 
-[![Build](https://github.com/zerodep/bpmn-middleware/actions/workflows/build.yaml/badge.svg)](https://github.com/zerodep/bpmn-middleware/actions/workflows/build.yaml)[![Coverage Status](https://coveralls.io/repos/github/zerodep/bpmn-middleware/badge.svg?branch=main)](https://coveralls.io/github/zerodep/bpmn-middleware?branch=main)
+[![Build](https://github.com/zerodep/bpmn-middleware/actions/workflows/build.yaml/badge.svg)](https://github.com/zerodep/bpmn-middleware/actions/workflows/build.yaml)[![Build (Windows)](https://github.com/zerodep/bpmn-middleware/actions/workflows/build-windows.yaml/badge.svg)](https://github.com/zerodep/bpmn-middleware/actions/workflows/build-windows.yaml)[![Coverage Status](https://coveralls.io/repos/github/zerodep/bpmn-middleware/badge.svg?branch=main)](https://coveralls.io/github/zerodep/bpmn-middleware?branch=main)
 
-Express middleware for [BPMN engine](https://npmjs.com/package/bpmn-engine).
+Express middleware for [BPMN engine](https://npmjs.com/package/bpmn-engine). Mount it and get a REST api for deploying and running BPMN 2.0 processes, without wiring state and resume handling around the engine yourself.
+
+- Deploy, start, signal, cancel and inspect processes over http. Camunda Modeler can deploy and start diagrams directly, Camunda 8 included
+- Engine state is saved to a pluggable [storage adapter](./docs/API.md#storage-adapter) as the process runs, so with a shared store any app instance can pick up a running process
+- Engines that only wait for input are stopped when idle and resumed from saved state when signalled
+- [Call activities](./docs/call-activity.md) start other deployed diagrams and continue when they complete or fail
+- Your own storage, services and scripts plug in, engine events are emitted on the Express app, and custom routes are composed from the same handlers
+- Ships type declarations and annotated routes that build into an [OpenAPI document](./example/README.md#openapi-document)
 
 Under construction so breaking changes will occur until v1.
 

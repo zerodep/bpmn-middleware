@@ -8,6 +8,7 @@
     "checkJs": true,
     "noImplicitAny": false,
     "declaration": false,
+    "declarationMap": false,
     "emitDeclarationOnly": false,
     "noEmit": true,
     "resolveJsonModule": true,

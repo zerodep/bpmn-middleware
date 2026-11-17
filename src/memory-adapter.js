@@ -55,7 +55,7 @@ MemoryAdapter.prototype.update = function upsert(type, key, value, options) {
 
 /**
  * Delete
- * @type {import('types').IStorageAdapter['delete']}
+ * @type {import('./interfaces.js').IStorageAdapter['delete']}
  */
 MemoryAdapter.prototype.delete = function deleteByKey(type, key) {
   this.storage.delete(`${type}:${key}`);
@@ -85,7 +85,7 @@ MemoryAdapter.prototype.fetch = async function fetch(type, key, options) {
 
 /**
  * Query
- * @type {import('types').IStorageAdapter['query']}
+ * @type {import('./interfaces.js').IStorageAdapter['query']}
  */
 MemoryAdapter.prototype.query = function query(type, qs) {
   let records = [];

@@ -1,4 +1,4 @@
 node_modules/
-types/index.d.ts
+types/
 tsconfig.json
 example/swagger.json

@@ -18,7 +18,7 @@ const kOptions = Symbol.for('options');
 
 /**
  * Engines class
- * @param {import('types').BpmnMiddlewareOptions} options
+ * @param {import('./interfaces.js').BpmnMiddlewareOptions} options
  */
 export function Engines(options) {
   if (!options?.name || typeof options.name !== 'string') throw new TypeError('options.name is mandatory and must be a string');
@@ -68,7 +68,7 @@ Object.defineProperty(Engines.prototype, 'broker', {
 });
 
 Object.defineProperty(Engines.prototype, 'adapter', {
-  /** @returns {import('types').IStorageAdapter} */
+  /** @returns {import('./interfaces.js').IStorageAdapter} */
   get() {
     return this[kOptions].adapter;
   },
@@ -83,7 +83,7 @@ Object.defineProperty(Engines.prototype, 'running', {
 
 /**
  * Clone engines instance
- * @param {Partial<import('types').BpmnMiddlewareOptions>} [overrideOptions]
+ * @param {Partial<import('./interfaces.js').BpmnMiddlewareOptions>} [overrideOptions]
  * @returns {Engines}
  */
 Engines.prototype.clone = function cloneEnginesInstance(overrideOptions) {
@@ -93,7 +93,7 @@ Engines.prototype.clone = function cloneEnginesInstance(overrideOptions) {
 
 /**
  * Create and execute engine from options
- * @param {import('types').MiddlewareEngineOptions} executeOptions
+ * @param {import('./interfaces.js').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.execute = function execute(executeOptions) {
   const token = executeOptions.token ?? randomUUID();
@@ -131,19 +131,19 @@ Engines.prototype.run = async function runEngine(engine, listener, callback) {
  * Resume engine execution
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} [listener]
- * @param {import('types').ExecuteOptions} [options]
+ * @param {import('./interfaces.js').ExecuteOptions} [options]
  * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback] resume run completed callback
  * @returns {Promise<MiddlewareEngine>}
  */
 Engines.prototype.resume = async function resume(token, listener, options, callback) {
   try {
     const engineCache = this.engineCache;
-    /** @type {import('types').ExecuteOptions} */
+    /** @type {import('./interfaces.js').ExecuteOptions} */
     const resumeOptions = { ...options };
 
     /** @type {MiddlewareEngine} */
     let engine = engineCache.get(token);
-    /** @type {import('types').MiddlewareEngineState} */
+    /** @type {import('./interfaces.js').MiddlewareEngineState} */
     let state = await this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
 
     if (!state && !engine) {
@@ -227,8 +227,8 @@ Engines.prototype.resume = async function resume(token, listener, options, callb
  * Signal activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @param {import('types').SignalBody} body
- * @param {import('types').ExecuteOptions} [options]
+ * @param {import('./interfaces.js').SignalBody} body
+ * @param {import('./interfaces.js').ExecuteOptions} [options]
  * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback]
  */
 Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivity(token, listener, body, options, callback) {
@@ -248,8 +248,8 @@ Engines.prototype.resumeAndSignalActivity = async function resumeAndSignalActivi
  * Cancel activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @param {import('types').SignalBody} body
- * @param {import('types').ExecuteOptions} [options]
+ * @param {import('./interfaces.js').SignalBody} body
+ * @param {import('./interfaces.js').ExecuteOptions} [options]
  * @param {(err: Error, engine: import('bpmn-engine').Execution)=>void} [callback]
  */
 Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token, listener, body, options, callback) {
@@ -269,8 +269,8 @@ Engines.prototype.resumeAndCancelActivity = async function cancelActivity(token,
  * Resume and fail activity
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @param {import('types').SignalBody} body
- * @param {import('types').ExecuteOptions} [options]
+ * @param {import('./interfaces.js').SignalBody} body
+ * @param {import('./interfaces.js').ExecuteOptions} [options]
  */
 Engines.prototype.resumeAndFailActivity = async function resumeAndFailActivity(token, listener, body, options) {
   const engine = await this.resume(token, listener, options);
@@ -283,7 +283,7 @@ Engines.prototype.resumeAndFailActivity = async function resumeAndFailActivity(t
  * Get postponed activities by token
  * @param {string} token
  * @param {import('bpmn-engine').IListenerEmitter} listener
- * @returns {Promise<import('types').PostponedElement[]>}
+ * @returns {Promise<import('./interfaces.js').PostponedElement[]>}
  */
 Engines.prototype.getPostponed = async function getPostponed(token, listener) {
   const engine = await this.resume(token, listener);
@@ -303,7 +303,7 @@ Engines.prototype.getPostponed = async function getPostponed(token, listener) {
  * Get engine state by token
  * @param {string} token
  * @param {any} [options] adapter fetch options
- * @returns {Promise<import('types').MiddlewareEngineState>}
+ * @returns {Promise<import('./interfaces.js').MiddlewareEngineState>}
  */
 Engines.prototype.getStateByToken = function getStateByToken(token, options) {
   return this.adapter.fetch(STORAGE_TYPE_STATE, token, options);
@@ -313,7 +313,7 @@ Engines.prototype.getStateByToken = function getStateByToken(token, options) {
  * Get engine status by token
  * @param {string} token
  * @param {any} [options] adapter fetch options
- * @returns {Promise<import('types').MiddlewareEngineStatus>}
+ * @returns {Promise<import('./interfaces.js').MiddlewareEngineStatus>}
  */
 Engines.prototype.getStatusByToken = function getStatusByToken(token, options) {
   return this.getStateByToken(token, { exclude: ['engine'], ...options });
@@ -322,7 +322,7 @@ Engines.prototype.getStatusByToken = function getStatusByToken(token, options) {
 /**
  * Get running engines by querying storage
  * @param {any} [query]
- * @returns {Promise<import('types').RunningEngines>}
+ * @returns {Promise<import('./interfaces.js').RunningEngines>}
  */
 Engines.prototype.getRunning = async function getRunning(query) {
   const { records, ...rest } = await this.adapter.query(STORAGE_TYPE_STATE, { ...query, state: 'running', exclude: ['engine'] });
@@ -398,7 +398,7 @@ Engines.prototype.terminateByToken = function terminateByToken(token) {
 
 /**
  * Create middleware bpmn engine
- * @param {import('types').MiddlewareEngineOptions} executeOptions
+ * @param {import('./interfaces.js').MiddlewareEngineOptions} executeOptions
  */
 Engines.prototype.createEngine = function createEngine(executeOptions) {
   const { name, token, source, listener, variables, caller, settings, idleTimeout, businessKey, sync } = executeOptions;
@@ -434,7 +434,7 @@ Engines.prototype.createEngine = function createEngine(executeOptions) {
 /**
  * Get running engine status by token
  * @param {string} token
- * @returns {import('types').MiddlewareEngineStatus | undefined}
+ * @returns {import('./interfaces.js').MiddlewareEngineStatus | undefined}
  */
 Engines.prototype.getEngineStatusByToken = function getEngineStatusByToken(token) {
   const engine = this.engineCache.get(token);
@@ -445,10 +445,10 @@ Engines.prototype.getEngineStatusByToken = function getEngineStatusByToken(token
 /**
  * Get engine status
  * @param {MiddlewareEngine} engine
- * @returns {import('types').MiddlewareEngineStatus}
+ * @returns {import('./interfaces.js').MiddlewareEngineStatus}
  */
 Engines.prototype.getEngineStatus = function getEngineStatus(engine) {
-  /** @type {import('types').MiddlewareEngineStatus} */
+  /** @type {import('./interfaces.js').MiddlewareEngineStatus} */
   const result = {
     token: engine.token,
     name: engine.name,
@@ -479,7 +479,7 @@ Engines.prototype.createEngineState = function createEngineState(engine) {
   const token = engine.token;
   const { expireAt, sequenceNumber, caller, businessKey } = engine.options;
 
-  /** @type {import('types').MiddlewareEngineState} */
+  /** @type {import('./interfaces.js').MiddlewareEngineState} */
   const state = {
     token,
     name: engine.name,
@@ -489,7 +489,7 @@ Engines.prototype.createEngineState = function createEngineState(engine) {
     ...(caller && { caller }),
   };
 
-  /** @type {import('types').postponed[]} */
+  /** @type {import('./interfaces.js').postponed[]} */
   const postponed = (state.postponed = []);
   for (const elmApi of engine.execution.getPostponed()) {
     postponed.push({ id: elmApi.id, type: elmApi.type });
@@ -717,7 +717,7 @@ Engines.prototype._teardownEngine = function teardownEngine(engine) {
 /**
  * Internal get activity
  * @param {MiddlewareEngine} engine
- * @param {import('types').SignalBody} body
+ * @param {import('./interfaces.js').SignalBody} body
  */
 function getActivityApi(engine, body) {
   const { id, executionId } = body;

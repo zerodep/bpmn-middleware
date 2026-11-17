@@ -1,13 +1,14 @@
 {
-  "include": ["src/**/*", "types/interfaces.d.ts"],
+  "include": ["src/**/*"],
   "compilerOptions": {
     "emitDeclarationOnly": true,
     "sourceMap": false,
     "rootDir": "src",
     "lib": ["es2017"],
     "target": "es2017",
-    "outDir": "./tmp/ignore",
+    "outDir": "./types",
     "declaration": true,
+    "declarationMap": true,
     "noEmitOnError": true,
     "noErrorTruncation": true,
     "allowJs": true,
@@ -22,9 +23,6 @@
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "typeRoots": ["./node_modules/@types"],
-    "paths": {
-      "types": ["./types/interfaces.js"]
-    }
+    "typeRoots": ["./node_modules/@types"]
   }
 }

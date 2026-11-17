@@ -6,11 +6,11 @@ const kToken = Symbol.for('engine token');
 export class MiddlewareEngine extends Engine {
   /**
    * @param {string} token
-   * @param {import('types').MiddlewareEngineOptions} [options]
+   * @param {import('./interfaces.js').MiddlewareEngineOptions} [options]
    */
   constructor(token, options) {
     super(options);
-    /** @type {import('types').MiddlewareEngineOptions} */
+    /** @type {import('./interfaces.js').MiddlewareEngineOptions} */
     this.options = options;
     /**
      * Engine execution token
