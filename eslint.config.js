@@ -66,7 +66,7 @@ export default [
     languageOptions: {
       parserOptions: {
         sourceType: 'module',
-        ecmaVersion: 2022,
+        ecmaVersion: 2025,
       },
       globals: {
         ...globals.nodeBuiltin,
@@ -76,19 +76,8 @@ export default [
     rules,
   },
   {
-    files: ['example/**/*.js'],
-    languageOptions: {
-      parserOptions: {
-        ecmaVersion: 2025,
-      },
-    },
-  },
-  {
     files: ['test/**/*.js'],
     languageOptions: {
-      parserOptions: {
-        ecmaVersion: 2025,
-      },
       globals: {
         ...globals.nodeBuiltin,
         ...globals.mocha,

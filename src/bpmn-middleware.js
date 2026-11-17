@@ -1,7 +1,6 @@
 import { basename, extname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { json } from 'express';
 import { Broker } from 'smqp';
 import { ISODuration } from '@0dep/piso';
@@ -22,9 +21,7 @@ import { createCallerFromActivityMessage } from './caller.js';
 import debug from './debug.js';
 import { DeferredCallback } from './deferred.js';
 
-const nodeRequire = createRequire(fileURLToPath(import.meta.url));
-
-const packageInfo = nodeRequire(join(process.cwd(), 'package.json'));
+const packageInfo = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
 const kInitilialized = Symbol.for('initialized');
 
 export { Engines, MemoryAdapter, HttpError, StorageError, MiddlewareEngine };

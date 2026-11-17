@@ -59,7 +59,6 @@ const middleware = bpmnEngineMiddleware({
 
 ```javascript
 import assert from 'node:assert';
-import { createRequire } from 'node:module';
 
 import { Engine } from 'bpmn-engine';
 import * as bpmnElements from 'bpmn-elements';
@@ -70,11 +69,8 @@ import {
   OnifyTimerEventDefinition,
 } from '@onify/flow-extensions';
 import { extensions as zerodepExtensions, extendFn as zerodepExtendFn } from '@0dep/bpmn-extensions';
-
-const nodeRequire = createRequire(import.meta.url);
-
-const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
-const zeebe = nodeRequire('zeebe-bpmn-moddle/resources/zeebe.json');
+import camunda from 'camunda-bpmn-moddle/resources/camunda.json' with { type: 'json' };
+import zeebe from 'zeebe-bpmn-moddle/resources/zeebe.json' with { type: 'json' };
 
 /**
  * Strip zeebe extension properties that collide with the camunda schema

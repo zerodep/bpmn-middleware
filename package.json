@@ -23,7 +23,7 @@
     "cov:html": "c8 -r html -r text mocha",
     "test:lcov": "c8 -r lcov mocha",
     "posttest:lcov": "npm run lint",
-    "test:md": "texample ./README.md,./docs/*.md",
+    "test:md": "texample ./README.md ./docs/*.md",
     "dist": "dts-buddy",
     "tsc": "tsc --noEmit && tsc -p test && tsc -p example",
     "toc": "toc -c README.md docs/*.md example/README.md"

@@ -14,7 +14,7 @@
     "checkJs": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "resolveJsonModule": false,
+    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "strictNullChecks": false,

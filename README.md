@@ -22,7 +22,6 @@ Under construction so breaking changes will occur until v1.
 ## Usage
 
 ```javascript
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import express from 'express';
@@ -33,12 +32,9 @@ import * as bpmnElements from 'bpmn-elements';
 
 import { bpmnEngineMiddleware, HttpError, MemoryAdapter } from 'bpmn-middleware';
 import { factory as ScriptsFactory } from './example/middleware-scripts.js';
+import camunda from 'camunda-bpmn-moddle/resources/camunda.json' with { type: 'json' };
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
-
-const nodeRequire = createRequire(import.meta.url);
-
-const camunda = nodeRequire('camunda-bpmn-moddle/resources/camunda.json');
 
 const elements = {
   ...bpmnElements,
