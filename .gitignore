@@ -136,9 +136,6 @@ CLAUDE.md
 package-lock.json
 tmp/
 
-dist/**/*
-!dist/package.json
-
 *.d.ts.map
 
 Dockerfile

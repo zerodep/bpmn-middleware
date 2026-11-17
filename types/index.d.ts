@@ -18,6 +18,7 @@ declare module 'bpmn-middleware' {
 	export type MiddlewareEngineStatus = MiddlewareEngineStatus_1;
 	export type MiddlewareEngineState = MiddlewareEngineState_1;
 	export type SignalBody = SignalBody_1;
+	export type IStorageAdapter = IStorageAdapter_1;
 	export type StartDeployment = StartDeployment_1;
 	export type TokenParameter = TokenParameter_1;
 	export type BpmnMiddlewareResponseLocals = BpmnMiddlewareResponseLocals_1;
@@ -36,7 +37,7 @@ declare module 'bpmn-middleware' {
 	name?: string;
 	/** middleware endpoint base path, defaults to `{*splat}` */
 	basePath?: string;
-	adapter?: IStorageAdapter;
+	adapter?: IStorageAdapter_1;
 	/** Options passed to each created engine */
 	engineOptions?: BpmnEngineOptions;
 	/** Executing engines */
@@ -48,11 +49,11 @@ declare module 'bpmn-middleware' {
 	/** Autosave engine state during execution */
 	autosaveEngineState?: boolean;
 	/** Scripts factory */
-	Scripts?: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => IScripts;
+	Scripts?: (adapter: IStorageAdapter_1, deploymentName: string, businessKey?: string) => IScripts;
 	/** Services factory */
 	Services?: (
 	  this: Environment,
-	  adapter: IStorageAdapter,
+	  adapter: IStorageAdapter_1,
 	  deploymentName: string,
 	  businessKey?: string
 	) => Record<string, ServiceFunction> | void;
@@ -104,7 +105,7 @@ declare module 'bpmn-middleware' {
 	[x: string]: any;
   }
 
-  interface IStorageAdapter {
+  interface IStorageAdapter_1 {
 	upsert<T>(type: string | StorageType, key: string, value: T, options?: any): Promise<any>;
 	update<T>(type: string | StorageType, key: string, value: T, options?: any): Promise<any>;
 	fetch<T>(type: string | StorageType, key: string, options?: any): Promise<T>;
@@ -272,7 +273,7 @@ declare module 'bpmn-middleware' {
 		 * */
 		constructor(options: BpmnMiddlewareOptions_1);
 		name: string;
-		adapter: IStorageAdapter;
+		adapter: IStorageAdapter_1;
 		broker: Broker;
 		engines: Engines;
 		engineOptions: {
@@ -496,7 +497,7 @@ declare module 'bpmn-middleware' {
 		/**
 		 * Storage adapter
 		 */
-		adapter: IStorageAdapter;
+		adapter: IStorageAdapter_1;
 		/**
 		 * Middleware broker
 		 */
@@ -613,11 +614,11 @@ declare module 'bpmn-middleware' {
 		
 		engineCache: LRUCache<string, MiddlewareEngine, unknown>;
 		autosaveEngineState: boolean;
-		Scripts: (adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
-		Services: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter, deploymentName: string, businessKey?: string) => Record<string, import("bpmn-elements").ServiceFunction> | void;
+		Scripts: (adapter: IStorageAdapter_1, deploymentName: string, businessKey?: string) => import("bpmn-elements").IScripts;
+		Services: (this: import("bpmn-elements").Environment, adapter: IStorageAdapter_1, deploymentName: string, businessKey?: string) => Record<string, import("bpmn-elements").ServiceFunction> | void;
 		get name(): string;
 		get broker(): import("smqp").Broker;
-		get adapter(): IStorageAdapter;
+		get adapter(): IStorageAdapter_1;
 		get running(): MiddlewareEngine[];
 		/**
 		 * Clone engines instance

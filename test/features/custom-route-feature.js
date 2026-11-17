@@ -877,7 +877,7 @@ Feature('custom routes', () => {
 
 /**
  *
- * @param {import('../../types/interfaces.js').IStorageAdapter} adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter
  * @param {string} name
  * @param {string|Buffer} source
  */

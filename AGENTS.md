@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm test` — run mocha; `posttest` chains `lint`, `dist`, and `test:md`.
+- `npm test` — run mocha; `posttest` chains `lint`, `dist`, `tsc`, and `test:md`.
 - `npm run lint` — `eslint . --cache && prettier . --check --cache`.
-- `npm run dist` — generate `types/index.d.ts` via `dts-buddy` (from JSDoc) and bundle the CJS build via `rollup`.
+- `npm run dist` — generate `types/index.d.ts` via `dts-buddy` (from JSDoc).
+- `npm run tsc` — typecheck `src/`, the tests (`test/tsconfig.json`), and the example app (`example/tsconfig.json`). Tests and example import `bpmn-middleware` by name and are checked against the generated `types/index.d.ts`, as a consumer would be, so run `npm run dist` first after changing types.
+- `npm run build:swagger --workspace=example` — regenerate `example/swagger.json` from `example/tsconfig.swagger.json`. Schemas come from the `.d.ts` files in that program, so its `include` must keep `../src` and `../types/interfaces.d.ts`; `example/tsconfig.json` is for typechecking only.
 - `npm run cov:html` / `npm run test:lcov` — coverage with `c8` (covers `src/` and `example/`).
 - `npm run test:md` — runs `texample` against `README.md`, `docs/API.md`, and `example/README.md`. Code blocks in those files are executed; keep them runnable when editing.
 - Single test: `npx mocha test/features/resume-feature.js` (or any single file). Add `--grep "<scenario name>"` to target a single Scenario in a `mocha-cakes-2` file. The repo's `.mocharc.json` already wires `chai/register-expect.js` and `test/helpers/setup.js` and uses the `mocha-cakes-2` UI, so don't pass `--ui bdd`.
@@ -14,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is an Express middleware wrapping [`bpmn-engine`](https://npmjs.com/package/bpmn-engine). It exposes a REST surface for deploying BPMN diagrams, starting/resuming engine executions, and brokering BPMN call-activity calls between deployments. The package ships ESM (`src/index.js`), a CJS bundle (`dist/main.cjs`), and generated `.d.ts` (`types/index.d.ts`).
+This is an Express middleware wrapping [`bpmn-engine`](https://npmjs.com/package/bpmn-engine). It exposes a REST surface for deploying BPMN diagrams, starting/resuming engine executions, and brokering BPMN call-activity calls between deployments. The package is ESM only: it ships the source as is (`src/index.js`) and generated `.d.ts` (`types/index.d.ts`), and requires Node.js `>=22`.
 
 ### Request pipeline
 

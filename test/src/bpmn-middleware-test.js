@@ -104,7 +104,7 @@ describe('BpmnEngineMiddleware', () => {
         await middleware._addProcessDefinitions('weird', 'weird.bpmn', '<default>');
       } catch (err) {
         // eslint-disable-next-line no-var
-        var error = err;
+        var error = /** @type {import('bpmn-middleware').HttpError} */ (err);
       }
 
       expect(error).to.be.instanceof(Error).with.property('statusCode', 400);

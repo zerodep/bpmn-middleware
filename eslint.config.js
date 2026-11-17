@@ -121,6 +121,6 @@ export default [
     },
   },
   {
-    ignores: ['coverage/**/*', 'node_modules/**/*', 'tmp/*', 'dist/*'],
+    ignores: ['coverage/**/*', 'node_modules/**/*', 'tmp/*'],
   },
 ];

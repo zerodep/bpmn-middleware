@@ -7,7 +7,7 @@ const allowedMimesPattern = /^(application|text)\/(node|javascript|octet-stream)
 export class JavaScriptAdapterResource extends JavaScriptResource {
   /**
    * @param {JavaScriptResource} fromScript
-   * @param {import('../types/interfaces.js').IStorageAdapter} adapter
+   * @param {import('bpmn-middleware').IStorageAdapter} adapter
    */
   constructor(fromScript, adapter) {
     const { resource, resourceBase } = /** @type {any} */ (fromScript);
@@ -29,21 +29,23 @@ export class JavaScriptAdapterResource extends JavaScriptResource {
 
 export class MiddlewareScripts extends FlowScripts {
   /**
-   * @param {import('../types/interfaces.js').IStorageAdapter} adapter Middleware storage adapter
+   * @param {import('bpmn-middleware').IStorageAdapter} adapter Middleware storage adapter
    * @param {string} deploymentName Deployment name
    * @param {string} resourceBase Resource base path, ignored in this implementation
    * @param {unknown} [runContext] additional VM run context properties
-   * @param {import('@onify/flow-extensions/FlowScripts').FlowScriptOptions} [options]
+   * @param {{ timeout?: number }} [options]
    */
   constructor(adapter, deploymentName, resourceBase, runContext, options) {
     super(deploymentName, resourceBase, runContext, options?.timeout);
     this.adapter = adapter;
   }
   /**
-   * @param {import('@onify/flow-extensions/FlowScripts').registerArgument} element
+   * @param {any} element activity or sequence flow, typed differently by bpmn-elements and flow-extensions
    */
   register(element) {
-    let script = super.register(element);
+    super.register(element);
+
+    let script;
 
     const registered = this.scripts.get(element.id);
     if (registered instanceof JavaScriptResource) {
@@ -56,7 +58,7 @@ export class MiddlewareScripts extends FlowScripts {
 
 /**
  * Middleware script factory
- * @param {import('../types/interfaces.js').IStorageAdapter} adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter
  * @param {string} deploymentName
  * @returns {import('bpmn-elements').IScripts}
  */

@@ -40,7 +40,13 @@ export async function createApp({ url, adapter }) {
       }
 
       const token = randomUUID();
-      send({ type: 'start', token, deployment: deploymentName, variables: req.body, businessKey: req.query.businessKey });
+      send({
+        type: 'start',
+        token,
+        deployment: deploymentName,
+        variables: req.body,
+        businessKey: /** @type {string} */ (req.query.businessKey),
+      });
       res.status(201).send({ id: token });
     } catch (err) {
       next(err);

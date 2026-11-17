@@ -427,7 +427,7 @@ Feature('save state', () => {
   });
 
   Scenario('using saveState service function', () => {
-    /** @type {import('../../types/interfaces.js').IStorageAdapter} */
+    /** @type {import('bpmn-middleware').IStorageAdapter} */
     let adapter;
     /** @type {ReturnType<testHelpers.horizontallyScaled>} */
     let apps;
@@ -647,7 +647,7 @@ Feature('save state', () => {
   });
 
   Scenario('process throws and an adapter with builtin reference error when updating', () => {
-    /** @type {import('../../types/interfaces.js').IStorageAdapter} */
+    /** @type {import('bpmn-middleware').IStorageAdapter} */
     let adapter;
     /** @type {ReturnType<testHelpers.horizontallyScaled>} */
     let apps;

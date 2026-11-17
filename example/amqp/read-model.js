@@ -73,7 +73,7 @@ export class ReadModel extends EventEmitter {
    */
   apply(routingKey, content, headers) {
     const { token, deployment, worker } = headers;
-    const status = this.statuses.get(token) ?? { token, state: 'running', waiting: [] };
+    const status = this.statuses.get(token) ?? /** @type {EngineStatus} */ ({ token, state: 'running', waiting: [] });
     status.deployment = deployment ?? status.deployment;
     status.worker = worker ?? status.worker;
     status.updatedAt = new Date().toISOString();

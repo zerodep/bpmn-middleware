@@ -1,28 +1,31 @@
 {
   "name": "bpmn-middleware",
-  "version": "0.21.1",
+  "version": "0.22.0",
   "description": "BPMN engine express middleware",
   "type": "module",
-  "main": "./dist/main.cjs",
+  "main": "./src/index.js",
   "module": "./src/index.js",
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "require": "./dist/main.cjs",
-      "types": "./types/index.d.ts"
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
     }
+  },
+  "engines": {
+    "node": ">=22"
   },
   "scripts": {
     "test": "mocha",
-    "posttest": "npm run lint && npm run dist && npm run test:md && npm run build:swagger --workspace=example",
+    "posttest": "npm run lint && npm run dist && npm run tsc && npm run test:md && npm run build:swagger --workspace=example",
     "lint": "eslint . --cache && npm run toc && prettier . --check --cache",
     "prepack": "npm run toc && npm run dist",
     "cov:html": "c8 -r html -r text mocha",
     "test:lcov": "c8 -r lcov mocha",
     "posttest:lcov": "npm run lint",
     "test:md": "texample ./README.md,./docs/*.md",
-    "dist": "dts-buddy && rollup -c",
+    "dist": "dts-buddy",
+    "tsc": "tsc --noEmit && tsc -p test && tsc -p example",
     "toc": "toc -c README.md docs/*.md example/README.md"
   },
   "repository": {
@@ -49,7 +52,6 @@
     "@0dep/bpmn-extensions": "^1.0.0",
     "@0dep/toc": "^2.1.0",
     "@eslint/js": "^10.0.1",
-    "@rollup/plugin-commonjs": "^29.0.0",
     "@types/bpmn-moddle": "^10.0.0",
     "@types/chai": "^5.2.3",
     "@types/debug": "^4.1.12",
@@ -72,9 +74,9 @@
     "mocha-scenarios": "^1.0.1",
     "nock": "^14.0.0",
     "prettier": "^3.3.3",
-    "rollup": "^4.17.2",
     "supertest": "^7.0.0",
-    "texample": "^1.1.0"
+    "texample": "^2.0.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "lru-cache": "^11.2.6",
@@ -90,7 +92,6 @@
   },
   "files": [
     "src/",
-    "dist/",
     "types/index.d.ts*",
     "CHANGELOG.md"
   ],

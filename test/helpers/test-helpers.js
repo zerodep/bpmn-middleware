@@ -24,7 +24,7 @@ const elements = {
 /**
  * Create apps with middleware options
  * @param {number} [instances] Number of instances, defaults to 2
- * @param {import('../../types/interfaces.js').BpmnMiddlewareOptions} [options]
+ * @param {import('bpmn-middleware').BpmnMiddlewareOptions} [options]
  */
 export function horizontallyScaled(instances = 2, options) {
   /** @type {LRUCache<string, any, any>} */
@@ -73,7 +73,7 @@ export function horizontallyScaled(instances = 2, options) {
 }
 
 /**
- * @param {import('../../types/interfaces.js').BpmnMiddlewareOptions} options
+ * @param {import('bpmn-middleware').BpmnMiddlewareOptions} options
  */
 export function getAppWithExtensions(options = {}) {
   const app = express();
@@ -98,8 +98,8 @@ export function getAppWithExtensions(options = {}) {
 
 /**
  * Get engine options
- * @param {import('../../types/interfaces.js').MiddlewareEngineOptions} [engineOptions]
- * @returns {import('../../types/interfaces.js').MiddlewareEngineOptions}
+ * @param {import('bpmn-middleware').BpmnMiddlewareOptions['engineOptions']} [engineOptions]
+ * @returns {import('bpmn-middleware').BpmnMiddlewareOptions['engineOptions']}
  */
 export function getBpmnEngineOptions(engineOptions) {
   return {

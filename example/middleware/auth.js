@@ -3,7 +3,7 @@ import { HttpError } from 'bpmn-middleware';
 
 /**
  * Basic auth middleware
- * @param {import('types').IStorageAdapter} [adapter]
+ * @param {import('bpmn-middleware').IStorageAdapter} [adapter]
  * @param {boolean} [allowAnonymous]
  */
 export function basicAuth(adapter, allowAnonymous) {
@@ -39,7 +39,7 @@ export function basicAuth(adapter, allowAnonymous) {
 
 /**
  * Authenticate user
- * @param {import('types').IStorageAdapter} adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter
  * @param {string} username
  * @param {string} password
  * @returns {Promise<User|undefined>} user
@@ -114,7 +114,7 @@ function sendUnauthorized(res) {
 
 /**
  * Add User
- * @param {import('../../types/interfaces.js').IStorageAdapter} adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter
  * @param {User} newUser
  */
 export async function addUser(adapter, newUser) {

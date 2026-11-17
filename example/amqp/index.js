@@ -14,6 +14,7 @@ const processesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'proces
 
 const url = process.env.AMQP_URL || 'amqp://localhost';
 
+/** @type {LRUCache<string, any>} */
 const storage = new LRUCache({ max: 1000 });
 
 const app = await createApp({ url, adapter: new MemoryAdapter(storage) });

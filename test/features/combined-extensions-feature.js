@@ -50,7 +50,7 @@ function combinedExtendFn(behaviour, element) {
 /**
  * Engine options combining onify flow-extensions and 0dep bpmn-extensions
  * @param {'onify-first' | 'zerodep-first'} [order] extension activation order
- * @returns {import('../../types/interfaces.js').MiddlewareEngineOptions}
+ * @returns {import('bpmn-middleware').BpmnMiddlewareOptions['engineOptions']}
  */
 function getCombinedEngineOptions(order = 'onify-first') {
   return {

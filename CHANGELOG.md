@@ -1,7 +1,15 @@
 # Changelog
 
-## Unreleased
+## v0.22.0 - 2026-11-17
 
+### Breaking
+
+- drop the CommonJS build, the package is ESM only: `dist/main.cjs` is gone and `main` and `exports` resolve to `src/index.js`. CommonJS code can still `require('bpmn-middleware')` on Node.js 22.12 or later
+- require Node.js `>=22`, declared in `engines.node`
+
+### Changes
+
+- export the `IStorageAdapter` type, a custom storage adapter can be typed with `import('bpmn-middleware').IStorageAdapter`
 - example: command and query app where AMQP workers run the engines, `npm run start:amqp --workspace=example`, tested against [amqp-emulator](https://npmjs.com/package/amqp-emulator)
 - example: upgrade [dmn-elements](https://npmjs.com/package/dmn-elements)
 

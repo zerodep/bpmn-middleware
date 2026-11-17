@@ -5,7 +5,7 @@ import { buildSwaggerDocument } from '@aller/express-swagger';
 
 import { app } from './app.js';
 
-const tsconfig = new URL('./tsconfig.json', import.meta.url);
+const tsconfig = new URL('./tsconfig.swagger.json', import.meta.url);
 const out = new URL('./swagger.json', import.meta.url);
 
 const doc = await buildSwaggerDocument(app, { tsconfig });

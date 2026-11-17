@@ -6,7 +6,7 @@ import { HttpError, STORAGE_TYPE_DEPLOYMENT, STORAGE_TYPE_FILE } from 'bpmn-midd
 
 /**
  * Evaluate a deployed DMN decision
- * @param {import('types').IStorageAdapter} adapter storage adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter storage adapter
  * @param {string} deploymentName deployment holding the DMN file
  * @param {string} decisionId id of the decision to evaluate
  * @param {Record<string, any>} [input] decision input, e.g. input data values by variable name
@@ -49,7 +49,7 @@ function Logger(scope) {
 
 /**
  * Evaluate decision route factory, request body is passed as decision input
- * @param {import('types').IStorageAdapter} adapter storage adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter storage adapter
  */
 export function decisionRoute(adapter) {
   /**
@@ -70,7 +70,7 @@ export function decisionRoute(adapter) {
 
 /**
  * Business rule task engine extension factory - points every business rule task to the shared DMN service
- * @param {import('types').IStorageAdapter} adapter storage adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter storage adapter
  */
 export function dmnServiceExtension(adapter) {
   /**
@@ -85,7 +85,7 @@ export function dmnServiceExtension(adapter) {
 /**
  * Business rule task DMN service, evaluates the decision addressed by camunda:decisionRef="deploymentName/decisionId"
  * or, for Camunda 8 diagrams, zeebe:calledDecision decisionId="deploymentName/decisionId"
- * @param {import('types').IStorageAdapter} adapter storage adapter
+ * @param {import('bpmn-middleware').IStorageAdapter} adapter storage adapter
  * @param {import('bpmn-elements').Activity} activity business rule task
  */
 function DmnService(adapter, activity) {
